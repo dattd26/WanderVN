@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WanderVN.API", "WanderVN.API\WanderVN.API.csproj", "{F6D6651B-4D10-49D5-9F56-70F6AF2BF3CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WanderVN.Application", "WanderVN.Application\WanderVN.Application.csproj", "{D3D6E627-CAD0-4113-88AE-DC16C38A31DC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WanderVN.Domain", "WanderVN.Domain\WanderVN.Domain.csproj", "{E727C4B1-7523-4579-996A-4E9A4E4C4C12}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WanderVN.Infrastructure", "WanderVN.Infrastructure\WanderVN.Infrastructure.csproj", "{67594BA1-9AFA-4500-9DC3-7C017608D10F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F6D6651B-4D10-49D5-9F56-70F6AF2BF3CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6D6651B-4D10-49D5-9F56-70F6AF2BF3CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6D6651B-4D10-49D5-9F56-70F6AF2BF3CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6D6651B-4D10-49D5-9F56-70F6AF2BF3CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3D6E627-CAD0-4113-88AE-DC16C38A31DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3D6E627-CAD0-4113-88AE-DC16C38A31DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3D6E627-CAD0-4113-88AE-DC16C38A31DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3D6E627-CAD0-4113-88AE-DC16C38A31DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E727C4B1-7523-4579-996A-4E9A4E4C4C12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E727C4B1-7523-4579-996A-4E9A4E4C4C12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E727C4B1-7523-4579-996A-4E9A4E4C4C12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E727C4B1-7523-4579-996A-4E9A4E4C4C12}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67594BA1-9AFA-4500-9DC3-7C017608D10F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67594BA1-9AFA-4500-9DC3-7C017608D10F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67594BA1-9AFA-4500-9DC3-7C017608D10F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67594BA1-9AFA-4500-9DC3-7C017608D10F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
