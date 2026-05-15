@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="WanderVN.API/WanderVN.API.csproj" />
+  <Project Path="WanderVN.Application/WanderVN.Application.csproj" />
+  <Project Path="WanderVN.Domain/WanderVN.Domain.csproj" />
+  <Project Path="WanderVN.Infrastructure/WanderVN.Infrastructure.csproj" />
+</Solution>
