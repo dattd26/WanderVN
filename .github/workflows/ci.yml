@@ -1,4 +1,4 @@
-name: Backend CI Pipeline
+name: WanderVN CI Pipeline
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ main, dev ]
 
 jobs:
-  build:
-    name: Build & Verify
+  backend:
+    name: Backend Build & Verify
     runs-on: ubuntu-latest
 
     steps:
@@ -26,5 +26,32 @@ jobs:
     - name: Build Backend Solution
       run: dotnet build Backend/WanderVN.sln --no-restore --configuration Release
 
-    - name: Run Tests
+    - name: Run Backend Tests
       run: dotnet test Backend/WanderVN.sln --no-build --configuration Release --verbosity normal
+
+  frontend:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: Frontend/package-lock.json
+
+    - name: Install Dependencies
+      working-directory: Frontend
+      run: npm ci
+
+    - name: Run Linter
+      working-directory: Frontend
+      run: npm run lint
+
+    - name: Build Frontend Application
+      working-directory: Frontend
+      run: npm run build
