@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using WanderVN.Domain.Entities;
+using WanderVN.Application.Common.Interfaces;
 
 namespace WanderVN.Infrastructure.Data;
 
-public partial class WanderVNDbContext : DbContext
+public partial class WanderVNDbContext : DbContext, IApplicationDbContext
 {
     public WanderVNDbContext()
     {
