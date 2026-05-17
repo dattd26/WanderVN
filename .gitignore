@@ -5,7 +5,8 @@
 
 # dotenv files
 .env
-
+.agents/
+project_context.md
 # User-specific files
 *.rsuser
 *.suo

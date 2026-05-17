@@ -1,0 +1,30 @@
+name: Backend CI Pipeline
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build:
+    name: Build & Verify
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore Dependencies
+      run: dotnet restore Backend/WanderVN.sln
+
+    - name: Build Backend Solution
+      run: dotnet build Backend/WanderVN.sln --no-restore --configuration Release
+
+    - name: Run Tests
+      run: dotnet test Backend/WanderVN.sln --no-build --configuration Release --verbosity normal
