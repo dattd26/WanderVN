@@ -6,7 +6,7 @@ using WanderVN.Application.Services;
 
 namespace WanderVN.API.Controllers;
 
-[Route("api/auth")]
+[Route("api/v1/auth")]
 [ApiController]
 public class AuthController : ControllerBase
 {
@@ -17,7 +17,7 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
-    /// POST: api/auth/login
+    /// POST: api/v1/auth/login
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginCommand command)
     {
@@ -32,7 +32,7 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
-    /// POST: api/auth/register
+    /// POST: api/v1/auth/register
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterCommand command)
     {
