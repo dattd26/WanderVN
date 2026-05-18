@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  .paper-texture {
+    background-color: #fdf9f4;
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuBK-wXGzbs4YPHN1iBQB5j2Dlzw7vJG4qXFIQ0NY98YtLKAbiRY3i2vQrQ76UV2i8QrB2g5dYcBA4IbtgrSX-nSBHinvZYaXa423Lqj88gmC793tfHxmu8E1VPtSTZkS03kzMFMYpkVWIU4RDMyK4v8bCIGoGZ-KWHjrELDt9tMLnFzD9ZL3qMpaU6sbUpJvUyEqUNh3sX6rcIkzwW_FjEVWQ22xiay5Wd8ta1XmV7Q-gCLhT2B3D6jgbkiqGNoTzKAGku_mT36yz0);
+    background-repeat: repeat;
+  }
+
+  .paper-grain {
+    position: relative;
+  }
+  
+  .paper-grain::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuBORWSOwJWdC2AZKV_J2kWXt3-z0BF8niKP6UoZghIOLEo0WFBU2gsgEtfeF43rMgJJjZR1CVfTAiGkDvTIQl7_rvZkO0QZDuzaOH6soAT5DuvxSxNKkX-LjsIl6horqxbfCk7U4AiKMOg9s7QUxF01Dl7fJWT3G0S5d5BCiK6-sI95rpj41O4s5z75ldd44qfGXTU_v1QNZHicOp5Kj2d-wPtc0BauTUPgZZ-JGefoZAkU-p_sbpe-wTHrO7hNbhfB2ssKwn-D9fg);
+  }
+
+  .cinematic-overlay {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 24;
+  }
+}
