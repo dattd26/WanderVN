@@ -1,11 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using WanderVN.API.Middleware;
 using WanderVN.Infrastructure.Data;
+using WanderVN.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Add Application Services (AutoMapper, etc.)
+builder.Services.AddApplicationServices();
 
 builder.Services.AddDbContext<WanderVNDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
