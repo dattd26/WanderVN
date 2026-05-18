@@ -65,6 +65,15 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
             new Roles { Id = 2, Name = "User" }
         );
 
+        modelBuilder.Entity<Hotels>(entity =>
+        {
+            // Thiết lập mối quan hệ 1-N giữa Users (Chủ sở hữu) và Hotels (Khách sạn)
+            entity.HasOne(h => h.Owner)
+                .WithMany(u => u.Hotels)
+                .HasForeignKey(h => h.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 
