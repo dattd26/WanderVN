@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using WanderVN.Application.Common;
 using WanderVN.Application.DTOs.Response;
 using WanderVN.Application.Features.Auth.Commands;
 using WanderVN.Domain.Entities;
@@ -12,14 +14,15 @@ namespace WanderVN.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly IAuthRepository _authRepository;
-    private readonly IUnitOfWork _unitOfWork; 
-    private const string SecretKey = "SecretKey_WanderVN_DaiHon32KyTu!";
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly JwtSettings _jwtSettings;
 
     // Constructor đã được thêm IUnitOfWork
-    public AuthService(IAuthRepository authRepository, IUnitOfWork unitOfWork)
+    public AuthService(IAuthRepository authRepository, IUnitOfWork unitOfWork, IOptions<JwtSettings> jwtOptions)
     {
         _authRepository = authRepository;
         _unitOfWork = unitOfWork;
+        _jwtSettings = jwtOptions.Value;
     }
 
     public async Task<AuthResponse> LoginAsync(LoginCommand command)
@@ -79,7 +82,7 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.Role,  user.Role?.Name ?? "User")
         };
 
-        var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SecretKey));
+        var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(

@@ -1,11 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using WanderVN.API.Middleware;
+using WanderVN.Application.Common;
 using WanderVN.Application.Services;
 using WanderVN.Domain.Repositories;
 using WanderVN.Infrastructure.Data;
 using WanderVN.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
