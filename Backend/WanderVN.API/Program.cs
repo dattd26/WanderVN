@@ -1,9 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using WanderVN.API.Middleware;
+using WanderVN.Application.Common;
+using WanderVN.Application.Services;
+using WanderVN.Domain.Repositories;
 using WanderVN.Infrastructure.Data;
+using WanderVN.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// 2. Đăng ký Repositories
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+
+// 3. Đăng ký Services
+builder.Services.AddScoped<IAuthService, AuthService>();
 // Add services to the container.
 builder.Services.AddControllers();
 
