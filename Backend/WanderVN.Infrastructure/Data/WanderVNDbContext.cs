@@ -47,6 +47,24 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WanderVNDbContext).Assembly);
 
+        modelBuilder.Entity<Flights>(entity =>
+        {
+            entity.HasOne(f => f.ArrAirport)
+                .WithMany(a => a.FlightsArrAirport)
+                .HasForeignKey(f => f.ArrAirportId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(f => f.DepAirport)
+                .WithMany(a => a.FlightsDepAirport)
+                .HasForeignKey(f => f.DepAirportId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<Roles>().HasData(
+            new Roles { Id = 1, Name = "Admin" },
+            new Roles { Id = 2, Name = "User" }
+        );
+
         OnModelCreatingPartial(modelBuilder);
     }
 
