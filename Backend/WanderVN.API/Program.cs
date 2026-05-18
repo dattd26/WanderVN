@@ -1,15 +1,22 @@
-using WanderVN.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using WanderVN.API.Middleware;
+using WanderVN.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddControllers();
+
+builder.Services.AddDbContext<WanderVNDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -38,6 +45,10 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 })
 .WithName("GetWeatherForecast");
+
+app.UseAuthorization();
+
+app.MapControllers();
 
 app.Run();
 
