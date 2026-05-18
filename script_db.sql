@@ -89,7 +89,9 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ---------------------------------------------------------
--- 8. BUSINESS LOGIC (FUNCTIONS & PROCEDURES)
+-- [CÁC BẢNG KHÁC GIỮ NGUYÊN...]
+---------------------------------------------------------
+-- 8. BUSINESS LOGIC (FUNCTIONS & PROCEDURES) - KÈM THEO PARTNER ENGINE MOD
 ---------------------------------------------------------
 
 -- Hàm kiểm tra phòng trống
@@ -654,31 +656,24 @@ BEGIN
     SET NOCOUNT ON;
     BEGIN TRANSACTION;
     BEGIN TRY
-        IF dbo.fn_GetAvailableRoomCount(@RoomTypeId, @CheckIn, @CheckOut) <= 0
+        DECLARE @RoleId INT;
+        SELECT @RoleId = Id FROM Roles WHERE Name = 'Partner';
+        IF @RoleId IS NULL
         BEGIN
-            ROLLBACK TRANSACTION;
-            RAISERROR('Phòng đã hết!', 16, 1);
-            RETURN;
+            INSERT INTO Roles (Name) VALUES ('Partner');
+            SET @RoleId = SCOPE_IDENTITY();
         END
 
-        DECLARE @RoomId INT;
-        SELECT TOP 1 @RoomId = r.Id FROM Rooms r
-        WHERE r.RoomTypeId = @RoomTypeId 
-          AND r.Id NOT IN (
-              SELECT bd.RoomId FROM BookingHotels bd
-              WHERE NOT (bd.CheckOutDate <= @CheckIn OR bd.CheckInDate >= @CheckOut)
-          );
-
-        INSERT INTO Bookings (UserId, BookingCode, ServiceType, TotalPrice, Status)
-        VALUES (@UserId, @BookingCode, 'Hotel', @TotalPrice, 'Pending');
+        INSERT INTO Users (RoleId, Email, PasswordHash, FullName, PhoneNumber, IsActive)
+        VALUES (@RoleId, @Email, @PasswordHash, @FullName, @PhoneNumber, 1);
         
-        DECLARE @BookingId INT = SCOPE_IDENTITY();
+        DECLARE @UserId INT = SCOPE_IDENTITY();
 
-        INSERT INTO BookingHotels (BookingId, RoomId, CheckInDate, CheckOutDate)
-        VALUES (@BookingId, @RoomId, @CheckIn, @CheckOut);
+        INSERT INTO Hotels (LocationId, Name, Address, IsActive, OwnerId)
+        VALUES (@LocationId, @HotelName, @Address, 1, @UserId);
 
         COMMIT TRANSACTION;
-        SELECT @BookingId AS NewBookingId;
+        SELECT @UserId AS NewPartnerId, SCOPE_IDENTITY() AS NewHotelId;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
@@ -802,6 +797,91 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
+-- Kịch bản 2: Cập nhật thông tin và cấu hình giá loại phòng (Có Check quyền sở hữu)
+CREATE OR ALTER PROCEDURE sp_Partner_UpdateRoomType
+    @PartnerId INT,
+    @RoomTypeId INT,
+    @Name NVARCHAR(100),
+    @BasePrice DECIMAL(18,2),
+    @Capacity INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM RoomTypes rt
+        JOIN Hotels h ON rt.HotelId = h.Id
+        WHERE rt.Id = @RoomTypeId AND h.OwnerId = @PartnerId
+    )
+    BEGIN
+        RAISERROR('403: Bạn không có quyền chỉnh sửa loại phòng này!', 16, 1);
+        RETURN;
+    END
+
+    UPDATE RoomTypes
+    SET Name = @Name,
+        BasePrice = @BasePrice,
+        Capacity = @Capacity
+    WHERE Id = @RoomTypeId;
+    
+    SELECT @@ROWCOUNT AS UpdatedRows;
+END;
+GO
+
+-- Kịch bản 3: Lưu hình ảnh đã upload từ Cloudinary vào Database
+CREATE OR ALTER PROCEDURE sp_Partner_AddHotelImage
+    @PartnerId INT,
+    @HotelId INT,
+    @ImageUrl NVARCHAR(500),
+    @IsPrimary BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Hotels WHERE Id = @HotelId AND OwnerId = @PartnerId)
+    BEGIN
+        RAISERROR('403: Bạn không có quyền quản lý hình ảnh của khách sạn này!', 16, 1);
+        RETURN;
+    END
+
+    IF @IsPrimary = 1
+    BEGIN
+        UPDATE HotelImages SET IsPrimary = 0 WHERE HotelId = @HotelId;
+    END
+
+    INSERT INTO HotelImages (HotelId, ImageUrl, IsPrimary)
+    VALUES (@HotelId, @ImageUrl, @IsPrimary);
+    
+    SELECT SCOPE_IDENTITY() AS NewImageId;
+END;
+GO
+
+-- Kịch bản 4: Xem báo cáo thống kê doanh thu và đơn đặt phòng (Dashboard Analytics)
+CREATE OR ALTER PROCEDURE sp_Partner_GetDashboardStats
+    @PartnerId INT,
+    @HotelId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Hotels WHERE Id = @HotelId AND OwnerId = @PartnerId)
+    BEGIN
+        RAISERROR('403: Bạn không có quyền truy cập dữ liệu của khách sạn này!', 16, 1);
+        RETURN;
+    END
+
+    SELECT 
+        COUNT(CASE WHEN b.Status = 'Pending' THEN 1 END) AS TotalPendingBookings,
+        COUNT(CASE WHEN b.Status = 'Confirmed' THEN 1 END) AS TotalConfirmedBookings,
+        ISNULL(SUM(CASE WHEN b.PaymentStatus = 'Paid' THEN b.TotalPrice END), 0) AS TotalRevenue
+    FROM Bookings b
+    JOIN BookingHotels bh ON b.Id = bh.BookingId
+    JOIN Rooms r ON bh.RoomId = r.Id
+    JOIN RoomTypes rt ON r.RoomTypeId = rt.Id
+    WHERE rt.HotelId = @HotelId;
+END;
+GO
 
 ---------------------------------------------------------
 -- 1. STORED PROCEDURES CHO ĐỐI TÁC (PARTNER FLOWS)
