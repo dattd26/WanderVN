@@ -31,8 +31,6 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
     public virtual DbSet<RoomTypeImages> RoomTypeImages { get; set; }
     public virtual DbSet<RoomTypes> RoomTypes { get; set; }
     public virtual DbSet<Rooms> Rooms { get; set; }
-    public virtual DbSet<TourImages> TourImages { get; set; }
-    public virtual DbSet<Tours> Tours { get; set; }
     public virtual DbSet<Users> Users { get; set; }
     public virtual DbSet<Wishlists> Wishlists { get; set; }
 

@@ -14,6 +14,4 @@ public partial class Locations
     public string? ImageUrl { get; set; }
 
     public virtual ICollection<Hotels> Hotels { get; set; } = new List<Hotels>();
-
-    public virtual ICollection<Tours> Tours { get; set; } = new List<Tours>();
 }

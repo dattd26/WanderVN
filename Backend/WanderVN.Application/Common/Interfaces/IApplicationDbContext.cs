@@ -21,8 +21,6 @@ public interface IApplicationDbContext
     DbSet<RoomTypeImages> RoomTypeImages { get; }
     DbSet<RoomTypes> RoomTypes { get; }
     DbSet<Rooms> Rooms { get; }
-    DbSet<TourImages> TourImages { get; }
-    DbSet<Tours> Tours { get; }
     DbSet<Users> Users { get; }
     DbSet<Wishlists> Wishlists { get; }
 
