@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using WanderVN.API.Common.Responses;
 using WanderVN.Application.Features.Flights.Queries.SearchFlights;
 using WanderVN.Application.Features.Hotels.Queries.SearchHotels;
+using WanderVN.Application.Features.Hotels.Queries.SearchAutocomplete;
 
 namespace WanderVN.API.Controllers;
 
@@ -17,6 +18,19 @@ public class SearchController : ControllerBase
     public SearchController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    /// <summary>
+    /// GET: api/v1/search/autocomplete
+    /// Gợi ý tự động (Autocomplete) địa điểm & khách sạn theo phong cách Traveloka.
+    /// </summary>
+    [HttpGet("autocomplete")]
+    public async Task<IActionResult> GetAutocomplete([FromQuery] SearchAutocompleteQuery query)
+    {
+        var data = await _mediator.Send(query);
+        
+        var response = new ApiResponse<List<SearchAutocompleteDto>>(true, "Gợi ý địa điểm thành công!", 200, data);
+        return Ok(response);
     }
 
     /// <summary>
