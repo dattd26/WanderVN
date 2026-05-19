@@ -1,9 +1,4 @@
-export interface LocationDto {
-  id: number;
-  name: string;
-  type: 'Province' | 'District' | 'Area' | 'Attraction';
-  parentId?: number;
-}
+// Định nghĩa các interface liên quan đến Khách sạn và Tìm kiếm lưu trú
 
 export interface SearchHotelsDto {
   id: number;

@@ -2,15 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, Search, Hotel as HotelIcon } from 'lucide-react';
 import { MOCK_LOCATIONS } from '../data/mockData';
-
-// Định nghĩa kiểu dữ liệu gợi ý nhận từ C# Autocomplete API
-interface SearchAutocompleteDto {
-  id: string;      // loc_xxx hoặc hotel_xxx
-  type: 'Location' | 'Hotel';
-  name: string;
-  subtitle: string;
-  targetId: number;
-}
+import type { SearchAutocompleteDto } from '../types';
+import { searchService } from '../services';
 
 interface SearchFormProps {
   compact?: boolean;
@@ -61,48 +54,19 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
 
   // Cơ chế gọi API gợi ý tự động (Autocomplete) kèm trì hoãn (Debounce 300ms)
   useEffect(() => {
+    if (!query.trim()) {
+      setSuggestions([]);
+      return;
+    }
     const delayDebounceFn = setTimeout(async () => {
       setLoading(true);
       try {
-        // Gửi truy vấn gợi ý sang ASP.NET Core Backend
-        const response = await fetch(`http://localhost:5096/api/v1/search/autocomplete?Keyword=${encodeURIComponent(query)}`);
-        if (response.ok) {
-          const result = await response.json();
-          if (result && result.success && Array.isArray(result.data)) {
-            setSuggestions(result.data);
-          }
-        } else {
-          throw new Error('API không thành công');
-        }
+        // Gửi truy vấn gợi ý sang dịch vụ API tập trung
+        const data = await searchService.getAutocomplete(query);
+        setSuggestions(data);
       } catch (err) {
-        console.warn('⚠️ Lỗi kết nối API Autocomplete C#, sử dụng cơ chế định tuyến dữ liệu mẫu:', err);
-        
-        // Cơ chế Dự phòng (Fallback): Lọc tại Client từ mockData địa phương
-        const keyword = query.trim().toLowerCase();
-        if (!keyword) {
-          // Trả về địa danh đề xuất mặc định khi chưa nhập chữ
-          setSuggestions(
-            MOCK_LOCATIONS.filter((l) => [101, 102, 104, 22].includes(l.id)).map((l) => ({
-              id: `loc_${l.id}`,
-              type: 'Location' as const,
-              name: l.name,
-              subtitle: l.type === 'District' ? 'Quận / Huyện • Việt Nam' : 'Tỉnh / Thành phố • Việt Nam',
-              targetId: l.id
-            }))
-          );
-        } else {
-          // Lọc theo từ khóa khớp tên
-          const match: SearchAutocompleteDto[] = MOCK_LOCATIONS.filter((loc) =>
-            loc.name.toLowerCase().includes(keyword)
-          ).map((l) => ({
-            id: `loc_${l.id}`,
-            type: 'Location' as const,
-            name: l.name,
-            subtitle: l.type === 'District' ? 'Quận / Huyện • Việt Nam' : 'Tỉnh / Thành phố • Việt Nam',
-            targetId: l.id
-          }));
-          setSuggestions(match);
-        }
+        console.warn('⚠️ Lỗi kết nối API Autocomplete C#:', err);
+        setSuggestions([]);
       } finally {
         setLoading(false);
       }
