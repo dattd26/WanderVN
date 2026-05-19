@@ -13,29 +13,35 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Đọc các tham số tìm kiếm từ URL hiện tại
-  const initialLocId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102; // Mặc định: Hội An
-  const initialLoc = MOCK_LOCATIONS.find((l) => l.id === initialLocId);
-  const initialCheckIn = searchParams.get('checkInDate') || new Date().toISOString().split('T')[0];
-  const initialCheckOut = searchParams.get('checkOutDate') || new Date(Date.now() + 86400000).toISOString().split('T')[0];
-  const initialCapacity = searchParams.get('capacity') ? parseInt(searchParams.get('capacity')!) : 2;
-  const initialHotelId = searchParams.get('hotelId') ? parseInt(searchParams.get('hotelId')!) : null;
-
-  // Khai báo các trạng thái React
-  const [locationId, setLocationId] = useState<number>(initialLocId);
-  const [locationName, setLocationName] = useState<string>(initialLoc ? initialLoc.name : 'Hội An');
-  const [selectedHotelId, setSelectedHotelId] = useState<number | null>(initialHotelId);
+  // Khai báo các trạng thái React với Lazy State Initializer để đảm bảo tính thuần khiết (Purity) khi render
+  const [locationId, setLocationId] = useState<number>(() => {
+    return searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102; // Mặc định: Hội An
+  });
+  const [locationName, setLocationName] = useState<string>(() => {
+    const locId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
+    const loc = MOCK_LOCATIONS.find((l) => l.id === locId);
+    return loc ? loc.name : 'Hội An';
+  });
+  const [selectedHotelId, setSelectedHotelId] = useState<number | null>(() => {
+    return searchParams.get('hotelId') ? parseInt(searchParams.get('hotelId')!) : null;
+  });
   const [query, setQuery] = useState('');
-  const [checkInDate, setCheckInDate] = useState(initialCheckIn);
-  const [checkOutDate, setCheckOutDate] = useState(initialCheckOut);
-  const [capacity, setCapacity] = useState(initialCapacity);
+  const [checkInDate, setCheckInDate] = useState(() => {
+    return searchParams.get('checkInDate') || new Date().toISOString().split('T')[0];
+  });
+  const [checkOutDate, setCheckOutDate] = useState(() => {
+    return searchParams.get('checkOutDate') || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  });
+  const [capacity, setCapacity] = useState(() => {
+    return searchParams.get('capacity') ? parseInt(searchParams.get('capacity')!) : 2;
+  });
 
   const [isOpen, setIsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchAutocompleteDto[]>([]);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Đồng bộ hóa trạng thái của form bất cứ khi nào URL thay đổi (Do nút tìm kiếm hoặc điều hướng bên ngoài)
+  // Đồng bộ hóa trạng thái của form bất cứ khi nào URL thay đổi, bọc qua setTimeout 0 để tránh re-render đồng bộ
   useEffect(() => {
     const locId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
     const loc = MOCK_LOCATIONS.find((l) => l.id === locId);
@@ -44,19 +50,25 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
     const cap = searchParams.get('capacity') ? parseInt(searchParams.get('capacity')!) : 2;
     const hotelId = searchParams.get('hotelId') ? parseInt(searchParams.get('hotelId')!) : null;
 
-    setLocationId(locId);
-    setLocationName(loc ? loc.name : 'Hội An');
-    setSelectedHotelId(hotelId);
-    setCheckInDate(checkIn);
-    setCheckOutDate(checkOut);
-    setCapacity(cap);
+    const timer = setTimeout(() => {
+      setLocationId(locId);
+      setLocationName(loc ? loc.name : 'Hội An');
+      setSelectedHotelId(hotelId);
+      setCheckInDate(checkIn);
+      setCheckOutDate(checkOut);
+      setCapacity(cap);
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [searchParams]);
 
   // Cơ chế gọi API gợi ý tự động (Autocomplete) kèm trì hoãn (Debounce 300ms)
   useEffect(() => {
     if (!query.trim()) {
-      setSuggestions([]);
-      return;
+      const timer = setTimeout(() => {
+        setSuggestions([]);
+      }, 0);
+      return () => clearTimeout(timer);
     }
     const delayDebounceFn = setTimeout(async () => {
       setLoading(true);
@@ -97,11 +109,13 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
       setSelectedHotelId(item.targetId);
       setLocationName(item.name);
       // Gán locationId theo khách sạn nếu có thông tin (hoặc giữ nguyên để gửi tìm kiếm)
-      setLocationId(initialLocId);
+      const currentLocId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
+      setLocationId(currentLocId);
     }
     setQuery('');
     setIsOpen(false);
   };
+
 
   // Điều hướng tìm kiếm khi gửi form
   const handleSubmit = (e: React.FormEvent) => {
@@ -120,7 +134,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
           targetHotelId = null;
         } else {
           targetHotelId = bestMatch.targetId;
-          targetLocId = initialLocId;
+          targetLocId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
         }
       }
     }

@@ -48,9 +48,10 @@ export const SearchStays: React.FC = () => {
         });
 
         setHotels(data);
-      } catch (err: any) {
+      } catch (err) {
         console.error('⚠️ Lỗi gọi API C# Backend:', err);
-        setError(err.message || 'Không thể kết nối đến máy chủ WanderVN. Vui lòng kiểm tra lại kết nối mạng.');
+        const errMsg = err instanceof Error ? err.message : 'Không thể kết nối đến máy chủ WanderVN. Vui lòng kiểm tra lại kết nối mạng.';
+        setError(errMsg);
         setHotels([]);
       } finally {
         // Trì hoãn nhẹ 300ms để hiệu ứng loading mượt mà
