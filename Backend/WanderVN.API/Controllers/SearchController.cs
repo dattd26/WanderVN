@@ -1,0 +1,48 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using WanderVN.API.Common.Responses;
+using WanderVN.Application.Features.Flights.Queries.SearchFlights;
+using WanderVN.Application.Features.Hotels.Queries.SearchHotels;
+
+namespace WanderVN.API.Controllers;
+
+[Route("api/v1/search")]
+[ApiController]
+public class SearchController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    public SearchController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
+    /// <summary>
+    /// GET: api/v1/search/hotels
+    /// Tìm kiếm và lọc danh sách khách sạn khả dụng cho trang chủ.
+    /// </summary>
+    [HttpGet("hotels")]
+    public async Task<IActionResult> SearchHotels([FromQuery] SearchHotelsQuery query)
+    {
+        var data = await _mediator.Send(query);
+        
+        var response = new ApiResponse<List<SearchHotelsDto>>(true, "Tìm kiếm khách sạn thành công!", 200, data);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// POST: api/v1/search/flights
+    /// Tìm kiếm chuyến bay thời gian thực từ Duffel API.
+    /// </summary>
+    [HttpPost("flights")]
+    public async Task<IActionResult> SearchFlights([FromBody] SearchFlightsQuery query)
+    {
+        // Nhận dữ liệu JSON gốc từ Duffel
+        var rawJson = await _mediator.Send(query);
+        
+        // Trả về trực tiếp chuỗi JSON gốc với Content-Type phù hợp để tối ưu hiệu suất
+        return Content(rawJson, "application/json");
+    }
+}

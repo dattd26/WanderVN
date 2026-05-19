@@ -5,6 +5,7 @@ using WanderVN.Application.Common.Interfaces;
 using WanderVN.Domain.Repositories;
 using WanderVN.Infrastructure.Data;
 using WanderVN.Infrastructure.Repositories;
+using WanderVN.Infrastructure.Services;
 
 namespace WanderVN.Infrastructure;
 
@@ -24,6 +25,17 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<WanderVNDbContext>());
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Đăng ký Duffel Service với HttpClient
+        services.AddHttpClient<IDuffelService, DuffelService>(c =>
+        {
+            c.BaseAddress = new Uri(configuration["Duffel:BaseUrl"] ?? "https://api.duffel.com/");
+            var apiKey = configuration["Duffel:AccessToken"] ?? string.Empty;
+            c.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+            c.DefaultRequestHeaders.Add("Duffel-Version", "v2");
+        });
+
+        services.AddScoped<IHotelRepository, HotelRepository>();
 
         return services;
     }
