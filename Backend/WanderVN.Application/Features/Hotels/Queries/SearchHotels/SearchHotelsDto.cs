@@ -13,4 +13,6 @@ public class SearchHotelsDto
     public string LocationName { get; set; } = string.Empty;
     public string PrimaryImage { get; set; } = string.Empty;
     public decimal MinPrice { get; set; }
+    public string PropertyTypeName { get; set; } = string.Empty; // Tên loại hình lưu trú (Khách sạn, Resort...)
+    public string PropertyTypeCode { get; set; } = string.Empty; // Mã loại hình lưu trú (HOTEL, RESORT...)
 }

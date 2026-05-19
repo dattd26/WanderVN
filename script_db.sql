@@ -281,6 +281,20 @@ PRIMARY KEY CLUSTERED
     [Id] ASC
 )) ON [PRIMARY]
 GO
+/****** Object:  Table [dbo].[PropertyTypes]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PropertyTypes](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [Name] [nvarchar](100) NOT NULL,
+    [Code] [varchar](50) NOT NULL UNIQUE,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
 /****** Object:  Table [dbo].[Hotels]    Script Date: 18-May-26 6:31:13 PM ******/
 SET ANSI_NULLS ON
 GO
@@ -296,6 +310,7 @@ CREATE TABLE [dbo].[Hotels](
     [IsActive] [bit] NULL,
     [CreatedAt] [datetimeoffset](7) NULL,
     [OwnerId] [int] NULL,
+    [PropertyTypeId] [int] NULL,
 PRIMARY KEY CLUSTERED 
 (
     [Id] ASC
@@ -309,12 +324,17 @@ GO
 CREATE TABLE [dbo].[Locations](
     [Id] [int] IDENTITY(1,1) NOT NULL,
     [Name] [nvarchar](100) NOT NULL,
+    [Type] [nvarchar](50) NOT NULL,
+    [ParentId] [int] NULL,
     [Description] [nvarchar](max) NULL,
     [ImageUrl] [nvarchar](500) NULL,
 PRIMARY KEY CLUSTERED 
 (
     [Id] ASC
 )) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Locations]  WITH CHECK ADD FOREIGN KEY([ParentId])
+REFERENCES [dbo].[Locations] ([Id])
 GO
 /****** Object:  Table [dbo].[Payments]    Script Date: 18-May-26 6:31:13 PM ******/
 SET ANSI_NULLS ON
@@ -550,6 +570,9 @@ GO
 ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD FOREIGN KEY([OwnerId])
 REFERENCES [dbo].[Users] ([Id])
 GO
+ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD FOREIGN KEY([PropertyTypeId])
+REFERENCES [dbo].[PropertyTypes] ([Id])
+GO
 ALTER TABLE [dbo].[Payments]  WITH CHECK ADD FOREIGN KEY([BookingId])
 REFERENCES [dbo].[Bookings] ([Id])
 GO
@@ -722,20 +745,47 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_SearchHotels]
     @LocationId INT,
     @CheckIn DATE,
     @CheckOut DATE,
-    @Capacity INT
+    @Capacity INT,
+    @MinPrice DECIMAL(18,2) = NULL,
+    @MaxPrice DECIMAL(18,2) = NULL,
+    @PageNumber INT = 1,
+    @PageSize INT = 10
 AS
 BEGIN
-    SELECT DISTINCT h.*, l.Name AS LocationName, 
+    SET NOCOUNT ON;
+
+    DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
+
+    -- Sử dụng CTE đệ quy để lấy toàn bộ các địa điểm con thuộc địa điểm được tìm kiếm (ví dụ: các Quận thuộc Hà Nội)
+    WITH LocationHierarchy AS (
+        SELECT Id FROM Locations WHERE Id = @LocationId
+        UNION ALL
+        SELECT l.Id FROM Locations l
+        INNER JOIN LocationHierarchy lh ON l.ParentId = lh.Id
+    )
+    SELECT DISTINCT h.Id, h.Name, h.Address, h.StarRating, h.Description, l.Name AS LocationName, 
            img.ImageUrl AS PrimaryImage,
-           (SELECT MIN(BasePrice) FROM RoomTypes WHERE HotelId = h.Id) AS MinPrice
+           rt_min.MinPrice,
+           pt.Name AS PropertyTypeName,
+           pt.Code AS PropertyTypeCode
     FROM Hotels h
     JOIN Locations l ON h.LocationId = l.Id
+    LEFT JOIN PropertyTypes pt ON h.PropertyTypeId = pt.Id
     JOIN RoomTypes rt ON rt.HotelId = h.Id
     LEFT JOIN HotelImages img ON h.Id = img.HotelId AND img.IsPrimary = 1
-    WHERE h.LocationId = @LocationId
+    CROSS APPLY (
+        SELECT MIN(BasePrice) AS MinPrice 
+        FROM RoomTypes 
+        WHERE HotelId = h.Id
+    ) rt_min
+    WHERE h.LocationId IN (SELECT Id FROM LocationHierarchy)
       AND h.IsActive = 1
       AND rt.Capacity >= @Capacity
-      AND dbo.fn_GetAvailableRoomCount(rt.Id, @CheckIn, @CheckOut) > 0;
+      AND dbo.fn_GetAvailableRoomCount(rt.Id, @CheckIn, @CheckOut) > 0
+      AND (@MinPrice IS NULL OR rt_min.MinPrice >= @MinPrice)
+      AND (@MaxPrice IS NULL OR rt_min.MinPrice <= @MaxPrice)
+    ORDER BY rt_min.MinPrice ASC
+    OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
 END;
 GO
 USE [master]

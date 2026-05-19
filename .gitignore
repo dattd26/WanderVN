@@ -3,6 +3,9 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+skills-lock.json
+local_data
+.stitch/
 # dotenv files
 .env
 .agents/
