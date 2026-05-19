@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Map, Sliders, Check } from 'lucide-react';
-
-interface PropertyType {
-  id: number;
-  name: string;
-  code: string;
-}
+import type { PropertyType } from '../types';
+import { propertyTypeService } from '../services';
 
 interface FiltersSidebarProps {
   onPriceChange?: (min: number, max: number) => void;
@@ -23,28 +19,15 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
 
-  // Tải động danh sách loại hình lưu trú từ API
+  // Tải động danh sách loại hình lưu trú từ API dịch vụ tập trung
   useEffect(() => {
     const fetchPropertyTypes = async () => {
       try {
-        const response = await fetch('http://localhost:5096/api/v1/property-types');
-        if (response.ok) {
-          const resJson = await response.json();
-          if (resJson.success && Array.isArray(resJson.data)) {
-            setPropertyTypes(resJson.data);
-            return;
-          }
-        }
-        throw new Error('Dữ liệu API không đúng định dạng');
+        const data = await propertyTypeService.getPropertyTypes();
+        setPropertyTypes(data);
       } catch (error) {
-        console.warn('⚠️ Lỗi gọi API /api/v1/property-types, sử dụng dữ liệu tĩnh dự phòng:', error);
-        // Fallback sang dữ liệu tĩnh nếu API chưa khả dụng để đảm bảo trải nghiệm người dùng
-        setPropertyTypes([
-          { id: 1, name: 'Khách sạn', code: 'HOTEL' },
-          { id: 2, name: 'Khu nghỉ dưỡng (Resort)', code: 'RESORT' },
-          { id: 3, name: 'Biệt thự (Villa)', code: 'VILLA' },
-          { id: 4, name: 'Căn hộ / Homestay', code: 'HOMESTAY' }
-        ]);
+        console.warn('⚠️ Lỗi gọi API /api/v1/property-types:', error);
+        setPropertyTypes([]);
       }
     };
 

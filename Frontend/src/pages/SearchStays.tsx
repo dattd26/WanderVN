@@ -3,8 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { SearchForm } from '../components/SearchForm';
 import { FiltersSidebar } from '../components/FiltersSidebar';
 import { HotelCard } from '../components/HotelCard';
-import { MOCK_HOTELS, MOCK_LOCATIONS } from '../data/mockData';
+import { MOCK_LOCATIONS } from '../data/mockData';
 import type { SearchHotelsDto } from '../types';
+import { searchService } from '../services';
 import { Loader2, Hotel } from 'lucide-react';
 
 export const SearchStays: React.FC = () => {
@@ -20,10 +21,10 @@ export const SearchStays: React.FC = () => {
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 500000, max: 8000000 });
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 
-  // States tải dữ liệu từ C# Backend
+  // States tải dữ liệu trực tiếp từ C# Backend
   const [hotels, setHotels] = useState<SearchHotelsDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isApiSuccess, setIsApiSuccess] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Tìm tên địa điểm hiện tại để hiển thị tiêu đề kết quả
   const currentLocationName = MOCK_LOCATIONS.find((l) => l.id === locationId)?.name || 'Việt Nam';
@@ -31,54 +32,36 @@ export const SearchStays: React.FC = () => {
   useEffect(() => {
     const fetchHotels = async () => {
       setLoading(true);
+      setError(null);
       try {
         const finalCheckIn = checkInDate || new Date().toISOString().split('T')[0];
         const finalCheckOut = checkOutDate || new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
-        // Xây dựng chuỗi truy vấn gọi đến ASP.NET Core Backend
-        const queryParams = new URLSearchParams({
-          LocationId: locationId.toString(),
-          Capacity: capacity.toString(),
-          PageNumber: '1',
-          PageSize: '20',
-          CheckInDate: finalCheckIn,
-          CheckOutDate: finalCheckOut
+        // Gọi API tìm kiếm khách sạn thông qua service tập trung
+        const data = await searchService.searchHotels({
+          locationId,
+          capacity,
+          pageNumber: 1,
+          pageSize: 20,
+          checkInDate: finalCheckIn,
+          checkOutDate: finalCheckOut
         });
 
-        // Gọi API Backend
-        const response = await fetch(`http://localhost:5096/api/v1/search/hotels?${queryParams.toString()}`);
-        if (!response.ok) throw new Error('Không thể kết nối đến Backend');
-
-        const result = await response.json();
-        if (result && (result.success || result.isSuccess) && Array.isArray(result.data)) {
-          setHotels(result.data);
-          setIsApiSuccess(true);
-        } else {
-          throw new Error('Dữ liệu API không đúng cấu trúc');
-        }
-      } catch (err) {
-        console.warn('⚠️ Lỗi gọi API C# Backend, đang kích hoạt chế độ dữ liệu mẫu dự phòng:', err);
-        
-        // Tự động kích hoạt cơ chế Fallback (dữ liệu mẫu) khi offline hoặc backend chưa bật
-        // Bộ lọc dữ liệu mẫu theo địa điểm đã chọn
-        const matchedMockHotels = MOCK_HOTELS.filter((hotel) =>
-          hotel.locationName.toLowerCase().includes(currentLocationName.toLowerCase()) ||
-          hotel.address.toLowerCase().includes(currentLocationName.toLowerCase())
-        );
-
-        // Nếu không có khách sạn nào khớp địa điểm, trả về toàn bộ khách sạn mẫu
-        setHotels(matchedMockHotels.length > 0 ? matchedMockHotels : MOCK_HOTELS);
-        setIsApiSuccess(false);
+        setHotels(data);
+      } catch (err: any) {
+        console.error('⚠️ Lỗi gọi API C# Backend:', err);
+        setError(err.message || 'Không thể kết nối đến máy chủ WanderVN. Vui lòng kiểm tra lại kết nối mạng.');
+        setHotels([]);
       } finally {
-        // Thêm độ trễ hiệu ứng tinh tế để tăng cảm giác mượt mà
-        setTimeout(() => setLoading(false), 600);
+        // Trì hoãn nhẹ 300ms để hiệu ứng loading mượt mà
+        setTimeout(() => setLoading(false), 300);
       }
     };
 
     fetchHotels();
-  }, [locationId, checkInDate, checkOutDate, capacity, currentLocationName]);
+  }, [locationId, checkInDate, checkOutDate, capacity]);
 
-  // Bộ lọc phụ ở Client-side (Lọc theo Giá, Loại phòng, Tiện ích)
+  // Bộ lọc phụ ở Client-side (Lọc theo Giá, Loại phòng)
   const displayedHotels = hotels.filter((hotel) => {
     // 1. Lọc theo giá
     if (hotel.minPrice > priceRange.max) return false;
@@ -95,7 +78,7 @@ export const SearchStays: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Search Header Form Widget */}
+      {/* Widget Thanh Tìm kiếm rút gọn ở Header */}
       <header className="relative pt-32 pb-16 px-margin-mobile md:px-margin-desktop bg-surface-container-low border-b border-surface-variant/40">
         <div className="max-w-container-max mx-auto">
           <div className="mb-6">
@@ -108,29 +91,29 @@ export const SearchStays: React.FC = () => {
 
       {/* Main Results Layout */}
       <main className="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-16 flex flex-col lg:flex-row gap-12">
-        
-        {/* Left Filters Sidebar */}
+
+        {/* Bộ lọc bên trái Sidebar */}
         <FiltersSidebar
           onPriceChange={(min, max) => setPriceRange({ min, max })}
           onTypeChange={(types) => setSelectedTypes(types)}
         />
 
-        {/* Right Search Results Panel */}
+        {/* Danh sách kết quả bên phải */}
         <section className="w-full lg:w-3/4 space-y-8">
-          
-          {/* Header Grid Summary */}
+
+          {/* Header tóm tắt kết quả */}
           <div className="flex justify-between items-center border-b border-outline-variant/30 pb-4">
             <div>
               <h2 className="font-display-lg text-headline-md text-on-surface">
                 {displayedHotels.length} Khách sạn chọn lọc tại {currentLocationName}
               </h2>
-              {!isApiSuccess && (
-                <span className="font-caption text-caption text-secondary mt-1 block font-medium">
-                  ⚡ Đang hiển thị danh sách tuyển chọn đặc biệt của WanderVN (Offline)
+              {error && (
+                <span className="font-caption text-caption text-error-color mt-1 block font-medium text-red-500">
+                  ⚠️ {error}
                 </span>
               )}
             </div>
-            
+
             <div className="hidden sm:flex items-center gap-2 font-body-md text-body-md text-on-surface-variant">
               <span>Sắp xếp:</span>
               <button className="flex items-center gap-1 font-label-md text-label-md text-primary font-semibold hover:text-secondary transition-colors">
@@ -139,7 +122,7 @@ export const SearchStays: React.FC = () => {
             </div>
           </div>
 
-          {/* Loading Indicator */}
+          {/* Trạng thái Loading */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-32 gap-4">
               <Loader2 className="h-10 w-10 text-secondary animate-spin" />
@@ -171,4 +154,5 @@ export const SearchStays: React.FC = () => {
     </div>
   );
 };
+
 export default SearchStays;
