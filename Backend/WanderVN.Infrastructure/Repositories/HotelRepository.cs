@@ -28,11 +28,23 @@ public class HotelRepository : IHotelRepository
     {
         var connection = _dbContext.Database.GetDbConnection();
 
+        // Tối ưu xử lý ngày mặc định độc lập múi giờ (Ví dụ: "2026-05-19")
+        var checkInStr = string.IsNullOrWhiteSpace(query.CheckInDate) 
+            ? DateTime.Today.ToString("yyyy-MM-dd") 
+            : query.CheckInDate;
+        var checkOutStr = string.IsNullOrWhiteSpace(query.CheckOutDate) 
+            ? DateTime.Today.AddDays(1).ToString("yyyy-MM-dd") 
+            : query.CheckOutDate;
+
+        // Parse chính xác tuyệt đối thành DateTime để Dapper truyền kiểu Date/DateTime chuẩn sang SQL Server
+        var checkIn = DateTime.ParseExact(checkInStr, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        var checkOut = DateTime.ParseExact(checkOutStr, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
         // Chuẩn bị tham số ánh xạ chính xác với Stored Procedure sp_SearchHotels
         var parameters = new DynamicParameters();
         parameters.Add("LocationId", query.LocationId);
-        parameters.Add("CheckIn", query.CheckInDate);
-        parameters.Add("CheckOut", query.CheckOutDate);
+        parameters.Add("CheckIn", checkIn);
+        parameters.Add("CheckOut", checkOut);
         parameters.Add("Capacity", query.Capacity);
         parameters.Add("MinPrice", query.MinPrice);
         parameters.Add("MaxPrice", query.MaxPrice);

@@ -10,8 +10,8 @@ namespace WanderVN.Application.Features.Hotels.Queries.SearchHotels;
 public class SearchHotelsQuery : IRequest<List<SearchHotelsDto>>
 {
     public int LocationId { get; set; }
-    public DateTime CheckInDate { get; set; }
-    public DateTime CheckOutDate { get; set; }
+    public string? CheckInDate { get; set; }
+    public string? CheckOutDate { get; set; }
     public int Capacity { get; set; }
     public decimal? MinPrice { get; set; }
     public decimal? MaxPrice { get; set; }

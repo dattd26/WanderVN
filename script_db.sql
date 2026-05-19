@@ -95,6 +95,12 @@ CREATE OR ALTER FUNCTION [dbo].[fn_GetAvailableRoomCount]
 RETURNS INT
 AS
 BEGIN
+    -- Kiểm tra tính hợp lệ của ngày đặt phòng (Check-in phải trước Check-out)
+    IF @CheckIn IS NULL OR @CheckOut IS NULL OR @CheckIn >= @CheckOut
+    BEGIN
+        RETURN 0;
+    END;
+
     DECLARE @TotalRooms INT;
     DECLARE @BookedRooms INT;
     SELECT @TotalRooms = TotalRooms FROM RoomTypes WHERE Id = @RoomTypeId;
@@ -377,7 +383,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[Rooms](
     [Id] [int] IDENTITY(1,1) NOT NULL,
-    [RoomTypeId] [int] NULL,
+    [HotelId] [int] NOT NULL, -- Liên kết trực tiếp với Hotels để tối ưu truy vấn hoặc hỗ trợ homestay
+    [RoomTypeId] [int] NULL, -- Cho phép NULL đối với Homestay/Villa không cần loại phòng
     [RoomNumber] [varchar](20) NOT NULL,
     [Status] [nvarchar](50) NULL,
 PRIMARY KEY CLUSTERED 
@@ -578,6 +585,9 @@ REFERENCES [dbo].[Bookings] ([Id])
 GO
 ALTER TABLE [dbo].[Rooms]  WITH CHECK ADD FOREIGN KEY([RoomTypeId])
 REFERENCES [dbo].[RoomTypes] ([Id])
+GO
+ALTER TABLE [dbo].[Rooms]  WITH CHECK ADD FOREIGN KEY([HotelId])
+REFERENCES [dbo].[Hotels] ([Id])
 GO
 ALTER TABLE [dbo].[RoomTypeImages]  WITH CHECK ADD FOREIGN KEY([RoomTypeId])
 REFERENCES [dbo].[RoomTypes] ([Id])
