@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, Search, Hotel as HotelIcon } from 'lucide-react';
-import { MOCK_LOCATIONS } from '../data/mockData';
 import type { SearchAutocompleteDto } from '../types';
 import { searchService } from '../services';
 
@@ -17,15 +16,12 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
   const [locationId, setLocationId] = useState<number>(() => {
     return searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102; // Mặc định: Hội An
   });
-  const [locationName, setLocationName] = useState<string>(() => {
-    const locId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
-    const loc = MOCK_LOCATIONS.find((l) => l.id === locId);
-    return loc ? loc.name : 'Hội An';
-  });
   const [selectedHotelId, setSelectedHotelId] = useState<number | null>(() => {
     return searchParams.get('hotelId') ? parseInt(searchParams.get('hotelId')!) : null;
   });
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(() => {
+    return searchParams.get('locationName') || 'Hội An'; // Lấy trực tiếp tên địa danh hiển thị từ tham số URL
+  });
   const [checkInDate, setCheckInDate] = useState(() => {
     return searchParams.get('checkInDate') || new Date().toISOString().split('T')[0];
   });
@@ -44,7 +40,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
   // Đồng bộ hóa trạng thái của form bất cứ khi nào URL thay đổi, bọc qua setTimeout 0 để tránh re-render đồng bộ
   useEffect(() => {
     const locId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
-    const loc = MOCK_LOCATIONS.find((l) => l.id === locId);
+    const locName = searchParams.get('locationName') || 'Hội An';
     const checkIn = searchParams.get('checkInDate') || new Date().toISOString().split('T')[0];
     const checkOut = searchParams.get('checkOutDate') || new Date(Date.now() + 86400000).toISOString().split('T')[0];
     const cap = searchParams.get('capacity') ? parseInt(searchParams.get('capacity')!) : 2;
@@ -52,7 +48,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
 
     const timer = setTimeout(() => {
       setLocationId(locId);
-      setLocationName(loc ? loc.name : 'Hội An');
+      setQuery(locName);
       setSelectedHotelId(hotelId);
       setCheckInDate(checkIn);
       setCheckOutDate(checkOut);
@@ -102,17 +98,15 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
   const handleSelectSuggestion = (item: SearchAutocompleteDto) => {
     if (item.type === 'Location') {
       setLocationId(item.targetId);
-      setLocationName(item.name);
       setSelectedHotelId(null); // Reset khách sạn cụ thể
     } else {
       // Nếu chọn trực tiếp một khách sạn cụ thể
       setSelectedHotelId(item.targetId);
-      setLocationName(item.name);
       // Gán locationId theo khách sạn nếu có thông tin (hoặc giữ nguyên để gửi tìm kiếm)
       const currentLocId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
       setLocationId(currentLocId);
     }
-    setQuery('');
+    setQuery(item.name); // Điền trực tiếp tên địa danh đã chọn vào ô nhập liệu
     setIsOpen(false);
   };
 
@@ -123,6 +117,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
     
     let targetLocId = locationId;
     let targetHotelId = selectedHotelId;
+    let targetLocName = query; // Sử dụng tên hiển thị hiện tại trong ô input làm mặc định
 
     // Nếu dropdown gợi ý đang mở và người dùng bấm nút Tìm kiếm mà chưa click chọn cụ thể
     if (isOpen && query.trim() !== '') {
@@ -132,14 +127,16 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
         if (bestMatch.type === 'Location') {
           targetLocId = bestMatch.targetId;
           targetHotelId = null;
+          targetLocName = bestMatch.name;
         } else {
           targetHotelId = bestMatch.targetId;
+          targetLocName = bestMatch.name;
           targetLocId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
         }
       }
     }
 
-    let url = `/stays?locationId=${targetLocId}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&capacity=${capacity}`;
+    let url = `/stays?locationId=${targetLocId}&locationName=${encodeURIComponent(targetLocName)}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&capacity=${capacity}`;
     
     // Nếu có chọn một khách sạn cụ thể, đính kèm thêm ID khách sạn để tự động cuộn hoặc lọc riêng biệt
     if (targetHotelId) {
@@ -172,12 +169,14 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
             type="text"
             className="w-full bg-transparent border-none p-0 pl-8 font-body-md text-body-md text-on-surface focus:ring-0 placeholder:text-outline/60"
             placeholder="Tìm địa danh hoặc khách sạn..."
-            value={isOpen ? query : locationName}
+            value={query}
             onFocus={() => {
               setIsOpen(true);
-              setQuery(locationName); // Điền sẵn tên địa danh hiện tại thay vì để trống, tăng UX chỉnh sửa
             }}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setIsOpen(true);
+            }}
           />
         </div>
 
