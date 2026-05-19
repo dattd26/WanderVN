@@ -33,6 +33,7 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
     public virtual DbSet<Rooms> Rooms { get; set; }
     public virtual DbSet<Users> Users { get; set; }
     public virtual DbSet<Wishlists> Wishlists { get; set; }
+    public virtual DbSet<PropertyTypes> PropertyTypes { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -70,6 +71,20 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .WithMany(u => u.Hotels)
                 .HasForeignKey(h => h.OwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Thiết lập mối quan hệ 1-N giữa PropertyTypes (Loại hình lưu trú) và Hotels
+            entity.HasOne(h => h.PropertyType)
+                .WithMany(p => p.Hotels)
+                .HasForeignKey(h => h.PropertyTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PropertyTypes>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Code).HasMaxLength(50).IsUnicode(false);
+            entity.Property(e => e.Name).HasMaxLength(100);
         });
 
         modelBuilder.Entity<Locations>(entity =>
