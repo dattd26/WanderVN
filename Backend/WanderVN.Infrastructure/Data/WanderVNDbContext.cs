@@ -72,6 +72,15 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<Locations>(entity =>
+        {
+            // Thiết lập mối quan hệ tự liên kết cấp bậc địa phương
+            entity.HasOne(l => l.Parent)
+                .WithMany(p => p.InverseParent)
+                .HasForeignKey(l => l.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 
