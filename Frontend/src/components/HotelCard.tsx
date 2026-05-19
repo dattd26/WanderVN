@@ -77,9 +77,9 @@ export const HotelCard: React.FC<HotelCardProps> = ({ hotel }) => {
               Giá chỉ từ
             </p>
             <p className="font-headline-md text-headline-md text-primary font-semibold">
-              ${hotel.minPrice}{' '}
+              {hotel.minPrice.toLocaleString('vi-VN')}{' '}
               <span className="font-body-md text-body-md font-normal text-on-surface-variant">
-                / đêm
+                VND / đêm
               </span>
             </p>
           </div>

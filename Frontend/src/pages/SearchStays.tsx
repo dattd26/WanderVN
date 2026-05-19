@@ -16,8 +16,8 @@ export const SearchStays: React.FC = () => {
   const checkOutDate = searchParams.get('checkOutDate') || '';
   const capacity = searchParams.get('capacity') ? parseInt(searchParams.get('capacity')!) : 2;
 
-  // Lọc theo khoảng giá từ sidebar
-  const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 50, max: 800 });
+  // Lọc theo khoảng giá từ sidebar (VNĐ)
+  const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 500000, max: 8000000 });
   const [selectedTypes, setSelectedTypes] = useState<string[]>(['Boutique Villa']);
 
   // States tải dữ liệu từ C# Backend
@@ -32,22 +32,25 @@ export const SearchStays: React.FC = () => {
     const fetchHotels = async () => {
       setLoading(true);
       try {
+        const finalCheckIn = checkInDate || new Date().toISOString().split('T')[0];
+        const finalCheckOut = checkOutDate || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
         // Xây dựng chuỗi truy vấn gọi đến ASP.NET Core Backend
         const queryParams = new URLSearchParams({
           LocationId: locationId.toString(),
           Capacity: capacity.toString(),
           PageNumber: '1',
-          PageSize: '20'
+          PageSize: '20',
+          CheckInDate: finalCheckIn,
+          CheckOutDate: finalCheckOut
         });
-        if (checkInDate) queryParams.append('CheckInDate', checkInDate);
-        if (checkOutDate) queryParams.append('CheckOutDate', checkOutDate);
 
         // Gọi API Backend
         const response = await fetch(`http://localhost:5096/api/v1/search/hotels?${queryParams.toString()}`);
         if (!response.ok) throw new Error('Không thể kết nối đến Backend');
 
         const result = await response.json();
-        if (result && result.isSuccess && Array.isArray(result.data)) {
+        if (result && (result.success || result.isSuccess) && Array.isArray(result.data)) {
           setHotels(result.data);
           setIsApiSuccess(true);
         } else {

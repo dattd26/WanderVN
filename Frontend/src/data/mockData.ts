@@ -44,7 +44,7 @@ export const MOCK_HOTELS: SearchHotelsDto[] = [
     description: 'Nằm ngay trung tâm phố cổ Hội An, ngôi nhà cổ thế kỷ 19 được phục dựng tỉ mỉ này mang đến một không gian thanh bình tuyệt đối. Thức dậy với hương hoa nhài và ánh sáng dịu nhẹ của đèn lồng lụa phản chiếu trên bức tường đá vôi cổ kính.',
     locationName: 'Hội An',
     primaryImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80',
-    minPrice: 280
+    minPrice: 2800000
   },
   {
     id: 2,
@@ -54,7 +54,7 @@ export const MOCK_HOTELS: SearchHotelsDto[] = [
     description: 'Khu nghỉ dưỡng ven sông thanh bình kết hợp hài hòa giữa nét thanh lịch của kiến trúc thuộc địa Pháp và phong cách thiết kế truyền thống Việt Nam. Thưởng thức những bữa tối độc bản bên dòng sông Thu Bồn lững lờ trôi.',
     locationName: 'Hội An',
     primaryImage: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=80',
-    minPrice: 450
+    minPrice: 4500000
   },
   {
     id: 3,
@@ -64,7 +64,7 @@ export const MOCK_HOTELS: SearchHotelsDto[] = [
     description: 'Tận hưởng sự sang trọng tinh tế trên hòn đảo ngọc Phú Quốc. Khu nghỉ dưỡng sở hữu tầm nhìn vô cực hướng biển Tây tuyệt đẹp, những căn suite đẳng cấp và dịch vụ spa nổi tiếng trên mặt nước hồ sen tĩnh lặng.',
     locationName: 'Phú Quốc',
     primaryImage: 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80',
-    minPrice: 380
+    minPrice: 3800000
   },
   {
     id: 4,
@@ -74,7 +74,7 @@ export const MOCK_HOTELS: SearchHotelsDto[] = [
     description: 'Ẩn hiện giữa những đỉnh núi đá vôi mờ sương của cao nguyên đá Đồng Văn, căn lodge mộc mạc mang lại trải nghiệm bản địa cao cấp vượt bậc. Nơi hoàn hảo để ngắm nhìn bình minh rực rỡ len qua làn sương ban mai.',
     locationName: 'Hà Giang',
     primaryImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=80',
-    minPrice: 190
+    minPrice: 1900000
   }
 ];
 

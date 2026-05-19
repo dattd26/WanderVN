@@ -12,7 +12,7 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   onTypeChange,
   onAmenityChange
 }) => {
-  const [maxPrice, setMaxPrice] = useState(800);
+  const [maxPrice, setMaxPrice] = useState(8000000); // Mặc định 8 triệu VNĐ
   const [selectedTypes, setSelectedTypes] = useState<string[]>(['Boutique Villa']);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
@@ -20,7 +20,7 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
     const value = parseInt(e.target.value);
     setMaxPrice(value);
     if (onPriceChange) {
-      onPriceChange(50, value);
+      onPriceChange(500000, value); // Giá tối thiểu là 500k VNĐ
     }
   };
 
@@ -84,14 +84,14 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
         
         <div className="space-y-4">
           <div className="flex justify-between font-body-md text-body-md text-on-surface-variant mb-1">
-            <span>$50</span>
-            <span className="font-semibold text-primary">${maxPrice}+</span>
+            <span>500K đ</span>
+            <span className="font-semibold text-primary">{(maxPrice / 1000000).toFixed(1)}M đ+</span>
           </div>
           <input
             type="range"
-            min="50"
-            max="1000"
-            step="50"
+            min="500000"
+            max="10000000"
+            step="500000"
             value={maxPrice}
             onChange={handlePriceChange}
             className="w-full accent-secondary cursor-pointer h-1 bg-surface-variant rounded-lg"

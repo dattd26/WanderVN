@@ -19,10 +19,23 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Wande
 
 builder.Services.AddControllers();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Kích hoạt CORS Middleware
+app.UseCors("AllowFrontend");
 
 app.UseMiddleware<ExceptionMiddleware>();
 
