@@ -14,6 +14,8 @@ export interface SearchHotelsDto {
   locationName: string;
   primaryImage: string;
   minPrice: number;
+  propertyTypeName?: string;
+  propertyTypeCode?: string;
 }
 
 export interface SearchHotelsQuery {

@@ -42,6 +42,23 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Đồng bộ hóa trạng thái của form bất cứ khi nào URL thay đổi (Do nút tìm kiếm hoặc điều hướng bên ngoài)
+  useEffect(() => {
+    const locId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
+    const loc = MOCK_LOCATIONS.find((l) => l.id === locId);
+    const checkIn = searchParams.get('checkInDate') || new Date().toISOString().split('T')[0];
+    const checkOut = searchParams.get('checkOutDate') || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const cap = searchParams.get('capacity') ? parseInt(searchParams.get('capacity')!) : 2;
+    const hotelId = searchParams.get('hotelId') ? parseInt(searchParams.get('hotelId')!) : null;
+
+    setLocationId(locId);
+    setLocationName(loc ? loc.name : 'Hội An');
+    setSelectedHotelId(hotelId);
+    setCheckInDate(checkIn);
+    setCheckOutDate(checkOut);
+    setCapacity(cap);
+  }, [searchParams]);
+
   // Cơ chế gọi API gợi ý tự động (Autocomplete) kèm trì hoãn (Debounce 300ms)
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -125,12 +142,33 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
   // Điều hướng tìm kiếm khi gửi form
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    let url = `/stays?locationId=${locationId}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&capacity=${capacity}`;
+    
+    let targetLocId = locationId;
+    let targetHotelId = selectedHotelId;
+
+    // Nếu dropdown gợi ý đang mở và người dùng bấm nút Tìm kiếm mà chưa click chọn cụ thể
+    if (isOpen && query.trim() !== '') {
+      if (suggestions.length > 0) {
+        // Tự động lấy gợi ý đầu tiên khớp nhất để thực hiện tìm kiếm
+        const bestMatch = suggestions[0];
+        if (bestMatch.type === 'Location') {
+          targetLocId = bestMatch.targetId;
+          targetHotelId = null;
+        } else {
+          targetHotelId = bestMatch.targetId;
+          targetLocId = initialLocId;
+        }
+      }
+    }
+
+    let url = `/stays?locationId=${targetLocId}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&capacity=${capacity}`;
     
     // Nếu có chọn một khách sạn cụ thể, đính kèm thêm ID khách sạn để tự động cuộn hoặc lọc riêng biệt
-    if (selectedHotelId) {
-      url += `&hotelId=${selectedHotelId}`;
+    if (targetHotelId) {
+      url += `&hotelId=${targetHotelId}`;
     }
+
+    setIsOpen(false);
     navigate(url);
   };
 
@@ -159,7 +197,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
             value={isOpen ? query : locationName}
             onFocus={() => {
               setIsOpen(true);
-              setQuery('');
+              setQuery(locationName); // Điền sẵn tên địa danh hiện tại thay vì để trống, tăng UX chỉnh sửa
             }}
             onChange={(e) => setQuery(e.target.value)}
           />

@@ -18,7 +18,7 @@ export const SearchStays: React.FC = () => {
 
   // Lọc theo khoảng giá từ sidebar (VNĐ)
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 500000, max: 8000000 });
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(['Boutique Villa']);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 
   // States tải dữ liệu từ C# Backend
   const [hotels, setHotels] = useState<SearchHotelsDto[]>([]);
@@ -83,17 +83,11 @@ export const SearchStays: React.FC = () => {
     // 1. Lọc theo giá
     if (hotel.minPrice > priceRange.max) return false;
 
-    // 2. Lọc theo Loại hình lưu trú (nếu có chọn)
+    // 2. Lọc theo Loại hình lưu trú động (Khách sạn, Resort, Villa, Homestay...)
     if (selectedTypes.length > 0) {
-      const boutiqueLabel = hotel.starRating >= 5 ? 'Khu nghỉ dưỡng Hạng sang' : 'Biệt thự Di sản';
-      // Ánh xạ khớp tương đối với nhãn lọc
-      const isMatched = selectedTypes.some(t => {
-        if (t === 'Boutique Villa' && boutiqueLabel === 'Biệt thự Di sản') return true;
-        if (t === 'Luxury Resort' && boutiqueLabel === 'Khu nghỉ dưỡng Hạng sang') return true;
-        if (t === 'Heritage Estate') return true; // Hiển thị chung
+      if (!hotel.propertyTypeCode || !selectedTypes.includes(hotel.propertyTypeCode)) {
         return false;
-      });
-      if (!isMatched) return false;
+      }
     }
 
     return true;

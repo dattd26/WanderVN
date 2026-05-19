@@ -38,7 +38,7 @@ export const HotelCard: React.FC<HotelCardProps> = ({ hotel }) => {
           <div className="flex justify-between items-start mb-2">
             <div>
               <span className="inline-block px-2.5 py-1 border border-on-tertiary-container text-on-tertiary-container font-caption text-caption uppercase tracking-wider mb-2 bg-tertiary-fixed-dim/20 rounded">
-                {getBoutiqueLabel(hotel.starRating)}
+                {hotel.propertyTypeName || getBoutiqueLabel(hotel.starRating)}
               </span>
               <h3 className="font-display-lg text-headline-lg text-on-surface mb-1 group-hover:text-secondary transition-colors duration-300">
                 {hotel.name}

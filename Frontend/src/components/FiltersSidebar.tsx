@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Map, Sliders, Check } from 'lucide-react';
+
+interface PropertyType {
+  id: number;
+  name: string;
+  code: string;
+}
 
 interface FiltersSidebarProps {
   onPriceChange?: (min: number, max: number) => void;
@@ -13,8 +19,37 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   onAmenityChange
 }) => {
   const [maxPrice, setMaxPrice] = useState(8000000);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(['Boutique Villa']);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+
+  // Tải động danh sách loại hình lưu trú từ API
+  useEffect(() => {
+    const fetchPropertyTypes = async () => {
+      try {
+        const response = await fetch('http://localhost:5096/api/v1/property-types');
+        if (response.ok) {
+          const resJson = await response.json();
+          if (resJson.success && Array.isArray(resJson.data)) {
+            setPropertyTypes(resJson.data);
+            return;
+          }
+        }
+        throw new Error('Dữ liệu API không đúng định dạng');
+      } catch (error) {
+        console.warn('⚠️ Lỗi gọi API /api/v1/property-types, sử dụng dữ liệu tĩnh dự phòng:', error);
+        // Fallback sang dữ liệu tĩnh nếu API chưa khả dụng để đảm bảo trải nghiệm người dùng
+        setPropertyTypes([
+          { id: 1, name: 'Khách sạn', code: 'HOTEL' },
+          { id: 2, name: 'Khu nghỉ dưỡng (Resort)', code: 'RESORT' },
+          { id: 3, name: 'Biệt thự (Villa)', code: 'VILLA' },
+          { id: 4, name: 'Căn hộ / Homestay', code: 'HOMESTAY' }
+        ]);
+      }
+    };
+
+    fetchPropertyTypes();
+  }, []);
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -24,10 +59,10 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
     }
   };
 
-  const toggleType = (type: string) => {
-    const next = selectedTypes.includes(type)
-      ? selectedTypes.filter((t) => t !== type)
-      : [...selectedTypes, type];
+  const toggleType = (typeCode: string) => {
+    const next = selectedTypes.includes(typeCode)
+      ? selectedTypes.filter((t) => t !== typeCode)
+      : [...selectedTypes, typeCode];
     setSelectedTypes(next);
     if (onTypeChange) {
       onTypeChange(next);
@@ -43,12 +78,6 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
       onAmenityChange(next);
     }
   };
-
-  const propertyTypes = [
-    'Boutique Villa',
-    'Heritage Estate',
-    'Luxury Resort'
-  ];
 
   const amenities = [
     'Bể bơi riêng',
@@ -106,12 +135,12 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
         </h3>
         <div className="space-y-3.5">
           {propertyTypes.map((type) => {
-            const isChecked = selectedTypes.includes(type);
+            const isChecked = selectedTypes.includes(type.code);
             return (
               <label
-                key={type}
+                key={type.code}
                 className="flex items-center gap-3 cursor-pointer group select-none"
-                onClick={() => toggleType(type)}
+                onClick={() => toggleType(type.code)}
               >
                 <div
                   className={`w-5 h-5 border rounded flex items-center justify-center transition-all duration-300 ${isChecked
@@ -122,7 +151,7 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                   {isChecked && <Check className="h-3.5 w-3.5 stroke-[3px]" />}
                 </div>
                 <span className="font-body-md text-body-md text-on-surface transition-colors duration-200 group-hover:text-secondary">
-                  {type}
+                  {type.name}
                 </span>
               </label>
             );

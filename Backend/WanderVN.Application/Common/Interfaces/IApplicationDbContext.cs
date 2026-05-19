@@ -23,6 +23,7 @@ public interface IApplicationDbContext
     DbSet<Rooms> Rooms { get; }
     DbSet<Users> Users { get; }
     DbSet<Wishlists> Wishlists { get; }
+    DbSet<PropertyTypes> PropertyTypes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
