@@ -20,3 +20,18 @@ Kho lưu trữ (repository) này được chia thành hai phần chính:
 * `WanderVN.Application`: Logic nghiệp vụ.
 * `WanderVN.Infrastructure`: Truy cập dữ liệu (EF Core + Dapper).
 * `WanderVN.API`: Web API, Swagger và cấu hình Dependency Injection (DI).
+
+## Hướng dẫn cấu hình local bảo mật (Local Secret Configuration)
+
+Để bảo mật thông tin nhạy cảm (như API Access Token của Duffel) và tránh bị lộ trên GitHub, dự án đã cấu hình sử dụng **.NET User Secrets** ở môi trường phát triển local.
+
+Khi clone dự án về, mỗi thành viên trong nhóm cần thực hiện lệnh sau trong terminal tại thư mục chứa file dự án của mình để cấu hình token local của riêng họ:
+
+### Cấu hình Duffel Access Token local:
+1. Mở terminal tại thư mục: `Backend/WanderVN.API`
+2. Chạy lệnh:
+   ```bash
+   dotnet user-secrets set "Duffel:AccessToken" "YOUR_DUFFEL_ACCESS_TOKEN_HERE"
+   ```
+
+*Lưu ý: Mọi thay đổi trong `appsettings.json` đều đã được thay thế bằng placeholder `"YOUR_DUFFEL_ACCESS_TOKEN_HERE"`. Không thay đổi trực tiếp file `appsettings.json`.
