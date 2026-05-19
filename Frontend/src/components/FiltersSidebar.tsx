@@ -12,7 +12,7 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   onTypeChange,
   onAmenityChange
 }) => {
-  const [maxPrice, setMaxPrice] = useState(8000000); // Mặc định 8 triệu VNĐ
+  const [maxPrice, setMaxPrice] = useState(8000000);
   const [selectedTypes, setSelectedTypes] = useState<string[]>(['Boutique Villa']);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
@@ -81,7 +81,7 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
             Giá mỗi đêm
           </h3>
         </div>
-        
+
         <div className="space-y-4">
           <div className="flex justify-between font-body-md text-body-md text-on-surface-variant mb-1">
             <span>500K đ</span>
@@ -114,11 +114,10 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                 onClick={() => toggleType(type)}
               >
                 <div
-                  className={`w-5 h-5 border rounded flex items-center justify-center transition-all duration-300 ${
-                    isChecked
+                  className={`w-5 h-5 border rounded flex items-center justify-center transition-all duration-300 ${isChecked
                       ? 'border-secondary bg-secondary text-on-primary'
                       : 'border-outline group-hover:border-secondary'
-                  }`}
+                    }`}
                 >
                   {isChecked && <Check className="h-3.5 w-3.5 stroke-[3px]" />}
                 </div>
@@ -146,11 +145,10 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                 onClick={() => toggleAmenity(amenity)}
               >
                 <div
-                  className={`w-5 h-5 border rounded flex items-center justify-center transition-all duration-300 ${
-                    isChecked
+                  className={`w-5 h-5 border rounded flex items-center justify-center transition-all duration-300 ${isChecked
                       ? 'border-secondary bg-secondary text-on-primary'
                       : 'border-outline group-hover:border-secondary'
-                  }`}
+                    }`}
                 >
                   {isChecked && <Check className="h-3.5 w-3.5 stroke-[3px]" />}
                 </div>
