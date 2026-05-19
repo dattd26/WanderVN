@@ -79,6 +79,21 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<Rooms>(entity =>
+        {
+            // Thiết lập mối quan hệ 1-N giữa Hotels (Khách sạn) và Rooms (Phòng)
+            entity.HasOne(r => r.Hotel)
+                .WithMany(h => h.Rooms)
+                .HasForeignKey(r => r.HotelId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Thiết lập mối quan hệ 1-N (nullable) giữa RoomTypes (Loại phòng) và Rooms (Phòng)
+            entity.HasOne(r => r.RoomType)
+                .WithMany(rt => rt.Rooms)
+                .HasForeignKey(r => r.RoomTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<PropertyTypes>(entity =>
         {
             entity.HasKey(e => e.Id);
