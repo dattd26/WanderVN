@@ -166,8 +166,8 @@ export const SearchFlights: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Cinematic Hero Section */}
-      <section className="relative h-[65vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
+      <section className="relative h-[65vh] flex items-center justify-center">
+        <div className="absolute inset-0 z-0 overflow-hidden">
           <img 
             alt="Mây trời phi cơ nghệ thuật" 
             className="w-full h-full object-cover grayscale-[15%] brightness-[65%]" 
