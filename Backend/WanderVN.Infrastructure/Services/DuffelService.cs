@@ -53,4 +53,14 @@ public class DuffelService : IDuffelService
 
         return await response.Content.ReadAsStringAsync();
     }
+
+    public async Task<string> CreateOrderAsync(DuffelOrderRequestDto request)
+    {
+        var content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync("air/orders", content);
+        
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadAsStringAsync();
+    }
 }

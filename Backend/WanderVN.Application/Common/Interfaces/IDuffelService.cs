@@ -12,4 +12,9 @@ public interface IDuffelService
     /// Gửi request tìm kiếm chuyến bay và nhận lại chuỗi JSON chứa danh sách Offers từ Duffel.
     /// </summary>
     Task<string> SearchOffersAsync(DuffelOfferRequestDto request);
+
+    /// <summary>
+    /// Gửi request tạo Order (đặt vé) và nhận lại chuỗi JSON chứa thông tin Order từ Duffel.
+    /// </summary>
+    Task<string> CreateOrderAsync(DuffelOrderRequestDto request);
 }
