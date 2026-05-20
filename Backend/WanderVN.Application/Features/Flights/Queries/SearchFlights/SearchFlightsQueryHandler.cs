@@ -128,21 +128,21 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, str
         json = json.Replace("\"name\":\"American Airlines\"", "\"name\":\"VietJet Air\"");
         json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/AA.svg\"", 
                             "\"logo_symbol_url\":\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/VietJet_Air_logo.svg/640px-VietJet_Air_logo.svg.png\"");
-        json = json.Replace("\"logo_lockup_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-lockup/AA.svg\"", "null");
+        json = json.Replace("\"logo_lockup_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-lockup/AA.svg\"", "\"logo_lockup_url\":null");
 
         // c. British Airways (BA) -> Bamboo Airways (QH)
         json = json.Replace("\"iata_code\":\"BA\"", "\"iata_code\":\"QH\"");
         json = json.Replace("\"name\":\"British Airways\"", "\"name\":\"Bamboo Airways\"");
         json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/BA.svg\"", 
                             "\"logo_symbol_url\":\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Bamboo_Airways_logo.svg/640px-Bamboo_Airways_logo.svg.png\"");
-        json = json.Replace("\"logo_lockup_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-lockup/BA.svg\"", "null");
+        json = json.Replace("\"logo_lockup_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-lockup/BA.svg\"", "\"logo_lockup_url\":null");
 
         // d. Iberia (IB) -> Vietravel Airlines (VU)
         json = json.Replace("\"iata_code\":\"IB\"", "\"iata_code\":\"VU\"");
         json = json.Replace("\"name\":\"Iberia\"", "\"name\":\"Vietravel Airlines\"");
         json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/IB.svg\"", 
                             "\"logo_symbol_url\":\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Vietravel_Airlines_logo.svg/640px-Vietravel_Airlines_logo.svg.png\"");
-        json = json.Replace("\"logo_lockup_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-lockup/IB.svg\"", "null");
+        json = json.Replace("\"logo_lockup_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-lockup/IB.svg\"", "\"logo_lockup_url\":null");
 
         return json;
     }
