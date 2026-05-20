@@ -1,8 +1,4 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using WanderVN.Application.Features.Hotels.Queries.SearchHotels;
-
 namespace WanderVN.Application.Common.Interfaces;
 
 /// <summary>

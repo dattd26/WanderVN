@@ -20,7 +20,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
     return searchParams.get('hotelId') ? parseInt(searchParams.get('hotelId')!) : null;
   });
   const [query, setQuery] = useState(() => {
-    return searchParams.get('locationName') || 'Hội An'; // Lấy trực tiếp tên địa danh hiển thị từ tham số URL
+    return searchParams.get('locationName') || 'Đà Lạt'; // Lấy trực tiếp tên địa danh hiển thị từ tham số URL
   });
   const [checkInDate, setCheckInDate] = useState(() => {
     return searchParams.get('checkInDate') || new Date().toISOString().split('T')[0];
@@ -40,7 +40,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ compact = false }) => {
   // Đồng bộ hóa trạng thái của form bất cứ khi nào URL thay đổi, bọc qua setTimeout 0 để tránh re-render đồng bộ
   useEffect(() => {
     const locId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
-    const locName = searchParams.get('locationName') || 'Hội An';
+    const locName = searchParams.get('locationName') || 'Đà Lạt';
     const checkIn = searchParams.get('checkInDate') || new Date().toISOString().split('T')[0];
     const checkOut = searchParams.get('checkOutDate') || new Date(Date.now() + 86400000).toISOString().split('T')[0];
     const cap = searchParams.get('capacity') ? parseInt(searchParams.get('capacity')!) : 2;
