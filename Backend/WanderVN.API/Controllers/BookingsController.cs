@@ -1,8 +1,9 @@
-using System.Threading.Tasks;
+ï»¿using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using WanderVN.API.Common.Responses;
 using WanderVN.Application.Features.Bookings.Commands.CreateHotelBooking;
+using WanderVN.Application.Features.Bookings.Commands.CreateFlightBooking;
 using WanderVN.Application.DTOs.Request;
 using WanderVN.Application.DTOs.Response;
 
@@ -24,7 +25,16 @@ public class BookingsController : ControllerBase
     {
         var command = new CreateHotelBookingCommand { Request = request };
         var result = await _mediator.Send(command);
-        var response = new ApiResponse<HotelBookingResponse>(true, "Ð?t ph?ng thành công", 200, result);
+        var response = new ApiResponse<HotelBookingResponse>(true, "Dat phong thanh cong", 200, result);
+        return Ok(response);
+    }
+
+    [HttpPost("flight")]
+    public async Task<IActionResult> CreateFlightBooking([FromBody] CreateFlightBookingRequest request)
+    {
+        var command = new CreateFlightBookingCommand { Request = request };
+        var result = await _mediator.Send(command);
+        var response = new ApiResponse<FlightBookingResponse>(true, "Dat ve may bay thanh cong", 200, result);
         return Ok(response);
     }
 }
