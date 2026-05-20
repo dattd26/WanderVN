@@ -12,5 +12,10 @@ namespace WanderVN.Domain.Repositories
             int pageNumber,
             int pageSize,
             CancellationToken cancellationToken = default);
+
+        Task<Users?> GetUserByIdAsync(
+            int id,
+            string? roleName = null,
+            CancellationToken cancellationToken = default);
     }
 }

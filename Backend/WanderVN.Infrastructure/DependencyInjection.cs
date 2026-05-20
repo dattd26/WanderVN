@@ -36,6 +36,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IHotelRepository, HotelRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
 
         return services;
     }

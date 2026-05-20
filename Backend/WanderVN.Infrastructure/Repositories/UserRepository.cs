@@ -63,4 +63,23 @@ public class UserRepository : GenericRepository<Users>, IUserRepository
 
         return (users, totalItems);
     }
+
+    public async Task<Users?> GetUserByIdAsync(
+        int id,
+        string? roleName = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .Include(u => u.Hotels)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(roleName))
+        {
+            query = query.Where(u => u.Role != null && u.Role.Name == roleName);
+        }
+
+        return await query.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
 }
