@@ -18,13 +18,6 @@ public class UsersController : ControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] GetUsersQuery query)
-    {
-        var users = await _mediator.Send(query);
-        var response = new ApiResponse<PagedResult<UserDto>>(true, "Lấy toàn bộ danh sách người dùng thành công.", 200, users);
-        return Ok(response);
-    }
 
     [HttpGet("customers")]
     public async Task<IActionResult> GetCustomers([FromQuery] GetUsersQuery query)
