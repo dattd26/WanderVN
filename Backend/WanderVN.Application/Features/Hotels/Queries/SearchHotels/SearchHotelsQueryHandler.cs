@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using WanderVN.Application.Common.Interfaces;
+using WanderVN.Domain.Repositories;
 
 namespace WanderVN.Application.Features.Hotels.Queries.SearchHotels;
 

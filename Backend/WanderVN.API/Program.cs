@@ -1,6 +1,5 @@
 using WanderVN.API.Middleware;
 using WanderVN.Application.Common;
-using WanderVN.Application.Services;
 using WanderVN.Domain.Repositories;
 using WanderVN.Infrastructure.Repositories;
 
@@ -14,7 +13,6 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 
-builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(WanderVN.Application.Common.Interfaces.IApplicationDbContext).Assembly));
 
 builder.Services.AddControllers();
