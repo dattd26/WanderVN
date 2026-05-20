@@ -28,6 +28,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
 
         // 1. Map to Duffel Request
         var duffelRequest = new DuffelOrderRequestDto();
+        duffelRequest.Data.Type = "instant";
         duffelRequest.Data.SelectedOffers.Add(request.OfferId);
         
         foreach (var pax in request.Passengers)
@@ -44,6 +45,17 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                 Gender = pax.Gender
             });
         }
+
+        // Thiết lập thông tin thanh toán cho vé máy bay (bắt buộc đối với loại đặt vé "instant")
+        duffelRequest.Data.Payments = new List<DuffelPaymentDto>
+        {
+            new DuffelPaymentDto
+            {
+                Type = "balance",
+                Amount = request.TotalPrice.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+                Currency = "USD" // Hệ thống Duffel Sandbox mặc định sử dụng USD cho môi trường kiểm thử
+            }
+        };
 
         // 2. Call Duffel API
         var duffelResponseJson = await _duffelService.CreateOrderAsync(duffelRequest);
@@ -67,25 +79,33 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        await _dbContext.Bookings.AddAsync(booking, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        // Save passengers to BookingFlights
-        foreach (var pax in request.Passengers)
+        try
         {
-            var bookingFlight = new WanderVN.Domain.Entities.BookingFlights
-            {
-                BookingId = booking.Id,
-                PassengerName = $"{pax.Title} {pax.GivenName} {pax.FamilyName}",
-                PassportNumber = pax.PassportNumber,
-                // FlightId is left null as we rely on Duffel for flight data (Option A)
-                FlightId = null
-            };
-            
-            await _dbContext.BookingFlights.AddAsync(bookingFlight, cancellationToken);
-        }
+            await _dbContext.Bookings.AddAsync(booking, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+            // Save passengers to BookingFlights
+            foreach (var pax in request.Passengers)
+            {
+                var bookingFlight = new WanderVN.Domain.Entities.BookingFlights
+                {
+                    BookingId = booking.Id,
+                    PassengerName = $"{pax.Title} {pax.GivenName} {pax.FamilyName}",
+                    PassportNumber = pax.PassportNumber,
+                    // FlightId is left null as we rely on Duffel for flight data (Option A)
+                    FlightId = null
+                };
+                
+                await _dbContext.BookingFlights.AddAsync(bookingFlight, cancellationToken);
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+        {
+            // Bắt lỗi cập nhật DB và ném ra chi tiết lỗi bên trong (Inner Exception) để dễ dàng chẩn đoán lỗi
+            throw new System.Exception($"Lỗi lưu cơ sở dữ liệu: {ex.Message}. Chi tiết lỗi SQL Server: {ex.InnerException?.Message}", ex);
+        }
 
         return new FlightBookingResponse
         {

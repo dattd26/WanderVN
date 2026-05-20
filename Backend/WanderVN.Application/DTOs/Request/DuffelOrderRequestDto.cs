@@ -11,11 +11,19 @@ public class DuffelOrderRequestDto
 
 public class DuffelOrderDataDto
 {
+    // Loại đặt vé: "instant" (đặt ngay và xuất vé) hoặc "hold" (giữ chỗ)
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "instant";
+
     [JsonPropertyName("selected_offers")]
     public List<string> SelectedOffers { get; set; } = new();
 
     [JsonPropertyName("passengers")]
     public List<DuffelPassengerDto> Passengers { get; set; } = new();
+
+    // Thông tin thanh toán (bắt buộc khi chọn type là "instant")
+    [JsonPropertyName("payments")]
+    public List<DuffelPaymentDto>? Payments { get; set; }
 }
 
 public class DuffelPassengerDto
@@ -43,4 +51,17 @@ public class DuffelPassengerDto
 
     [JsonPropertyName("gender")]
     public string Gender { get; set; } = string.Empty;
+}
+
+public class DuffelPaymentDto
+{
+    // Phương thức thanh toán, mặc định dùng số dư ví Duffel "balance"
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "balance";
+
+    [JsonPropertyName("amount")]
+    public string Amount { get; set; } = string.Empty;
+
+    [JsonPropertyName("currency")]
+    public string Currency { get; set; } = "USD";
 }
