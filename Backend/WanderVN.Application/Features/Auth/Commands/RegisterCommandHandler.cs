@@ -26,7 +26,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-        var user = new Users
+        var user = new WanderVN.Domain.Entities.Users
         {
             Email = request.Email,
             PasswordHash = passwordHash,
