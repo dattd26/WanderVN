@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Navbar } from './components/Navbar';
-import { Footer } from './components/Footer';
-import { Home } from './pages/Home';
-import { SearchStays } from './pages/SearchStays';
+import { Navbar } from './components/shared/Navbar';
+import { Footer } from './components/shared/Footer';
+import { Home } from './pages/client/Home';
+import { SearchStays } from './pages/client/SearchStays';
+import { HotelDetail } from './pages/client/HotelDetail';
+import { SearchFlights } from './pages/client/SearchFlights';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/stays" element={<SearchStays />} />
+            <Route path="/hotel/:id" element={<HotelDetail />} />
+            <Route path="/flights" element={<SearchFlights />} />
           </Routes>
         </div>
 

@@ -1,7 +1,7 @@
 // Dịch vụ API tải danh mục loại hình lưu trú
 
-import { request } from './apiClient';
-import type { PropertyType } from '../types';
+import { request } from '../shared/apiClient';
+import type { PropertyType } from '../../types';
 
 export const propertyTypeService = {
   /**

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Star, MapPin } from 'lucide-react';
-import type { SearchHotelsDto } from '../types';
+import type { SearchHotelsDto } from '../../types';
+import { Link } from 'react-router-dom';
 
 interface HotelCardProps {
   hotel: SearchHotelsDto;
@@ -84,9 +85,12 @@ export const HotelCard: React.FC<HotelCardProps> = ({ hotel }) => {
             </p>
           </div>
           
-          <button className="w-full sm:w-auto border border-primary text-primary hover:bg-primary hover:text-on-primary font-label-md text-label-md px-8 py-3 transition-colors duration-300 uppercase tracking-widest font-medium">
+          <Link 
+            to={`/hotel/${hotel.id}`} 
+            className="w-full sm:w-auto border border-primary text-primary hover:bg-primary hover:text-on-primary font-label-md text-label-md px-8 py-3 transition-colors duration-300 uppercase tracking-widest font-medium text-center"
+          >
             Xem chi tiết
-          </button>
+          </Link>
         </div>
       </div>
     </article>

@@ -1,8 +1,34 @@
-import React from 'react';
-import { SearchForm } from '../components/SearchForm';
+import React, { useState, useEffect } from 'react';
+import { HotelSearchForm } from '../../components/client/HotelSearchForm';
 import { Compass, ShieldCheck, HeartHandshake } from 'lucide-react';
 
+// Danh sách hình ảnh di sản chất lượng cao 1920px phục vụ quay vòng nền Cinematic
+const HERO_BACKGROUNDS = [
+  {
+    url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80',
+    alt: 'Phong cảnh sương mù Hà Giang hùng vĩ'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1920&q=80',
+    alt: 'Phố cổ Hội An lung linh sắc đèn lồng hoài cổ'
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1920&q=80',
+    alt: 'Hoàng hôn biển Phú Quốc rực rỡ'
+  }
+];
+
 export const Home: React.FC = () => {
+  const [bgIndex, setBgIndex] = useState(0);
+
+  // Tự động xoay vòng ảnh nền sau mỗi 7 giây
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % HERO_BACKGROUNDS.length);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, []);
+
   const featuredDestinations = [
     {
       id: 1,
@@ -33,35 +59,43 @@ export const Home: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Cinematic Hero Section */}
-      <header className="relative h-screen w-full flex items-center justify-center overflow-hidden">
-        {/* Background Image & Overlay */}
-        <div className="absolute inset-0 z-0">
-          <img
-            alt="Phong cảnh sương mù Hà Giang"
-            className="w-full h-full object-cover object-center scale-105 animate-subtle-zoom"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXA9z5TK_uYkaobAHAdHalVqzNVWXVGZhjGa0pBjAe2sO4NfQE-Ex8vfc6OPYt6UvV_YIwzHeO0wE520ACR5YMc7-F7dO_b3OsjVZM54wTW_b7CArOBzxCwryXqrcGDRJy05uDBVIDCr7QgypTX8YnFEGF15ODb-DsqLrexR1QQ6ekzs6lWOXwQ6LYheZRfXe9G7Dl8CpYQ6RwL_mYNS57CfaIkdempRsaL-1UcqcTP_DEqr9KC0b9EGfY-5f_5uO5Qy6PzM6x8sw"
-          />
-          <div className="absolute inset-0 bg-black/45"></div>
+      <header className="relative min-h-[90vh] md:h-screen w-full flex items-center justify-center overflow-visible">
+        {/* Lớp ảnh nền trượt mờ dần (Cross-dissolve) kết hợp Ken Burns */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          {HERO_BACKGROUNDS.map((bg, idx) => (
+            <img
+              key={bg.url}
+              alt={bg.alt}
+              className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-[2000ms] ease-in-out ${
+                idx === bgIndex ? 'opacity-100 animate-subtle-zoom-cinematic' : 'opacity-0'
+              }`}
+              src={bg.url}
+            />
+          ))}
+          {/* Lớp phủ chuyển sắc tối tạo chiều sâu nghệ thuật */}
+          <div className="absolute inset-0 bg-black/40 z-[1]"></div>
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 text-center px-margin-mobile md:px-margin-desktop max-w-4xl mx-auto mt-12">
-          <h1 className="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-primary mb-6 leading-tight select-none">
+        {/* Khối văn bản xuất hiện nhịp điệu phong cách tạp chí */}
+        <div className="relative z-10 text-center px-margin-mobile md:px-margin-desktop max-w-4xl mx-auto mt-12 pb-24 md:pb-0">
+          <h1 className="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-primary mb-6 leading-tight select-none animate-fade-up">
             Khám phá Việt Nam <br className="hidden md:inline" /> Vượt ngoài lối mòn thông thường
           </h1>
-          <p className="font-body-lg text-body-lg text-surface-container-low max-w-2xl mx-auto mb-16 leading-relaxed select-none">
+          <p className="font-body-lg text-body-lg text-surface-container-low max-w-2xl mx-auto mb-16 leading-relaxed select-none animate-fade-up-delay-1">
             Bộ sưu tập phòng nghỉ boutique chọn lọc, trải nghiệm bản địa sâu sắc được thiết kế riêng cho những lữ khách tinh tế.
           </p>
         </div>
 
-        {/* Floating Search Bar */}
-        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 w-full max-w-container-max px-margin-mobile md:px-margin-desktop z-20">
-          <SearchForm />
+        {/* Thanh tìm kiếm lơ lửng 3D nổi bật */}
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-full max-w-container-max px-margin-mobile md:px-margin-desktop z-20">
+          <div className="animate-fade-up-delay-2">
+            <HotelSearchForm theme="dark" />
+          </div>
         </div>
       </header>
 
       {/* Featured Destinations Showcase */}
-      <section className="py-section-gap bg-background px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
+      <section className="pt-24 md:pt-36 pb-section-gap bg-background px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <span className="font-label-md text-label-md text-secondary uppercase tracking-widest block mb-3">
             Những Điểm Đến Tinh Hoa

@@ -485,3 +485,5 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 node_modules/\ndist/\n.env\n
+DESIGN.md
+response_1779263368811.json

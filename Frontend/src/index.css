@@ -50,3 +50,41 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+
+/* Hiệu ứng phóng đại điện ảnh (Ken Burns) chậm rãi vô tận */
+@keyframes subtle-zoom {
+  0% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1.11);
+  }
+}
+.animate-subtle-zoom-cinematic {
+  animation: subtle-zoom 10s ease-in-out infinite alternate;
+}
+
+/* Hiệu ứng trượt lên mờ dần phong cách tạp chí nghệ thuật */
+@keyframes cinematic-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: cinematic-fade-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-fade-up-delay-1 {
+  animation: cinematic-fade-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.35s;
+  opacity: 0;
+}
+.animate-fade-up-delay-2 {
+  animation: cinematic-fade-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.7s;
+  opacity: 0;
+}

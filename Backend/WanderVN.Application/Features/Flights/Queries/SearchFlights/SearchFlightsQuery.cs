@@ -1,12 +1,14 @@
+using System.Collections.Generic;
 using MediatR;
+using WanderVN.Application.DTOs.Response;
 
 namespace WanderVN.Application.Features.Flights.Queries.SearchFlights;
 
 /// <summary>
 /// DTO Query yêu cầu tìm kiếm chuyến bay.
-/// Trả về chuỗi JSON thô từ Duffel API chứa danh sách Offers.
+/// Trả về danh sách FlightOfferDto tinh gọn đã lược bỏ các dữ liệu thừa.
 /// </summary>
-public class SearchFlightsQuery : IRequest<string>
+public class SearchFlightsQuery : IRequest<List<FlightOfferDto>>
 {
     public string Origin { get; set; } = string.Empty;
     public string Destination { get; set; } = string.Empty;

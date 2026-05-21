@@ -1,6 +1,6 @@
 // API Client helper cho kết nối backend dùng fetch thuần gọn nhẹ và hiệu năng cao
 
-import type { ApiResponse } from '../types';
+import type { ApiResponse } from '../../types';
 
 const BASE_URL = 'http://localhost:5096/api/v1';
 
