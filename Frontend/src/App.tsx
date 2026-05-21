@@ -3,7 +3,7 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
 import { SearchStays } from './pages/SearchStays';
-import { SearchFlights } from './pages/SearchFlights';
+import { HotelDetail } from './pages/HotelDetail';
 
 function App() {
   return (
@@ -20,7 +20,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/stays" element={<SearchStays />} />
-            <Route path="/flights" element={<SearchFlights />} />
+            <Route path="/hotel/:id" element={<HotelDetail />} />
           </Routes>
         </div>
 

@@ -8,6 +8,7 @@ using Dapper;
 using Microsoft.EntityFrameworkCore;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Application.Features.Hotels.Queries.SearchHotels;
+using WanderVN.Application.Features.Hotels.Queries.GetHotelDetail;
 using WanderVN.Infrastructure.Data;
 
 namespace WanderVN.Infrastructure.Repositories;
@@ -64,5 +65,40 @@ public class HotelRepository : IHotelRepository
         );
 
         return hotels.ToList();
+    }
+
+    public async Task<HotelDetailDto?> GetHotelDetailAsync(int hotelId, CancellationToken cancellationToken)
+    {
+        // Use EF Core for complex object mapping and available room calculation
+        var hotel = await _dbContext.Hotels
+            .Include(h => h.Location)
+            .Include(h => h.HotelImages)
+            .Include(h => h.RoomTypes)
+            .Where(h => h.Id == hotelId && h.IsActive == true)
+            .Select(h => new HotelDetailDto
+            {
+                Id = h.Id,
+                Name = h.Name,
+                Address = h.Address,
+                StarRating = h.StarRating,
+                Description = h.Description,
+                LocationName = h.Location != null ? h.Location.Name : null,
+                Images = h.HotelImages.OrderByDescending(img => img.IsPrimary).Select(img => img.ImageUrl ?? string.Empty).ToList(),
+                RoomTypes = h.RoomTypes.Select(rt => new RoomTypeInfo
+                {
+                    Id = rt.Id,
+                    Name = rt.Name,
+                    BasePrice = rt.BasePrice,
+                    Capacity = rt.Capacity,
+                    // Calculate available rooms by comparing total rooms with current non-cancelled bookings
+                    AvailableRooms = rt.TotalRooms - _dbContext.BookingHotels
+                        .Join(_dbContext.Rooms, bh => bh.RoomId, r => r.Id, (bh, r) => new { bh, r })
+                        .Join(_dbContext.Bookings, x => x.bh.BookingId, b => b.Id, (x, b) => new { x.bh, x.r, b })
+                        .Count(x => x.r.RoomTypeId == rt.Id && x.b.Status != "Cancelled" && !(x.bh.CheckOutDate <= DateOnly.FromDateTime(System.DateTime.Today) || x.bh.CheckInDate >= DateOnly.FromDateTime(System.DateTime.Today)))
+                }).ToList()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return hotel;
     }
 }
