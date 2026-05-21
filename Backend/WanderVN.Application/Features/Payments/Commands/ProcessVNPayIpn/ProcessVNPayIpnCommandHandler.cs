@@ -1,0 +1,119 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using WanderVN.Application.Common.Interfaces;
+using WanderVN.Application.DTOs.Response;
+using WanderVN.Domain.Entities;
+
+namespace WanderVN.Application.Features.Payments.Commands.ProcessVNPayIpn;
+
+/// <summary>
+/// Bộ xử lý Command tiếp nhận và xác thực kết quả thanh toán từ VNPay Server gửi về qua IPN.
+/// </summary>
+public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnCommand, VNPayIpnResponse>
+{
+    private readonly IApplicationDbContext _dbContext;
+    private readonly IVNPayService _vnpayService;
+
+    public ProcessVNPayIpnCommandHandler(IApplicationDbContext dbContext, IVNPayService vnpayService)
+    {
+        _dbContext = dbContext;
+        _vnpayService = vnpayService;
+    }
+
+    /// <summary>
+    /// Xử lý cập nhật hóa đơn dựa trên thông tin IPN của VNPay.
+    /// </summary>
+    public async Task<VNPayIpnResponse> Handle(ProcessVNPayIpnCommand command, CancellationToken cancellationToken)
+    {
+        // 1. Xác thực chữ ký checksum đảm bảo gói tin không bị thay đổi và đến đúng từ VNPay
+        if (!_vnpayService.ValidateSignature(command.Parameters))
+        {
+            return new VNPayIpnResponse { RspCode = "97", Message = "Invalid Checksum" };
+        }
+
+        // 2. Trích xuất các tham số cần thiết
+        if (!command.Parameters.TryGetValue("vnp_TxnRef", out var txnRef) || string.IsNullOrEmpty(txnRef))
+        {
+            return new VNPayIpnResponse { RspCode = "99", Message = "Missing vnp_TxnRef" };
+        }
+
+        // Tách BookingId ra từ chuỗi vnp_TxnRef (được định dạng "BookingId_Ticks")
+        var txnParts = txnRef.Split('_');
+        if (!int.TryParse(txnParts[0], out int bookingId))
+        {
+            return new VNPayIpnResponse { RspCode = "01", Message = "Order not found (Invalid TxnRef format)" };
+        }
+
+        if (!command.Parameters.TryGetValue("vnp_Amount", out var amountStr) || !long.TryParse(amountStr, out long vnpAmount))
+        {
+            return new VNPayIpnResponse { RspCode = "99", Message = "Missing or invalid vnp_Amount" };
+        }
+        // VNPay nhân số tiền lên 100 lần, ta cần chia ngược lại để có số tiền thực tế (VND)
+        decimal amountPaid = (decimal)vnpAmount / 100;
+
+        command.Parameters.TryGetValue("vnp_ResponseCode", out var responseCode);
+        command.Parameters.TryGetValue("vnp_TransactionNo", out var transactionNo);
+
+        try
+        {
+            // 3. Tìm kiếm đơn đặt hàng trong Database
+            var booking = await _dbContext.Bookings
+                .FirstOrDefaultAsync(b => b.Id == bookingId, cancellationToken);
+
+            if (booking == null)
+            {
+                return new VNPayIpnResponse { RspCode = "01", Message = "Order not found" };
+            }
+
+            // 4. Kiểm tra số tiền thanh toán từ VNPay có trùng khớp với giá trị của hóa đơn hay không
+            if (booking.TotalPrice != amountPaid)
+            {
+                return new VNPayIpnResponse { RspCode = "04", Message = "Invalid Amount" };
+            }
+
+            // 5. Kiểm tra xem hóa đơn này đã được xác nhận thanh toán trước đó chưa (tránh Double Confirm)
+            if (booking.PaymentStatus == "Paid")
+            {
+                return new VNPayIpnResponse { RspCode = "02", Message = "Order already confirmed" };
+            }
+
+            // 6. Xử lý trạng thái thanh toán dựa trên vnp_ResponseCode ("00" là thành công)
+            if (responseCode == "00")
+            {
+                booking.PaymentStatus = "Paid";
+                booking.Status = "Confirmed";
+
+                // Lưu thông tin giao dịch vào bảng Payments làm lịch sử giao dịch
+                var payment = new WanderVN.Domain.Entities.Payments
+                {
+                    BookingId = booking.Id,
+                    Amount = amountPaid,
+                    Method = "VNPAY",
+                    TransactionId = transactionNo,
+                    PaymentDate = DateTimeOffset.UtcNow
+                };
+
+                await _dbContext.Payments.AddAsync(payment, cancellationToken);
+            }
+            else
+            {
+                // Giao dịch không thành công ở cổng VNPay
+                booking.PaymentStatus = "Failed";
+                booking.Status = "Cancelled";
+            }
+
+            // Lưu thay đổi vào cơ sở dữ liệu
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return new VNPayIpnResponse { RspCode = "00", Message = "Confirm Success" };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ Lỗi khi xử lý IPN VNPay: {ex.Message}");
+            return new VNPayIpnResponse { RspCode = "99", Message = "Internal Server Error" };
+        }
+    }
+}

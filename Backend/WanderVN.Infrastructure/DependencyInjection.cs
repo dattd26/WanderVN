@@ -35,6 +35,9 @@ public static class DependencyInjection
             c.DefaultRequestHeaders.Add("Duffel-Version", "v2");
         });
 
+        // Đăng ký VNPay Service
+        services.AddScoped<IVNPayService, VNPayService>();
+
         services.AddScoped<IHotelRepository, HotelRepository>();
 
         return services;
