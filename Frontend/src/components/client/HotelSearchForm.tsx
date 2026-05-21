@@ -9,7 +9,7 @@ interface HotelSearchFormProps {
   theme?: 'light' | 'dark';
 }
 
-export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({ 
+export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
   compact = false,
   theme = 'dark'
 }) => {
@@ -114,7 +114,7 @@ export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
   // Điều hướng tìm kiếm khi gửi form
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     let targetLocId = locationId;
     let targetHotelId = selectedHotelId;
     let targetLocName = query;
@@ -135,7 +135,7 @@ export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
     }
 
     let url = `/stays?locationId=${targetLocId}&locationName=${encodeURIComponent(targetLocName)}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&capacity=${capacity}`;
-    
+
     if (targetHotelId) {
       url += `&hotelId=${targetHotelId}`;
     }
@@ -159,7 +159,7 @@ export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
     : `flex items-center gap-2 border-b border-primary/20 focus-within:border-primary pb-2 relative`;
 
   const iconClasses = isDark ? `text-white/50 h-5 w-5 shrink-0` : `text-outline h-5 w-5 shrink-0`;
-  
+
   const inputClasses = isDark
     ? `w-full bg-transparent border-none p-0 text-white focus:ring-0 font-body-md text-body-md cursor-pointer placeholder:text-white/30 [color-scheme:dark]`
     : `w-full bg-transparent border-none p-0 text-on-surface focus:ring-0 font-body-md text-body-md cursor-pointer placeholder:text-outline/60`;
@@ -167,7 +167,7 @@ export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className={containerClasses}>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
-        
+
         {/* 1. Điểm đến hoặc tên khách sạn (Autocomplete) */}
         <div className="space-y-2 relative md:col-span-1" ref={dropdownRef}>
           <label className={labelClasses}>Điểm đến / Khách sạn</label>
@@ -268,11 +268,11 @@ export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
               value={capacity}
               onChange={(e) => setCapacity(parseInt(e.target.value))}
             >
-              <option value={1} className={isDark ? "bg-[#1a1a1a] text-white" : "bg-surface text-on-surface"}>1 Lữ khách</option>
-              <option value={2} className={isDark ? "bg-[#1a1a1a] text-white" : "bg-surface text-on-surface"}>2 Lữ khách</option>
-              <option value={3} className={isDark ? "bg-[#1a1a1a] text-white" : "bg-surface text-on-surface"}>3 Lữ khách</option>
-              <option value={4} className={isDark ? "bg-[#1a1a1a] text-white" : "bg-surface text-on-surface"}>4 Lữ khách</option>
-              <option value={6} className={isDark ? "bg-[#1a1a1a] text-white" : "bg-surface text-on-surface"}>6+ Lữ khách</option>
+              <option value={1} className={isDark ? "bg-[#1a1a1a] text-white" : "bg-surface text-on-surface"}>1 Người</option>
+              <option value={2} className={isDark ? "bg-[#1a1a1a] text-white" : "bg-surface text-on-surface"}>2 Người</option>
+              <option value={3} className={isDark ? "bg-[#1a1a1a] text-white" : "bg-surface text-on-surface"}>3 Người</option>
+              <option value={4} className={isDark ? "bg-[#1a1a1a] text-white" : "bg-surface text-on-surface"}>4 Người</option>
+              <option value={6} className={isDark ? "bg-[#1a1a1a] text-white" : "bg-surface text-on-surface"}>6+ Người</option>
             </select>
           </div>
         </div>
@@ -285,7 +285,7 @@ export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
           <Search className="h-5 w-5" />
           TÌM KHÁCH SẠN
         </button>
-        
+
       </div>
     </form>
   );

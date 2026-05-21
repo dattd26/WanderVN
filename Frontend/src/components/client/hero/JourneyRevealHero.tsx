@@ -13,7 +13,7 @@ const DESTINATIONS = [
     locationId: 1,
     name: 'Hạ Long',
     subtitle: 'Vịnh ngọc biển Đông',
-    coords: '20.9101° N · Limestone Bay',
+    coords: '20.9101° N · Vịnh Đá Vôi',
     image: halongImg,
   },
   {
@@ -21,7 +21,7 @@ const DESTINATIONS = [
     locationId: 102,
     name: 'Hội An',
     subtitle: 'Thành phố Đèn lồng Thế giới',
-    coords: '15.8801° N · Lantern Town',
+    coords: '15.8801° N · Phố Cổ Đèn Lồng',
     image: hoianImg,
   },
   {
@@ -29,7 +29,7 @@ const DESTINATIONS = [
     locationId: 3,
     name: 'Ninh Bình',
     subtitle: 'Vùng đất Đá Vàng mùa lúa',
-    coords: '20.2543° N · Golden Fields',
+    coords: '20.2543° N · Đồng Lúa Vàng',
     image: ninhbinhImg,
   },
   {
@@ -37,7 +37,7 @@ const DESTINATIONS = [
     locationId: 4,
     name: 'Sa Pa',
     subtitle: 'Bản mây Fansipan huyền bí',
-    coords: '22.3364° N · Cloud Village',
+    coords: '22.3364° N · Bản Mây Sương Mù',
     image: sapaImg,
   },
 ] as const;
@@ -113,7 +113,7 @@ export const JourneyRevealHero: React.FC = () => {
   const nextDest = DESTINATIONS[revealIndex];
 
   // Animation Loop chạy liên tục qua requestAnimationFrame (sử dụng Ref để tránh lặp render hoặc lỗi closure/dependency)
-  const tickRef = useRef<(ts: number) => void>(() => {});
+  const tickRef = useRef<(ts: number) => void>(() => { });
 
   useEffect(() => {
     tickRef.current = (ts: number) => {
@@ -411,7 +411,7 @@ export const JourneyRevealHero: React.FC = () => {
           ].join(' ')}
           style={{ color: '#D6A84F' }}
         >
-          Heritage Journey · {dest.coords.split('·')[1]?.trim()}
+          Hành trình Di sản · {dest.coords.split('·')[1]?.trim()}
         </p>
 
         <h1
@@ -426,11 +426,11 @@ export const JourneyRevealHero: React.FC = () => {
             textShadow: '0 2px 30px rgba(17,16,14,0.45)'
           }}
         >
-          Discover Vietnam
+          Khám phá Việt Nam
           <br />
-          <span style={{ color: '#D6A84F' }}>Through Timeless</span>
+          <span style={{ color: '#D6A84F' }}>Vẻ đẹp bất tận</span>
           <br />
-          Journeys
+          {/* Hành trình của bạn */}
         </h1>
 
         <p
@@ -441,8 +441,7 @@ export const JourneyRevealHero: React.FC = () => {
           ].join(' ')}
           style={{ color: 'rgba(239,227,200,0.75)' }}
         >
-          Curated stays, flights, and cultural experiences across
-          Vietnam's most atmospheric destinations.
+          Tuyển chọn những khách sạn nghệ thuật, khu nghỉ dưỡng cao cấp và trải nghiệm văn hóa bản địa độc bản tại Việt Nam.
         </p>
       </div>
 
@@ -462,7 +461,7 @@ export const JourneyRevealHero: React.FC = () => {
           style={{ color: '#FFFFFF' }}
         >
           {dest.name}
-          <span className="ml-2 font-light" style={{ color: '#D6A84F' }}>Vietnam</span>
+          <span className="ml-2 font-light" style={{ color: '#D6A84F' }}>Việt Nam</span>
         </p>
         <p
           key={`meta-coord-${textKey}`}
