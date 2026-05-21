@@ -1,25 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FlightSearchForm } from '../../components/client/FlightSearchForm';
 import { flightService } from '../../services';
-import type { FlightOfferDto, PassengerDto } from '../../types';
+import type { FlightOfferDto } from '../../types';
 import {
   Plane,
   Utensils,
   BedDouble,
   Wifi,
-  Loader2,
-  CheckCircle,
-  ArrowRight,
-  Calendar,
-  User,
-  Mail,
-  Phone,
-  FileText
+  ArrowRight
 } from 'lucide-react';
+
 
 export const SearchFlights: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Lấy dữ liệu trực tiếp từ searchParams trên URL để tránh đồng bộ state trùng lặp không cần thiết
   const origin = searchParams.get('origin') || 'HAN';
@@ -39,28 +34,6 @@ export const SearchFlights: React.FC = () => {
 
   // Trạng thái vé máy bay đang được chọn
   const [selectedOffer, setSelectedOffer] = useState<FlightOfferDto | null>(null);
-
-  // Trạng thái modal thông tin hành khách
-  const [isPassengerModalOpen, setIsPassengerModalOpen] = useState(false);
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingSuccessData, setBookingSuccessData] = useState<{
-    bookingCode: string;
-    bookingId: number;
-    totalPrice: number;
-    status: string;
-  } | null>(null);
-
-  // Form thông tin hành khách
-  const [passengerForm, setPassengerForm] = useState<Omit<PassengerDto, 'id'>>({
-    title: 'mr',
-    familyName: 'Nguyen',
-    givenName: 'Van A',
-    bornOn: '1995-05-20',
-    email: 'nguyenvana@example.com',
-    phoneNumber: '+84901234567',
-    gender: 'm',
-    passportNumber: 'B1234567'
-  });
 
   // Thực hiện tìm kiếm chuyến bay từ C# API (khai báo trước useEffect để tránh lỗi truy cập trước khi khai báo)
   const executeSearch = async (o: string, d: string, date: string) => {
@@ -134,39 +107,6 @@ export const SearchFlights: React.FC = () => {
     return `${hours} ${minutes}`.trim() || '1h 20m';
   };
 
-  // Xử lý gửi đặt vé máy bay lên Backend C#
-  const handleBookingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedOffer) return;
-
-    setBookingLoading(true);
-    try {
-      // Sử dụng ID đặt vé của hãng Duffel Airways (ZZ) để đảm bảo sandbox thành công 100%
-      const finalOfferId = selectedOffer.duffelAirwaysOfferId || selectedOffer.id;
-      const finalPassengerId = selectedOffer.duffelAirwaysPassengerId || selectedOffer.passengerId || 'pas_default';
-
-      const bookingRequest = {
-        userId: 1, // Mock User ID đã đăng nhập
-        offerId: finalOfferId,
-        totalPrice: selectedOffer.totalAmount,
-        passengers: [
-          {
-            id: finalPassengerId,
-            ...passengerForm
-          }
-        ]
-      };
-
-      const result = await flightService.createBooking(bookingRequest);
-      setBookingSuccessData(result);
-      setIsPassengerModalOpen(false);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Có lỗi xảy ra';
-      alert(`⚠️ Lỗi đặt vé máy bay: ${message}`);
-    } finally {
-      setBookingLoading(false);
-    }
-  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -211,181 +151,99 @@ export const SearchFlights: React.FC = () => {
 
       {/* Main Results Content Area */}
       <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mt-28 md:mt-36 mb-section-gap w-full flex-grow">
-        {/* Kết quả đặt vé thành công */}
-        {bookingSuccessData ? (
-          <div className="bg-surface border border-outline-variant/30 p-12 rounded-lg text-center max-w-2xl mx-auto limestone-shadow animate-fade-in">
-            <div className="flex justify-center mb-6">
-              <CheckCircle className="h-16 w-16 text-secondary" />
+        {!hasSearched ? (
+          <div className="bg-surface border border-outline/10 p-12 text-center rounded-lg limestone-shadow max-w-3xl mx-auto flex flex-col items-center gap-6 mt-4">
+            <div className="w-20 h-20 rounded-full bg-secondary/10 flex items-center justify-center text-secondary mb-2 animate-bounce">
+              <Plane className="h-10 w-10 rotate-[45deg]" />
             </div>
-            <span className="font-label-md text-label-md text-secondary uppercase tracking-widest block mb-2">
-              Giao dịch thành công
-            </span>
-            <h2 className="font-display-lg text-headline-lg text-primary mb-6">
-              Chúc mừng chuyến hành trình di sản!
-            </h2>
-            <p className="font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">
-              Yêu cầu đặt vé máy bay chặng <span className="font-bold">{origin} → {destination}</span> đã được xử lý và lưu trữ thành công trên hệ thống Duffel Sandbox & WanderVN SQL Server.
+            <h3 className="font-display-md text-headline-md text-primary font-bold">
+              Khám Phá Các Chặng Bay Thượng Lưu
+            </h3>
+            <p className="text-body-md text-on-surface-variant max-w-xl leading-relaxed">
+              WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam. 
+              Hãy điền thông tin chặng bay và ngày khởi hành ở thanh tìm kiếm phía trên để chúng tôi tìm kiếm các ưu đãi chuyến bay tốt nhất dành cho hành trình tinh hoa của bạn.
             </p>
-
-            <div className="bg-surface-container-low p-6 rounded border border-outline-variant/20 text-left space-y-4 mb-8">
-              <div className="flex justify-between items-center text-body-md">
-                <span className="text-on-surface-variant">Mã đặt vé (Order ID):</span>
-                <span className="font-mono font-bold text-primary">{bookingSuccessData.bookingCode}</span>
+            <div className="w-full border-t border-outline/10 my-4" />
+            <div className="w-full text-left">
+              <span className="font-label-md text-label-md text-secondary uppercase tracking-widest block mb-4 text-center">
+                Gợi ý chặng bay phổ biến
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {[
+                  { from: 'HAN', to: 'SGN', title: 'Hà Nội → TP. Hồ Chí Minh', desc: 'Chặng bay nhộn nhịp nhất nối liền 2 đầu cầu kinh tế.' },
+                  { from: 'HAN', to: 'DAD', title: 'Hà Nội → Đà Nẵng', desc: 'Hành trình đến với thành phố đáng sống bên sông Hàn thơ mộng.' },
+                  { from: 'SGN', to: 'CXR', title: 'TP. Hồ Chí Minh → Nha Trang', desc: 'Chuyến đi nghỉ dưỡng ngập tràn nắng vàng trên vịnh ngọc.' },
+                  { from: 'HAN', to: 'PQC', title: 'Hà Nội → Phú Quốc', desc: 'Đắm mình trong làn nước xanh ngọc bích của Đảo Ngọc.' },
+                  { from: 'SGN', to: 'VDO', title: 'TP. Hồ Chí Minh → Vân Đồn', desc: 'Cửa ngõ khám phá kỳ quan thiên nhiên thế giới Vịnh Hạ Long.' },
+                  { from: 'DAD', to: 'SGN', title: 'Đà Nẵng → TP. Hồ Chí Minh', desc: 'Chặng bay khứ hồi kết nối biển xanh và đô thị sầm uất.' },
+                ].map((route) => (
+                  <button
+                    key={`${route.from}-${route.to}`}
+                    onClick={() => handleSearchSubmit(route.from, route.to, departureDate)}
+                    className="p-5 border border-outline/15 hover:border-primary/40 rounded-lg text-left bg-surface-container-low hover:bg-surface-container-high transition-all flex flex-col gap-1 limestone-shadow-sm hover:scale-[1.02]"
+                  >
+                    <span className="font-label-md text-primary">{route.title}</span>
+                    <span className="text-caption text-on-surface-variant font-medium line-clamp-2 mt-1">{route.desc}</span>
+                  </button>
+                ))}
               </div>
-              <div className="flex justify-between items-center text-body-md">
-                <span className="text-on-surface-variant">Tổng chi phí:</span>
-                <span className="font-bold text-secondary-fixed-dim bg-primary text-on-primary px-3 py-1 text-sm rounded">
-                  ${bookingSuccessData.totalPrice.toFixed(2)} USD
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-body-md">
-                <span className="text-on-surface-variant">Trạng thái đặt vé:</span>
-                <span className="font-bold text-emerald-600 font-label-md uppercase tracking-wider text-xs bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                  {bookingSuccessData.status}
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-body-md">
-                <span className="text-on-surface-variant">Hành khách:</span>
-                <span className="font-semibold text-primary">{passengerForm.familyName} {passengerForm.givenName}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => {
-                  setBookingSuccessData(null);
-                  setSelectedOffer(null);
-                }}
-                className="font-label-md text-label-md uppercase tracking-widest px-8 py-3.5 border border-primary text-primary hover:bg-primary hover:text-on-primary transition-all rounded-[4px]"
-              >
-                Đặt thêm vé mới
-              </button>
-              <button
-                onClick={() => window.location.href = '/stays'}
-                className="font-label-md text-label-md uppercase tracking-widest px-8 py-3.5 bg-secondary text-on-primary hover:bg-on-secondary-container transition-all rounded-[4px]"
-              >
-                Tìm kiếm khách sạn
-              </button>
             </div>
           </div>
         ) : (
           <>
-            {!hasSearched ? (
-              <div className="bg-surface border border-outline/10 p-12 text-center rounded-lg limestone-shadow max-w-3xl mx-auto flex flex-col items-center gap-6 mt-4">
-                <div className="w-20 h-20 rounded-full bg-secondary/10 flex items-center justify-center text-secondary mb-2 animate-bounce">
-                  <Plane className="h-10 w-10 rotate-[45deg]" />
-                </div>
-                <h3 className="font-display-md text-headline-md text-primary font-bold">
-                  Khám Phá Các Chặng Bay Thượng Lưu
-                </h3>
-                <p className="text-body-md text-on-surface-variant max-w-xl leading-relaxed">
-                  WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam. 
-                  Hãy điền thông tin chặng bay và ngày khởi hành ở thanh tìm kiếm phía trên để chúng tôi tìm kiếm các ưu đãi chuyến bay tốt nhất dành cho hành trình tinh hoa của bạn.
-                </p>
-                <div className="w-full border-t border-outline/10 my-4" />
-                <div className="w-full text-left">
-                  <span className="font-label-md text-label-md text-secondary uppercase tracking-widest block mb-4 text-center">
-                    Gợi ý chặng bay phổ biến
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {[
-                      { from: 'HAN', to: 'SGN', label: 'Hà Nội (HAN) ⇄ TP. HCM (SGN)', desc: 'Chặng bay nhộn nhịp nhất' },
-                      { from: 'HAN', to: 'DAD', label: 'Hà Nội (HAN) ⇄ Đà Nẵng (DAD)', desc: 'Khám phá di sản miền Trung' },
-                      { from: 'SGN', to: 'PQC', label: 'TP. HCM (SGN) ⇄ Phú Quốc (PQC)', desc: 'Thiên đường nghỉ dưỡng đảo ngọc' },
-                    ].map((route, i) => (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          const futureDate = new Date();
-                          futureDate.setDate(futureDate.getDate() + 7);
-                          const dateStr = futureDate.toISOString().split('T')[0];
-                          setSearchParams({
-                            origin: route.from,
-                            destination: route.to,
-                            departureDate: dateStr
-                          });
-                        }}
-                        className="flex flex-col items-center text-center p-4 border border-outline/10 rounded-lg hover:border-primary/30 hover:bg-surface-container-low transition-all duration-300 limestone-shadow"
-                      >
-                        <span className="font-bold text-body-md text-primary mb-1">{route.label}</span>
-                        <span className="text-xs text-on-surface-variant font-light">{route.desc}</span>
-                      </button>
-                    ))}
+            {loading ? (
+              /* High-End Skeleton Loading Cards */
+              <div className="space-y-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-surface border border-outline/10 p-8 rounded-lg flex flex-col lg:flex-row items-center justify-between gap-8 animate-pulse">
+                    <div className="flex items-center gap-6 lg:w-1/4 w-full">
+                      <div className="w-12 h-12 bg-outline-variant/30 rounded" />
+                      <div className="space-y-2">
+                        <div className="h-4 bg-outline-variant/30 w-24 rounded" />
+                        <div className="h-3 bg-outline-variant/30 w-16 rounded" />
+                      </div>
+                    </div>
+                    <div className="flex-1 flex items-center justify-between gap-6 md:gap-12 w-full lg:px-12">
+                      <div className="space-y-2">
+                        <div className="h-6 bg-outline-variant/30 w-16 rounded" />
+                        <div className="h-3 bg-outline-variant/30 w-8 rounded" />
+                      </div>
+                      <div className="flex-grow max-w-[200px] h-2 bg-outline-variant/20 rounded" />
+                      <div className="space-y-2 text-right">
+                        <div className="h-6 bg-outline-variant/30 w-16 rounded" />
+                        <div className="h-3 bg-outline-variant/30 w-8 rounded" />
+                      </div>
+                    </div>
+                    <div className="lg:w-1/4 w-full flex flex-row lg:flex-col items-center lg:items-end justify-between gap-4">
+                      <div className="h-6 bg-outline-variant/30 w-20 rounded" />
+                      <div className="h-10 bg-outline-variant/30 w-36 rounded" />
+                    </div>
                   </div>
-                </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="bg-surface border border-outline/10 p-12 text-center rounded-lg limestone-shadow max-w-xl mx-auto flex flex-col items-center gap-4">
+                <span className="text-secondary text-5xl">⚠️</span>
+                <h3 className="font-display-md text-headline-md text-primary font-bold">Không tìm thấy kết quả</h3>
+                <p className="text-body-md text-on-surface-variant leading-relaxed">{error}</p>
+                <button
+                  onClick={() => setSearchParams({})}
+                  className="px-6 py-2.5 border border-primary text-primary hover:bg-primary hover:text-on-primary font-label-md text-label-md uppercase tracking-wider transition-all rounded-[4px] mt-4"
+                >
+                  Xóa bộ lọc tìm kiếm
+                </button>
               </div>
             ) : (
-              <>
-                {/* Header thông tin tìm kiếm */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center pb-4 border-b border-outline-variant/20 mb-6">
                   <div>
-                    <span className="font-label-md text-label-md text-secondary uppercase tracking-widest block mb-2">
-                      Chuyến Bay Trong Ngày
-                    </span>
-                    <h2 className="font-display-lg text-headline-lg text-primary select-none">
-                      Chặng bay {origin} <span className="font-mono text-outline-variant mx-2">→</span> {destination}
-                    </h2>
-                    <p className="text-on-surface-variant italic font-body-md mt-1">
-                      Ngày khởi hành {departureDate}.
+                    <h2 className="font-display-md text-headline-md text-primary">Các Chuyến Bay Khả Dụng</h2>
+                    <p className="text-body-md text-on-surface-variant italic mt-0.5">
+                      Tìm thấy {offers.length} chuyến bay cao cấp từ {origin} đi {destination}
                     </p>
                   </div>
                 </div>
 
-                {/* Trạng thái Loading với Skeleton Cards */}
-                {loading && (
-                  <div className="space-y-6">
-                    <div className="flex flex-col items-center justify-center py-6 gap-2 mb-4">
-                      <Loader2 className="h-8 w-8 text-secondary animate-spin" />
-                      <span className="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest animate-pulse">
-                        Đang kết nối Duffel API để tìm chuyến bay...
-                      </span>
-                    </div>
-                    {[1, 2, 3].map((n) => (
-                      <div key={n} className="bg-surface border border-outline/10 p-8 rounded-lg animate-pulse space-y-6 limestone-shadow">
-                        <div className="flex flex-col lg:flex-row justify-between items-center gap-8">
-                          <div className="flex items-center gap-6 lg:w-1/4 w-full">
-                            <div className="w-12 h-12 bg-outline/10 rounded-full" />
-                            <div className="space-y-2">
-                              <div className="h-4 w-24 bg-outline/10 rounded animate-pulse" />
-                              <div className="h-3 w-16 bg-outline/10 rounded animate-pulse" />
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between gap-6 lg:w-2/4 w-full">
-                            <div className="text-right space-y-1">
-                              <div className="h-5 w-16 bg-outline/10 rounded ml-auto animate-pulse" />
-                              <div className="h-3 w-12 bg-outline/10 rounded ml-auto animate-pulse" />
-                            </div>
-                            <div className="flex-1 flex flex-col items-center gap-1">
-                              <div className="h-3 w-20 bg-outline/10 rounded animate-pulse" />
-                              <div className="w-full h-[2px] bg-outline/10 relative" />
-                              <div className="h-3 w-16 bg-outline/10 rounded animate-pulse" />
-                            </div>
-                            <div className="text-left space-y-1">
-                              <div className="h-5 w-16 bg-outline/10 rounded animate-pulse" />
-                              <div className="h-3 w-12 bg-outline/10 rounded animate-pulse" />
-                            </div>
-                          </div>
-                          <div className="lg:w-1/4 w-full flex flex-col items-end gap-2">
-                            <div className="h-6 w-24 bg-outline/10 rounded animate-pulse" />
-                            <div className="h-10 w-full bg-outline/10 rounded animate-pulse" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Trạng thái Lỗi */}
-                {error && !loading && (
-                  <div className="bg-surface-container-low border border-outline-variant/30 p-8 text-center rounded-lg max-w-xl mx-auto limestone-shadow">
-                    <p className="text-body-md text-on-surface font-medium mb-2">{error}</p>
-                    <p className="text-caption text-on-surface-variant">Vui lòng thử chọn chặng bay khác hoặc thay đổi ngày khởi hành xa hơn để tìm kiếm.</p>
-                  </div>
-                )}
-
-                {/* Danh sách thẻ chuyến bay */}
-                {!loading && !error && offers.length > 0 && (
-              <div className="space-y-6">
                 {offers.map((offer) => {
                   const isSelected = selectedOffer?.id === offer.id;
 
@@ -495,12 +353,10 @@ export const SearchFlights: React.FC = () => {
             )}
           </>
         )}
-      </>
-    )}
       </main>
 
       {/* Booking Bar (Thanh chọn vé cố định ở chân trang) */}
-      {selectedOffer && !bookingSuccessData && (
+      {selectedOffer && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-primary text-on-primary px-8 py-4 rounded-full shadow-2xl z-40 flex flex-col sm:flex-row items-center justify-between gap-6 border border-white/10 backdrop-blur-md animate-slide-up">
           <div className="flex items-center gap-6 divide-x divide-white/20 w-full sm:w-auto">
             <div className="flex flex-col">
@@ -517,187 +373,11 @@ export const SearchFlights: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={() => setIsPassengerModalOpen(true)}
+            onClick={() => navigate('/flights/checkout', { state: { offer: selectedOffer } })}
             className="bg-secondary-container text-on-secondary-container px-8 py-3 rounded-full font-label-md text-label-md hover:scale-105 transition-transform w-full sm:w-auto uppercase tracking-wider text-center select-none"
           >
             ĐẶT VÉ &amp; THANH TOÁN
           </button>
-        </div>
-      )}
-
-      {/* Passenger Details Modal (Form nhập thông tin hành khách sang trọng) */}
-      {isPassengerModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-surface border border-outline-variant/30 rounded-lg max-w-2xl w-full p-8 shadow-2xl limestone-shadow max-h-[90vh] overflow-y-auto animate-scale-in">
-            <div className="flex justify-between items-center border-b border-outline-variant/20 pb-4 mb-6">
-              <div>
-                <h3 className="font-display-lg text-headline-md text-primary">Thông Tin Hành Khách</h3>
-                <p className="text-caption text-on-surface-variant italic mt-0.5">Vui lòng nhập thông tin chính xác theo Hộ chiếu hoặc CCCD.</p>
-              </div>
-              <button
-                onClick={() => setIsPassengerModalOpen(false)}
-                className="text-on-surface-variant hover:text-primary font-bold text-lg select-none"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleBookingSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {/* Danh xưng */}
-                <div>
-                  <label className="font-label-md text-caption uppercase tracking-wider text-on-surface-variant block mb-2">Danh xưng</label>
-                  <select
-                    value={passengerForm.title}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, title: e.target.value })}
-                    className="w-full bg-surface border border-outline-variant/30 rounded px-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary cursor-pointer"
-                  >
-                    <option value="mr">Ông (Mr)</option>
-                    <option value="ms">Bà (Ms)</option>
-                    <option value="mrs">Cô/Chị (Mrs)</option>
-                  </select>
-                </div>
-
-                {/* Họ */}
-                <div className="sm:col-span-2">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-on-surface-variant block mb-2">Họ (Family Name)</label>
-                  <div className="relative flex items-center">
-                    <User className="absolute left-3 text-outline h-4.5 w-4.5" />
-                    <input
-                      type="text"
-                      required
-                      value={passengerForm.familyName}
-                      onChange={(e) => setPassengerForm({ ...passengerForm, familyName: e.target.value })}
-                      placeholder="e.g. NGUYEN"
-                      className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary uppercase"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Tên đệm & Tên gọi */}
-              <div>
-                <label className="font-label-md text-caption uppercase tracking-wider text-on-surface-variant block mb-2">Tên đệm &amp; Tên gọi (Given Name)</label>
-                <div className="relative flex items-center">
-                  <User className="absolute left-3 text-outline h-4.5 w-4.5" />
-                  <input
-                    type="text"
-                    required
-                    value={passengerForm.givenName}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, givenName: e.target.value })}
-                    placeholder="e.g. VAN A"
-                    className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary uppercase"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Ngày sinh */}
-                <div>
-                  <label className="font-label-md text-caption uppercase tracking-wider text-on-surface-variant block mb-2">Ngày sinh</label>
-                  <div className="relative flex items-center">
-                    <Calendar className="absolute left-3 text-outline h-4.5 w-4.5 pointer-events-none" />
-                    <input
-                      type="date"
-                      required
-                      value={passengerForm.bornOn}
-                      onChange={(e) => setPassengerForm({ ...passengerForm, bornOn: e.target.value })}
-                      className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary"
-                    />
-                  </div>
-                </div>
-
-                {/* Giới tính */}
-                <div>
-                  <label className="font-label-md text-caption uppercase tracking-wider text-on-surface-variant block mb-2">Giới tính</label>
-                  <select
-                    value={passengerForm.gender}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, gender: e.target.value })}
-                    className="w-full bg-surface border border-outline-variant/30 rounded px-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary cursor-pointer"
-                  >
-                    <option value="m">Nam (Male)</option>
-                    <option value="f">Nữ (Female)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Email */}
-                <div>
-                  <label className="font-label-md text-caption uppercase tracking-wider text-on-surface-variant block mb-2">Địa chỉ Email</label>
-                  <div className="relative flex items-center">
-                    <Mail className="absolute left-3 text-outline h-4.5 w-4.5" />
-                    <input
-                      type="email"
-                      required
-                      value={passengerForm.email}
-                      onChange={(e) => setPassengerForm({ ...passengerForm, email: e.target.value })}
-                      placeholder="nguyenvana@example.com"
-                      className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary"
-                    />
-                  </div>
-                </div>
-
-                {/* Số điện thoại */}
-                <div>
-                  <label className="font-label-md text-caption uppercase tracking-wider text-on-surface-variant block mb-2">Số điện thoại</label>
-                  <div className="relative flex items-center">
-                    <Phone className="absolute left-3 text-outline h-4.5 w-4.5" />
-                    <input
-                      type="tel"
-                      required
-                      value={passengerForm.phoneNumber}
-                      onChange={(e) => setPassengerForm({ ...passengerForm, phoneNumber: e.target.value })}
-                      placeholder="+84901234567"
-                      className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Số hộ chiếu / CCCD */}
-              <div>
-                <label className="font-label-md text-caption uppercase tracking-wider text-on-surface-variant block mb-2">Số Hộ chiếu (Passport) / CCCD</label>
-                <div className="relative flex items-center">
-                  <FileText className="absolute left-3 text-outline h-4.5 w-4.5" />
-                  <input
-                    type="text"
-                    required
-                    value={passengerForm.passportNumber}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, passportNumber: e.target.value })}
-                    placeholder="e.g. B1234567"
-                    className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary uppercase"
-                  />
-                </div>
-              </div>
-
-              {/* Nút gửi */}
-              <div className="pt-4 flex gap-4 justify-end border-t border-outline-variant/20">
-                <button
-                  type="button"
-                  onClick={() => setIsPassengerModalOpen(false)}
-                  disabled={bookingLoading}
-                  className="px-6 py-2.5 border border-outline/30 text-on-surface hover:bg-surface-container transition-all font-label-md text-label-md uppercase tracking-wider rounded-[4px] select-none"
-                >
-                  HỦY BỎ
-                </button>
-                <button
-                  type="submit"
-                  disabled={bookingLoading}
-                  className="px-8 py-2.5 bg-secondary text-on-primary hover:bg-on-secondary-container transition-all font-label-md text-label-md uppercase tracking-wider flex items-center justify-center gap-2 rounded-[4px] select-none"
-                >
-                  {bookingLoading ? (
-                    <>
-                      <Loader2 className="h-4.5 w-4.5 animate-spin" />
-                      ĐANG XỬ LÝ...
-                    </>
-                  ) : (
-                    'XÁC NHẬN ĐẶT VÉ'
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
     </div>
