@@ -48,15 +48,19 @@ public class SearchController : ControllerBase
 
     /// <summary>
     /// POST: api/v1/search/flights
-    /// Tìm kiếm chuyến bay thời gian thực từ Duffel API.
+    /// Tìm kiếm chuyến bay thời gian thực từ Duffel API đã được tinh gọn qua DTO.
     /// </summary>
     [HttpPost("flights")]
     public async Task<IActionResult> SearchFlights([FromBody] SearchFlightsQuery query)
     {
-        // Nhận dữ liệu JSON gốc từ Duffel
-        var rawJson = await _mediator.Send(query);
+        var data = await _mediator.Send(query);
         
-        // Trả về trực tiếp chuỗi JSON gốc với Content-Type phù hợp để tối ưu hiệu suất
-        return Content(rawJson, "application/json");
+        var response = new ApiResponse<List<WanderVN.Application.DTOs.Response.FlightOfferDto>>(
+            true, 
+            "Tìm kiếm chuyến bay thành công!", 
+            200, 
+            data
+        );
+        return Ok(response);
     }
 }

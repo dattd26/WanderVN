@@ -23,6 +23,7 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { name: 'Điểm đến', path: '#' },
     { name: 'Khách sạn', path: '/stays' },
+    { name: 'Vé máy bay', path: '/flights' },
     { name: 'Trải nghiệm', path: '#' },
     { name: 'Nhật ký hành trình', path: '#' },
   ];
