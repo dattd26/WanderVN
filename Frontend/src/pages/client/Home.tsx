@@ -1,5 +1,5 @@
 import React from 'react';
-import { SearchForm } from '../components/SearchForm';
+import { SearchForm } from '../../components/client/SearchForm';
 import { Compass, ShieldCheck, HeartHandshake } from 'lucide-react';
 
 export const Home: React.FC = () => {

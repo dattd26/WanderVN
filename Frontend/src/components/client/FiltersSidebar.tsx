@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Map, Sliders, Check } from 'lucide-react';
-import type { PropertyType } from '../types';
-import { propertyTypeService } from '../services';
+import type { PropertyType } from '../../types';
+import { propertyTypeService } from '../../services';
 
 interface FiltersSidebarProps {
   onPriceChange?: (min: number, max: number) => void;

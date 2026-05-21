@@ -1,5 +1,5 @@
-import { request } from './apiClient';
-import type { FlightSearchQuery, FlightOfferDto, CreateFlightBookingRequest, FlightBookingResponse } from '../types';
+import { request } from '../shared/apiClient';
+import type { FlightSearchQuery, FlightOfferDto, CreateFlightBookingRequest, FlightBookingResponse } from '../../types';
 
 export const flightService = {
   /**

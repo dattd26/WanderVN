@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, Search, Hotel as HotelIcon } from 'lucide-react';
-import type { SearchAutocompleteDto } from '../types';
-import { searchService } from '../services';
+import type { SearchAutocompleteDto } from '../../types';
+import { searchService } from '../../services';
 
 interface SearchFormProps {
   compact?: boolean;

@@ -1,7 +1,7 @@
 // Dịch vụ API xử lý tìm kiếm lưu trú và gợi ý tự động (Autocomplete)
 
-import { request } from './apiClient';
-import type { SearchHotelsDto, SearchHotelsQuery, SearchAutocompleteDto } from '../types';
+import { request } from '../shared/apiClient';
+import type { SearchHotelsDto, SearchHotelsQuery, SearchAutocompleteDto } from '../../types';
 
 export const searchService = {
   /**

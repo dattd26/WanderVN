@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { SearchForm } from '../components/SearchForm';
-import { FiltersSidebar } from '../components/FiltersSidebar';
-import { HotelCard } from '../components/HotelCard';
-import type { SearchHotelsDto } from '../types';
-import { searchService } from '../services';
+import { SearchForm } from '../../components/client/SearchForm';
+import { FiltersSidebar } from '../../components/client/FiltersSidebar';
+import { HotelCard } from '../../components/client/HotelCard';
+import type { SearchHotelsDto } from '../../types';
+import { searchService } from '../../services';
 import { Loader2, Hotel } from 'lucide-react';
 
 export const SearchStays: React.FC = () => {

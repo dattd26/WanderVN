@@ -1,7 +1,7 @@
 // Điểm export tập trung toàn bộ các TypeScript interface
 
-export * from './common';
-export * from './location';
-export * from './hotel';
-export * from './propertyType';
-export * from './flight';
+export * from './shared/common';
+export * from './client/location';
+export * from './client/hotel';
+export * from './client/propertyType';
+export * from './client/flight';

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FlightSearchForm } from '../components/FlightSearchForm';
-import { flightService } from '../services/flightService';
-import type { FlightOfferDto, PassengerDto } from '../types';
+import { FlightSearchForm } from '../../components/client/FlightSearchForm';
+import { flightService } from '../../services';
+import type { FlightOfferDto, PassengerDto } from '../../types';
 import { 
   Plane, 
   Utensils, 
