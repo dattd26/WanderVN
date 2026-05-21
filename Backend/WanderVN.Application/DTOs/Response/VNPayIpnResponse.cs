@@ -5,6 +5,8 @@ namespace WanderVN.Application.DTOs.Response;
 /// </summary>
 public class VNPayIpnResponse
 {
+    public bool Success { get; set; }
+
     /// <summary>
     /// Mã lỗi phản hồi (Ví dụ: "00" là thành công, "97" là sai chữ ký, v.v.).
     /// </summary>

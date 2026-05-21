@@ -36,8 +36,11 @@ public class VNPayService : IVNPayService
             throw new InvalidOperationException("Cấu hình VNPay không hợp lệ hoặc bị thiếu.");
         }
 
+        // Chuyển đổi số tiền từ USD sang VND bằng bộ công cụ chuyển đổi để tránh lỗi giao dịch không hợp lệ
+        decimal vndAmount = WanderVN.Application.Common.Utils.CurrencyConverter.ConvertUsdToVnd(amount);
+
         // VNPay yêu cầu số tiền nhân với 100 và chuyển thành chuỗi số nguyên
-        long paymentAmount = (long)(amount * 100);
+        long paymentAmount = (long)(vndAmount * 100);
 
         // Tạo danh sách tham số gửi sang VNPay
         var vnpayData = new SortedDictionary<string, string>(StringComparer.Ordinal)

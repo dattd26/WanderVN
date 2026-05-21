@@ -65,19 +65,20 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
 
             if (booking == null)
             {
-                return new VNPayIpnResponse { RspCode = "01", Message = "Order not found" };
+                return new VNPayIpnResponse { Success = false, RspCode = "01", Message = "Order not found" };
             }
 
-            // 4. Kiểm tra số tiền thanh toán từ VNPay có trùng khớp với giá trị của hóa đơn hay không
-            if (booking.TotalPrice != amountPaid)
+            // 4. Kiểm tra số tiền thanh toán từ VNPay có trùng khớp với giá trị của hóa đơn hay không (quy đổi sang VND để so sánh)
+            decimal expectedAmountInVnd = WanderVN.Application.Common.Utils.CurrencyConverter.ConvertUsdToVnd(booking.TotalPrice);
+            if (expectedAmountInVnd != amountPaid)
             {
-                return new VNPayIpnResponse { RspCode = "04", Message = "Invalid Amount" };
+                return new VNPayIpnResponse { Success = false, RspCode = "04", Message = "Invalid Amount" };
             }
 
             // 5. Kiểm tra xem hóa đơn này đã được xác nhận thanh toán trước đó chưa (tránh Double Confirm)
             if (booking.PaymentStatus == "Paid")
             {
-                return new VNPayIpnResponse { RspCode = "02", Message = "Order already confirmed" };
+                return new VNPayIpnResponse { Success = true, RspCode = "02", Message = "Order already confirmed" };
             }
 
             // 6. Xử lý trạng thái thanh toán dựa trên vnp_ResponseCode ("00" là thành công)
@@ -86,11 +87,11 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
                 booking.PaymentStatus = "Paid";
                 booking.Status = "Confirmed";
 
-                // Lưu thông tin giao dịch vào bảng Payments làm lịch sử giao dịch
+                // Lưu thông tin giao dịch vào bảng Payments làm lịch sử giao dịch (sử dụng đơn vị USD nhất quán)
                 var payment = new WanderVN.Domain.Entities.Payments
                 {
                     BookingId = booking.Id,
-                    Amount = amountPaid,
+                    Amount = booking.TotalPrice,
                     Method = "VNPAY",
                     TransactionId = transactionNo,
                     PaymentDate = DateTimeOffset.UtcNow
@@ -108,12 +109,12 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
             // Lưu thay đổi vào cơ sở dữ liệu
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            return new VNPayIpnResponse { RspCode = "00", Message = "Confirm Success" };
+            return new VNPayIpnResponse { Success = true, RspCode = "00", Message = "Confirm Success" };
         }
         catch (Exception ex)
         {
             Console.WriteLine($"⚠️ Lỗi khi xử lý IPN VNPay: {ex.Message}");
-            return new VNPayIpnResponse { RspCode = "99", Message = "Internal Server Error" };
+            return new VNPayIpnResponse { Success = false, RspCode = "99", Message = "Internal Server Error" };
         }
     }
 }
