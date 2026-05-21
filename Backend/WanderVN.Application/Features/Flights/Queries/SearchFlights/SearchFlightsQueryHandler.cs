@@ -59,7 +59,7 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
         {
             responseJson = RewriteJsonForVietnameseAirlinesAndAirports(responseJson, originalOrigin, originalDestination);
         }
-        
+
         // Thực hiện parse JSON từ Duffel và ánh xạ (map) sang List<FlightOfferDto> tối giản
         return ParseDuffelOffers(responseJson);
     }
@@ -70,7 +70,7 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
     private bool IsVietnameseAirport(string code)
     {
         if (string.IsNullOrEmpty(code)) return false;
-        
+
         var vnAirports = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase)
         {
             "HAN", "SGN", "DAD", "CXR", "PQC", "HPH", "VCA", "VII", "HUI", "UIH", "PXU", "TBB", "BMV", "VCL", "VCS", "VKG", "DIN", "SQH"
@@ -95,12 +95,12 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
             { "PQC", ("Phu Quoc International Airport", "Phu Quoc", "VVPQ", 10.1691, 103.9904) }
         };
 
-        var originInfo = airportDetails.ContainsKey(targetOrigin) 
-            ? airportDetails[targetOrigin] 
+        var originInfo = airportDetails.ContainsKey(targetOrigin)
+            ? airportDetails[targetOrigin]
             : ("Noi Bai International Airport", "Hanoi", "VVNB", 21.2212, 105.8072);
 
-        var destInfo = airportDetails.ContainsKey(targetDestination) 
-            ? airportDetails[targetDestination] 
+        var destInfo = airportDetails.ContainsKey(targetDestination)
+            ? airportDetails[targetDestination]
             : ("Tan Son Nhat International Airport", "Ho Chi Minh City", "VVTS", 10.8186, 106.6554);
 
         // 2. Tiến hành thay thế các thuộc tính của LHR (London Heathrow) bằng targetOrigin
@@ -125,27 +125,27 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
         // a. Duffel Airways (ZZ) -> Vietnam Airlines (VN)
         json = json.Replace("\"iata_code\":\"ZZ\"", "\"iata_code\":\"VN\"");
         json = json.Replace("\"name\":\"Duffel Airways\"", "\"name\":\"Vietnam Airlines\"");
-        json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/ZZ.svg\"", 
+        json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/ZZ.svg\"",
                             "\"logo_symbol_url\":\"https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Vietnam_Airlines_2015_wordmark.svg/640px-Vietnam_Airlines_2015_wordmark.svg.png\"");
 
         // b. American Airlines (AA) -> VietJet Air (VJ)
         json = json.Replace("\"iata_code\":\"AA\"", "\"iata_code\":\"VJ\"");
         json = json.Replace("\"name\":\"American Airlines\"", "\"name\":\"VietJet Air\"");
-        json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/AA.svg\"", 
+        json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/AA.svg\"",
                             "\"logo_symbol_url\":\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/VietJet_Air_logo.svg/640px-VietJet_Air_logo.svg.png\"");
         json = json.Replace("\"logo_lockup_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-lockup/AA.svg\"", "\"logo_lockup_url\":null");
 
         // c. British Airways (BA) -> Bamboo Airways (QH)
         json = json.Replace("\"iata_code\":\"BA\"", "\"iata_code\":\"QH\"");
         json = json.Replace("\"name\":\"British Airways\"", "\"name\":\"Bamboo Airways\"");
-        json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/BA.svg\"", 
+        json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/BA.svg\"",
                             "\"logo_symbol_url\":\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Bamboo_Airways_logo.svg/640px-Bamboo_Airways_logo.svg.png\"");
         json = json.Replace("\"logo_lockup_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-lockup/BA.svg\"", "\"logo_lockup_url\":null");
 
         // d. Iberia (IB) -> Vietravel Airlines (VU)
         json = json.Replace("\"iata_code\":\"IB\"", "\"iata_code\":\"VU\"");
         json = json.Replace("\"name\":\"Iberia\"", "\"name\":\"Vietravel Airlines\"");
-        json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/IB.svg\"", 
+        json = json.Replace("\"logo_symbol_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/IB.svg\"",
                             "\"logo_symbol_url\":\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Vietravel_Airlines_logo.svg/640px-Vietravel_Airlines_logo.svg.png\"");
         json = json.Replace("\"logo_lockup_url\":\"https://assets.duffel.com/img/airlines/for-light-background/full-color-lockup/IB.svg\"", "\"logo_lockup_url\":null");
 
@@ -165,30 +165,31 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
         {
             using var doc = JsonDocument.Parse(responseJson);
             var root = doc.RootElement;
-            
-            if (!root.TryGetProperty("data", out var dataProp)) return resultList;
+
+            if (!root.TryGetProperty("data", out var dataProp) || dataProp.ValueKind != JsonValueKind.Object) return resultList;
             if (!dataProp.TryGetProperty("offers", out var offersProp) || offersProp.ValueKind != JsonValueKind.Array) return resultList;
 
             foreach (var offer in offersProp.EnumerateArray())
             {
+                if (offer.ValueKind != JsonValueKind.Object) continue;
                 var dto = new FlightOfferDto();
-                
+
                 // 1. Trích xuất ID ưu đãi
-                if (offer.TryGetProperty("id", out var idProp))
+                if (offer.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String)
                 {
                     dto.Id = idProp.GetString() ?? string.Empty;
                 }
 
                 // 2. Trích xuất giá cả
-                if (offer.TryGetProperty("total_amount", out var amountProp))
+                if (offer.TryGetProperty("total_amount", out var amountProp) && amountProp.ValueKind == JsonValueKind.String)
                 {
                     if (decimal.TryParse(amountProp.GetString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedAmount))
                     {
                         dto.TotalAmount = parsedAmount;
                     }
                 }
-                
-                if (offer.TryGetProperty("total_currency", out var currencyProp))
+
+                if (offer.TryGetProperty("total_currency", out var currencyProp) && currencyProp.ValueKind == JsonValueKind.String)
                 {
                     dto.TotalCurrency = currencyProp.GetString() ?? "USD";
                 }
@@ -197,7 +198,7 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                 if (offer.TryGetProperty("passengers", out var passengersProp) && passengersProp.ValueKind == JsonValueKind.Array && passengersProp.GetArrayLength() > 0)
                 {
                     var firstPassenger = passengersProp[0];
-                    if (firstPassenger.TryGetProperty("id", out var passIdProp))
+                    if (firstPassenger.ValueKind == JsonValueKind.Object && firstPassenger.TryGetProperty("id", out var passIdProp) && passIdProp.ValueKind == JsonValueKind.String)
                     {
                         dto.PassengerId = passIdProp.GetString() ?? string.Empty;
                     }
@@ -207,54 +208,60 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                 if (offer.TryGetProperty("slices", out var slicesProp) && slicesProp.ValueKind == JsonValueKind.Array && slicesProp.GetArrayLength() > 0)
                 {
                     var slice = slicesProp[0]; // Chỉ hiển thị chặng chiều đi
-                    
-                    if (slice.TryGetProperty("duration", out var durProp))
-                    {
-                        dto.Duration = durProp.GetString() ?? string.Empty;
-                    }
 
-                    // Điểm đi / Điểm đến chặng bay
-                    if (slice.TryGetProperty("origin", out var originProp))
+                    if (slice.ValueKind == JsonValueKind.Object)
                     {
-                        if (originProp.TryGetProperty("iata_code", out var origCodeProp)) dto.OriginCode = origCodeProp.GetString() ?? string.Empty;
-                        if (originProp.TryGetProperty("name", out var origNameProp)) dto.OriginName = origNameProp.GetString() ?? string.Empty;
-                    }
-
-                    if (slice.TryGetProperty("destination", out var destProp))
-                    {
-                        if (destProp.TryGetProperty("iata_code", out var destCodeProp)) dto.DestinationCode = destCodeProp.GetString() ?? string.Empty;
-                        if (destProp.TryGetProperty("name", out var destNameProp)) dto.DestinationName = destNameProp.GetString() ?? string.Empty;
-                    }
-
-                    // 5. Trích xuất thông tin các phân đoạn (Segments)
-                    if (slice.TryGetProperty("segments", out var segmentsProp) && segmentsProp.ValueKind == JsonValueKind.Array && segmentsProp.GetArrayLength() > 0)
-                    {
-                        var segment = segmentsProp[0]; // Phân đoạn cất cánh đầu tiên
-
-                        if (segment.TryGetProperty("departing_at", out var depProp) && DateTime.TryParse(depProp.GetString(), out var depTime))
+                        if (slice.TryGetProperty("duration", out var durProp) && durProp.ValueKind == JsonValueKind.String)
                         {
-                            dto.DepartingAt = depTime;
+                            dto.Duration = durProp.GetString() ?? string.Empty;
                         }
 
-                        // Lấy thời gian hạ cánh của phân đoạn cuối cùng trong slice
-                        var lastSegment = segmentsProp[segmentsProp.GetArrayLength() - 1];
-                        if (lastSegment.TryGetProperty("arriving_at", out var arrProp) && DateTime.TryParse(arrProp.GetString(), out var arrTime))
+                        // Điểm đi / Điểm đến chặng bay
+                        if (slice.TryGetProperty("origin", out var originProp) && originProp.ValueKind == JsonValueKind.Object)
                         {
-                            dto.ArrivingAt = arrTime;
+                            if (originProp.TryGetProperty("iata_code", out var origCodeProp) && origCodeProp.ValueKind == JsonValueKind.String) dto.OriginCode = origCodeProp.GetString() ?? string.Empty;
+                            if (originProp.TryGetProperty("name", out var origNameProp) && origNameProp.ValueKind == JsonValueKind.String) dto.OriginName = origNameProp.GetString() ?? string.Empty;
                         }
 
-                        // Trích xuất thông tin hãng hàng không vận hành (operating_carrier)
-                        if (segment.TryGetProperty("operating_carrier", out var carrierProp))
+                        if (slice.TryGetProperty("destination", out var destProp) && destProp.ValueKind == JsonValueKind.Object)
                         {
-                            if (carrierProp.TryGetProperty("iata_code", out var cCodeProp)) dto.CarrierCode = cCodeProp.GetString() ?? string.Empty;
-                            if (carrierProp.TryGetProperty("name", out var cNameProp)) dto.CarrierName = cNameProp.GetString() ?? string.Empty;
-                            if (carrierProp.TryGetProperty("logo_symbol_url", out var cLogoProp)) dto.CarrierLogoUrl = cLogoProp.GetString() ?? string.Empty;
+                            if (destProp.TryGetProperty("iata_code", out var destCodeProp) && destCodeProp.ValueKind == JsonValueKind.String) dto.DestinationCode = destCodeProp.GetString() ?? string.Empty;
+                            if (destProp.TryGetProperty("name", out var destNameProp) && destNameProp.ValueKind == JsonValueKind.String) dto.DestinationName = destNameProp.GetString() ?? string.Empty;
                         }
 
-                        // Trích xuất dòng máy bay vận hành (aircraft)
-                        if (segment.TryGetProperty("aircraft", out var aircraftProp))
+                        // 5. Trích xuất thông tin các phân đoạn (Segments)
+                        if (slice.TryGetProperty("segments", out var segmentsProp) && segmentsProp.ValueKind == JsonValueKind.Array && segmentsProp.GetArrayLength() > 0)
                         {
-                            if (aircraftProp.TryGetProperty("name", out var airNameProp)) dto.AircraftName = airNameProp.GetString() ?? string.Empty;
+                            var segment = segmentsProp[0]; // Phân đoạn cất cánh đầu tiên
+
+                            if (segment.ValueKind == JsonValueKind.Object)
+                            {
+                                if (segment.TryGetProperty("departing_at", out var depProp) && depProp.ValueKind == JsonValueKind.String && DateTime.TryParse(depProp.GetString(), out var depTime))
+                                {
+                                    dto.DepartingAt = depTime;
+                                }
+
+                                // Lấy thời gian hạ cánh của phân đoạn cuối cùng trong slice
+                                var lastSegment = segmentsProp[segmentsProp.GetArrayLength() - 1];
+                                if (lastSegment.ValueKind == JsonValueKind.Object && lastSegment.TryGetProperty("arriving_at", out var arrProp) && arrProp.ValueKind == JsonValueKind.String && DateTime.TryParse(arrProp.GetString(), out var arrTime))
+                                {
+                                    dto.ArrivingAt = arrTime;
+                                }
+
+                                // Trích xuất thông tin hãng hàng không vận hành (operating_carrier)
+                                if (segment.TryGetProperty("operating_carrier", out var carrierProp) && carrierProp.ValueKind == JsonValueKind.Object)
+                                {
+                                    if (carrierProp.TryGetProperty("iata_code", out var cCodeProp) && cCodeProp.ValueKind == JsonValueKind.String) dto.CarrierCode = cCodeProp.GetString() ?? string.Empty;
+                                    if (carrierProp.TryGetProperty("name", out var cNameProp) && cNameProp.ValueKind == JsonValueKind.String) dto.CarrierName = cNameProp.GetString() ?? string.Empty;
+                                    if (carrierProp.TryGetProperty("logo_symbol_url", out var cLogoProp) && cLogoProp.ValueKind == JsonValueKind.String) dto.CarrierLogoUrl = cLogoProp.GetString() ?? string.Empty;
+                                }
+
+                                // Trích xuất dòng máy bay vận hành (aircraft)
+                                if (segment.TryGetProperty("aircraft", out var aircraftProp) && aircraftProp.ValueKind == JsonValueKind.Object)
+                                {
+                                    if (aircraftProp.TryGetProperty("name", out var airNameProp) && airNameProp.ValueKind == JsonValueKind.String) dto.AircraftName = airNameProp.GetString() ?? string.Empty;
+                                }
+                            }
                         }
                     }
                 }
