@@ -109,7 +109,7 @@ public class VNPayService : IVNPayService
 
         string? vnp_SecureHash = null;
         var rawData = new StringBuilder();
-        
+
         // Sắp xếp các tham số nhận được theo thứ tự alphabet
         var sortedParams = new SortedDictionary<string, string>(queryParameters, StringComparer.Ordinal);
 
@@ -133,7 +133,7 @@ public class VNPayService : IVNPayService
 
         if (rawData.Length > 0)
         {
-            rawData.Remove(rawData.Length - 1, 1);
+            rawData.Remove(rawData.Length - 1, 1); // xoa & cuoi cung
         }
 
         if (string.IsNullOrEmpty(vnp_SecureHash))
@@ -144,6 +144,8 @@ public class VNPayService : IVNPayService
         // Tính toán chữ ký từ dữ liệu nhận được để đối chiếu
         string calculatedHash = HmacSHA512(vnp_HashSecret, rawData.ToString());
 
+        // check xem hash từ query parameters từ VNPay gửi(IPN - server to server) 
+        // có trùng với hash với secret key của mình không
         // So sánh không phân biệt chữ hoa chữ thường
         return string.Equals(calculatedHash, vnp_SecureHash, StringComparison.OrdinalIgnoreCase);
     }

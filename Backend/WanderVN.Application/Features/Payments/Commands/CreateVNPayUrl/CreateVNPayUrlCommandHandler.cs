@@ -2,8 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using WanderVN.Application.Common.Interfaces;
+using WanderVN.Domain.Repositories;
 
 namespace WanderVN.Application.Features.Payments.Commands.CreateVNPayUrl;
 
@@ -12,12 +12,12 @@ namespace WanderVN.Application.Features.Payments.Commands.CreateVNPayUrl;
 /// </summary>
 public class CreateVNPayUrlCommandHandler : IRequestHandler<CreateVNPayUrlCommand, string>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IVNPayService _vnpayService;
 
-    public CreateVNPayUrlCommandHandler(IApplicationDbContext dbContext, IVNPayService vnpayService)
+    public CreateVNPayUrlCommandHandler(IUnitOfWork unitOfWork, IVNPayService vnpayService)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
         _vnpayService = vnpayService;
     }
 
@@ -26,9 +26,10 @@ public class CreateVNPayUrlCommandHandler : IRequestHandler<CreateVNPayUrlComman
     /// </summary>
     public async Task<string> Handle(CreateVNPayUrlCommand command, CancellationToken cancellationToken)
     {
-        // 1. Kiểm tra sự tồn tại của đơn đặt phòng/vé trong cơ sở dữ liệu
-        var booking = await _dbContext.Bookings
-            .FirstOrDefaultAsync(b => b.Id == command.BookingId, cancellationToken);
+        // 1. Kiểm tra sự tồn tại của đơn đặt phòng/vé trong cơ sở dữ liệu qua Repository
+        var booking = await _unitOfWork.Bookings.FindFirstOrDefaultAsync(
+            b => b.Id == command.BookingId,
+            cancellationToken: cancellationToken);
 
         if (booking == null)
         {

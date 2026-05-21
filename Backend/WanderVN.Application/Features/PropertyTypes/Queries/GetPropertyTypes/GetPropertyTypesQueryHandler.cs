@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using WanderVN.Application.Common.Interfaces;
 
 namespace WanderVN.Application.Features.PropertyTypes.Queries.GetPropertyTypes;
@@ -13,26 +11,15 @@ namespace WanderVN.Application.Features.PropertyTypes.Queries.GetPropertyTypes;
 /// </summary>
 public class GetPropertyTypesQueryHandler : IRequestHandler<GetPropertyTypesQuery, List<GetPropertyTypesDto>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IPropertyTypeRepository _propertyTypeRepository;
 
-    public GetPropertyTypesQueryHandler(IApplicationDbContext context)
+    public GetPropertyTypesQueryHandler(IPropertyTypeRepository propertyTypeRepository)
     {
-        _context = context;
+        _propertyTypeRepository = propertyTypeRepository;
     }
 
     public async Task<List<GetPropertyTypesDto>> Handle(GetPropertyTypesQuery request, CancellationToken cancellationToken)
     {
-        // Truy vấn toàn bộ danh mục từ database và map sang DTO
-        var propertyTypes = await _context.PropertyTypes
-            .AsNoTracking()
-            .Select(pt => new GetPropertyTypesDto
-            {
-                Id = pt.Id,
-                Name = pt.Name,
-                Code = pt.Code
-            })
-            .ToListAsync(cancellationToken);
-
-        return propertyTypes;
+        return await _propertyTypeRepository.GetPropertyTypesAsync(cancellationToken);
     }
 }

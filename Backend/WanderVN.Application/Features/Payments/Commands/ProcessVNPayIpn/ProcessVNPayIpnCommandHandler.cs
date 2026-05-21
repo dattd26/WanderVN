@@ -2,10 +2,10 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Application.DTOs.Response;
 using WanderVN.Domain.Entities;
+using WanderVN.Domain.Repositories;
 
 namespace WanderVN.Application.Features.Payments.Commands.ProcessVNPayIpn;
 
@@ -14,12 +14,12 @@ namespace WanderVN.Application.Features.Payments.Commands.ProcessVNPayIpn;
 /// </summary>
 public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnCommand, VNPayIpnResponse>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IVNPayService _vnpayService;
 
-    public ProcessVNPayIpnCommandHandler(IApplicationDbContext dbContext, IVNPayService vnpayService)
+    public ProcessVNPayIpnCommandHandler(IUnitOfWork unitOfWork, IVNPayService vnpayService)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
         _vnpayService = vnpayService;
     }
 
@@ -58,10 +58,11 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
         command.Parameters.TryGetValue("vnp_TransactionNo", out var transactionNo);
 
         try
-        {
-            // 3. Tìm kiếm đơn đặt hàng trong Database
-            var booking = await _dbContext.Bookings
-                .FirstOrDefaultAsync(b => b.Id == bookingId, cancellationToken);
+         {
+            // 3. Tìm kiếm đơn đặt hàng trong Database thông qua repository
+            var booking = await _unitOfWork.Bookings.FindFirstOrDefaultAsync(
+                b => b.Id == bookingId,
+                cancellationToken: cancellationToken);
 
             if (booking == null)
             {
@@ -97,7 +98,7 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
                     PaymentDate = DateTimeOffset.UtcNow
                 };
 
-                await _dbContext.Payments.AddAsync(payment, cancellationToken);
+                await _unitOfWork.Payments.AddAsync(payment, cancellationToken);
             }
             else
             {
@@ -106,8 +107,11 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
                 booking.Status = "Cancelled";
             }
 
-            // Lưu thay đổi vào cơ sở dữ liệu
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            // Đánh dấu cập nhật thực thể Booking
+            _unitOfWork.Bookings.Update(booking);
+
+            // Lưu thay đổi vào cơ sở dữ liệu qua Unit of Work
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new VNPayIpnResponse { Success = true, RspCode = "00", Message = "Confirm Success" };
         }

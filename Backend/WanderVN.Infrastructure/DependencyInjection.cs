@@ -39,6 +39,8 @@ public static class DependencyInjection
         services.AddScoped<IVNPayService, VNPayService>();
 
         services.AddScoped<IHotelRepository, HotelRepository>();
+        services.AddScoped<IPropertyTypeRepository, PropertyTypeRepository>();
+        services.AddScoped<ISearchAutocompleteRepository, SearchAutocompleteRepository>();
 
         return services;
     }
