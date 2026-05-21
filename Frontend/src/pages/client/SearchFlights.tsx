@@ -31,6 +31,8 @@ export const SearchFlights: React.FC = () => {
     return futureDate.toISOString().split('T')[0];
   })();
 
+  const hasSearched = !!(searchParams.get('origin') && searchParams.get('destination') && searchParams.get('departureDate'));
+
   const [offers, setOffers] = useState<FlightOfferDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -180,10 +182,10 @@ export const SearchFlights: React.FC = () => {
         </div>
         <div className="relative z-10 text-center text-on-primary px-margin-mobile">
           <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg mb-4 drop-shadow-xl select-none">
-            Heritage in the Skies
+            Tìm Chuyến Bay Của Bạn
           </h1>
           <p className="font-headline-md text-body-lg max-w-2xl mx-auto opacity-95 italic select-none">
-            Kết nối di sản ngàn năm với các chuyến bay thượng lưu bậc nhất Việt Nam.
+            Kết nối di sản ngàn năm với các chuyến bay thoải mái bậc nhất Việt Nam.
           </p>
         </div>
         {/* Floating Search Widget */}
@@ -268,41 +270,121 @@ export const SearchFlights: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Header thông tin tìm kiếm */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-              <div>
-                <span className="font-label-md text-label-md text-secondary uppercase tracking-widest block mb-2">
-                  Chuyến Bay Di Sản Trong Ngày
-                </span>
-                <h2 className="font-display-lg text-headline-lg text-primary select-none">
-                  Chặng bay {origin} <span className="font-mono text-outline-variant mx-2">→</span> {destination}
-                </h2>
-                <p className="text-on-surface-variant italic font-body-md mt-1">
-                  Khởi hành: {departureDate} • Các chuyến bay trực tiếp tinh tế
+            {!hasSearched ? (
+              <div className="bg-surface border border-outline/10 p-12 text-center rounded-lg limestone-shadow max-w-3xl mx-auto flex flex-col items-center gap-6 mt-4">
+                <div className="w-20 h-20 rounded-full bg-secondary/10 flex items-center justify-center text-secondary mb-2 animate-bounce">
+                  <Plane className="h-10 w-10 rotate-[45deg]" />
+                </div>
+                <h3 className="font-display-md text-headline-md text-primary font-bold">
+                  Khám Phá Các Chặng Bay Thượng Lưu
+                </h3>
+                <p className="text-body-md text-on-surface-variant max-w-xl leading-relaxed">
+                  WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam. 
+                  Hãy điền thông tin chặng bay và ngày khởi hành ở thanh tìm kiếm phía trên để chúng tôi tìm kiếm các ưu đãi chuyến bay tốt nhất dành cho hành trình tinh hoa của bạn.
                 </p>
+                <div className="w-full border-t border-outline/10 my-4" />
+                <div className="w-full text-left">
+                  <span className="font-label-md text-label-md text-secondary uppercase tracking-widest block mb-4 text-center">
+                    Gợi ý chặng bay phổ biến
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {[
+                      { from: 'HAN', to: 'SGN', label: 'Hà Nội (HAN) ⇄ TP. HCM (SGN)', desc: 'Chặng bay nhộn nhịp nhất' },
+                      { from: 'HAN', to: 'DAD', label: 'Hà Nội (HAN) ⇄ Đà Nẵng (DAD)', desc: 'Khám phá di sản miền Trung' },
+                      { from: 'SGN', to: 'PQC', label: 'TP. HCM (SGN) ⇄ Phú Quốc (PQC)', desc: 'Thiên đường nghỉ dưỡng đảo ngọc' },
+                    ].map((route, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          const futureDate = new Date();
+                          futureDate.setDate(futureDate.getDate() + 7);
+                          const dateStr = futureDate.toISOString().split('T')[0];
+                          setSearchParams({
+                            origin: route.from,
+                            destination: route.to,
+                            departureDate: dateStr
+                          });
+                        }}
+                        className="flex flex-col items-center text-center p-4 border border-outline/10 rounded-lg hover:border-primary/30 hover:bg-surface-container-low transition-all duration-300 limestone-shadow"
+                      >
+                        <span className="font-bold text-body-md text-primary mb-1">{route.label}</span>
+                        <span className="text-xs text-on-surface-variant font-light">{route.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Header thông tin tìm kiếm */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+                  <div>
+                    <span className="font-label-md text-label-md text-secondary uppercase tracking-widest block mb-2">
+                      Chuyến Bay Trong Ngày
+                    </span>
+                    <h2 className="font-display-lg text-headline-lg text-primary select-none">
+                      Chặng bay {origin} <span className="font-mono text-outline-variant mx-2">→</span> {destination}
+                    </h2>
+                    <p className="text-on-surface-variant italic font-body-md mt-1">
+                      Ngày khởi hành {departureDate}.
+                    </p>
+                  </div>
+                </div>
 
-            {/* Trạng thái Loading */}
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <Loader2 className="h-12 w-12 text-secondary animate-spin" />
-                <span className="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest animate-pulse">
-                  Đang tìm chuyến bay từ Duffel API...
-                </span>
-              </div>
-            )}
+                {/* Trạng thái Loading với Skeleton Cards */}
+                {loading && (
+                  <div className="space-y-6">
+                    <div className="flex flex-col items-center justify-center py-6 gap-2 mb-4">
+                      <Loader2 className="h-8 w-8 text-secondary animate-spin" />
+                      <span className="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest animate-pulse">
+                        Đang kết nối Duffel API để tìm chuyến bay...
+                      </span>
+                    </div>
+                    {[1, 2, 3].map((n) => (
+                      <div key={n} className="bg-surface border border-outline/10 p-8 rounded-lg animate-pulse space-y-6 limestone-shadow">
+                        <div className="flex flex-col lg:flex-row justify-between items-center gap-8">
+                          <div className="flex items-center gap-6 lg:w-1/4 w-full">
+                            <div className="w-12 h-12 bg-outline/10 rounded-full" />
+                            <div className="space-y-2">
+                              <div className="h-4 w-24 bg-outline/10 rounded animate-pulse" />
+                              <div className="h-3 w-16 bg-outline/10 rounded animate-pulse" />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-6 lg:w-2/4 w-full">
+                            <div className="text-right space-y-1">
+                              <div className="h-5 w-16 bg-outline/10 rounded ml-auto animate-pulse" />
+                              <div className="h-3 w-12 bg-outline/10 rounded ml-auto animate-pulse" />
+                            </div>
+                            <div className="flex-1 flex flex-col items-center gap-1">
+                              <div className="h-3 w-20 bg-outline/10 rounded animate-pulse" />
+                              <div className="w-full h-[2px] bg-outline/10 relative" />
+                              <div className="h-3 w-16 bg-outline/10 rounded animate-pulse" />
+                            </div>
+                            <div className="text-left space-y-1">
+                              <div className="h-5 w-16 bg-outline/10 rounded animate-pulse" />
+                              <div className="h-3 w-12 bg-outline/10 rounded animate-pulse" />
+                            </div>
+                          </div>
+                          <div className="lg:w-1/4 w-full flex flex-col items-end gap-2">
+                            <div className="h-6 w-24 bg-outline/10 rounded animate-pulse" />
+                            <div className="h-10 w-full bg-outline/10 rounded animate-pulse" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-            {/* Trạng thái Lỗi */}
-            {error && !loading && (
-              <div className="bg-surface-container-low border border-outline-variant/30 p-8 text-center rounded-lg max-w-xl mx-auto">
-                <p className="text-body-md text-on-surface font-medium mb-2">{error}</p>
-                <p className="text-caption text-on-surface-variant">Vui lòng thử chọn chặng bay khác hoặc thay đổi ngày khởi hành xa hơn để tìm kiếm.</p>
-              </div>
-            )}
+                {/* Trạng thái Lỗi */}
+                {error && !loading && (
+                  <div className="bg-surface-container-low border border-outline-variant/30 p-8 text-center rounded-lg max-w-xl mx-auto limestone-shadow">
+                    <p className="text-body-md text-on-surface font-medium mb-2">{error}</p>
+                    <p className="text-caption text-on-surface-variant">Vui lòng thử chọn chặng bay khác hoặc thay đổi ngày khởi hành xa hơn để tìm kiếm.</p>
+                  </div>
+                )}
 
-            {/* Danh sách thẻ chuyến bay */}
-            {!loading && !error && offers.length > 0 && (
+                {/* Danh sách thẻ chuyến bay */}
+                {!loading && !error && offers.length > 0 && (
               <div className="space-y-6">
                 {offers.map((offer) => {
                   const isSelected = selectedOffer?.id === offer.id;
@@ -413,6 +495,8 @@ export const SearchFlights: React.FC = () => {
             )}
           </>
         )}
+      </>
+    )}
       </main>
 
       {/* Booking Bar (Thanh chọn vé cố định ở chân trang) */}
