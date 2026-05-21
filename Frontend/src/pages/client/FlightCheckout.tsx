@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { flightService, paymentService } from '../../services';
 import type { FlightOfferDto, PassengerDto } from '../../types';
@@ -18,8 +18,24 @@ export const FlightCheckout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const WANDER_SELECTED_OFFER = 'wander_selected_offer';
-  // Trạng thái vé máy bay đang được thanh toán
-  const [offer, setOffer] = useState<FlightOfferDto | null>(null);
+  // Trạng thái vé máy bay đang được thanh toán - khôi phục đồng bộ trực tiếp từ state hoặc sessionStorage để tránh trễ render và vi phạm eslint
+  const [offer] = useState<FlightOfferDto | null>(() => {
+    const stateOffer = location.state?.offer as FlightOfferDto | undefined;
+    if (stateOffer) {
+      sessionStorage.setItem(WANDER_SELECTED_OFFER, JSON.stringify(stateOffer));
+      return stateOffer;
+    }
+    const cachedOffer = sessionStorage.getItem(WANDER_SELECTED_OFFER);
+    if (cachedOffer) {
+      try {
+        return JSON.parse(cachedOffer) as FlightOfferDto;
+      } catch (e) {
+        console.error('Không thể parse dữ liệu vé đã lưu:', e);
+      }
+    }
+    return null;
+  });
+
   const [bookingLoading, setBookingLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'momo' | 'credit'>('vnpay');
 
@@ -34,24 +50,6 @@ export const FlightCheckout: React.FC = () => {
     gender: 'm',
     passportNumber: 'B1234567'
   });
-
-  // Khôi phục thông tin chuyến bay từ state hoặc sessionStorage để tránh mất dữ liệu khi refresh
-  useEffect(() => {
-    const stateOffer = location.state?.offer as FlightOfferDto | undefined;
-    if (stateOffer) {
-      setOffer(stateOffer);
-      sessionStorage.setItem(WANDER_SELECTED_OFFER, JSON.stringify(stateOffer));
-    } else {
-      const cachedOffer = sessionStorage.getItem(WANDER_SELECTED_OFFER);
-      if (cachedOffer) {
-        try {
-          setOffer(JSON.parse(cachedOffer));
-        } catch (e) {
-          console.error('Không thể parse dữ liệu vé đã lưu:', e);
-        }
-      }
-    }
-  }, [location]);
 
   // Định dạng thời gian
   const formatTime = (timeStr: string) => {

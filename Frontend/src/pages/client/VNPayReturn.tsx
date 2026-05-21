@@ -1,46 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, XCircle, Calendar, Building, ShieldCheck, ArrowRight, Home, RefreshCw } from 'lucide-react';
 
 
 export const VNPayReturn: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [isSuccess, setIsSuccess] = useState<boolean>(false);
-  const [bookingId, setBookingId] = useState<string>('');
-  const [vnpayTxnRef, setVnpayTxnRef] = useState<string>('');
-  const [amount, setAmount] = useState<number>(0);
-  const [txnNo, setTxnNo] = useState<string>('');
-  const [bankCode, setBankCode] = useState<string>('');
-  const [payDate, setPayDate] = useState<string>('');
-  const [responseCode, setResponseCode] = useState<string>('');
 
-  useEffect(() => {
-    // Lấy thông tin từ Query String của VNPay gửi về
-    const code = searchParams.get('vnp_ResponseCode') || '';
-    const txnRef = searchParams.get('vnp_TxnRef') || '';
-    const rawAmount = searchParams.get('vnp_Amount') || '0';
-    const transactionNo = searchParams.get('vnp_TransactionNo') || '';
-    const bank = searchParams.get('vnp_BankCode') || '';
-    const date = searchParams.get('vnp_PayDate') || '';
+  // Lấy thông tin trực tiếp từ Query String của VNPay gửi về
+  const responseCode = searchParams.get('vnp_ResponseCode') || '';
+  const isSuccess = responseCode === '00';
+  const vnpayTxnRef = searchParams.get('vnp_TxnRef') || '';
+  const rawAmount = searchParams.get('vnp_Amount') || '0';
+  const txnNo = searchParams.get('vnp_TransactionNo') || '';
+  const bankCode = searchParams.get('vnp_BankCode') || '';
+  const payDate = searchParams.get('vnp_PayDate') || '';
 
-    setResponseCode(code);
-    setIsSuccess(code === '00');
-    setVnpayTxnRef(txnRef);
-    setTxnNo(transactionNo);
-    setBankCode(bank);
-    setPayDate(date);
+  // Trích xuất bookingId thực tế từ vnp_TxnRef dạng bookingId_Ticks
+  const bookingId = vnpayTxnRef ? vnpayTxnRef.split('_')[0] : '';
 
-    // Trích xuất bookingId thực tế từ vnp_TxnRef dạng bookingId_Ticks
-    if (txnRef) {
-      const idPart = txnRef.split('_')[0];
-      setBookingId(idPart);
-    }
-
-    // Đổi số tiền (chia cho 100 theo quy định VNPay)
-    if (rawAmount) {
-      setAmount(parseFloat(rawAmount) / 100);
-    }
-  }, [searchParams]);
+  // Đổi số tiền (chia cho 100 theo quy định VNPay)
+  const amount = rawAmount ? parseFloat(rawAmount) / 100 : 0;
 
   // Hàm chuyển đổi định dạng yyyyMMddHHmmss của VNPay sang hiển thị thân thiện tiếng Việt
   const formatVNPayDate = (dateStr: string) => {
