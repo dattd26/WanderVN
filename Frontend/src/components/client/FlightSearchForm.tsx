@@ -26,7 +26,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
   // Khởi tạo các trạng thái lựa chọn và giá trị nhập liệu
   const [tripType, setTripType] = useState<'round-trip' | 'one-way'>('one-way');
   const [cabinClass, setCabinClass] = useState<'business' | 'economy'>('business');
-  
+
   const [origin, setOrigin] = useState(initialOrigin);
   const [destination, setDestination] = useState(initialDestination);
   const [departureDate, setDepartureDate] = useState(() => {
@@ -36,7 +36,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
     futureDate.setDate(futureDate.getDate() + 7);
     return futureDate.toISOString().split('T')[0];
   });
-  const [guests, setGuests] = useState('1 Lữ khách');
+  const [guests, setGuests] = useState('1 Người');
 
   // Hàm xử lý gửi yêu cầu tìm kiếm lên component cha
   const handleSubmit = (e: React.FormEvent) => {
@@ -185,10 +185,10 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
               onChange={(e) => setGuests(e.target.value)}
               className="bg-transparent border-none p-0 text-white focus:ring-0 w-full font-body-md text-body-md cursor-pointer select-none appearance-none pr-4"
             >
-              <option value="1 Lữ khách" className="bg-[#1a1a1a] text-white">1 Lữ khách</option>
-              <option value="2 Lữ khách" className="bg-[#1a1a1a] text-white">2 Lữ khách</option>
-              <option value="3 Lữ khách" className="bg-[#1a1a1a] text-white">3 Lữ khách</option>
-              <option value="4 Lữ khách" className="bg-[#1a1a1a] text-white">4 Lữ khách</option>
+              <option value="1 Lữ khách" className="bg-[#1a1a1a] text-white">1 Người</option>
+              <option value="2 Lữ khách" className="bg-[#1a1a1a] text-white">2 Người</option>
+              <option value="3 Lữ khách" className="bg-[#1a1a1a] text-white">3 Người</option>
+              <option value="4 Lữ khách" className="bg-[#1a1a1a] text-white">4 Người</option>
             </select>
           </div>
         </div>
