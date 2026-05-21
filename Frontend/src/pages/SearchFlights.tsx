@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FlightSearchForm } from '../components/FlightSearchForm';
 import { flightService } from '../services/flightService';
-import type { DuffelOffer, PassengerDto } from '../types';
+import type { FlightOfferDto, PassengerDto } from '../types';
 import { 
   Plane, 
   Utensils, 
@@ -31,12 +31,12 @@ export const SearchFlights: React.FC = () => {
     return futureDate.toISOString().split('T')[0];
   });
 
-  const [offers, setOffers] = useState<DuffelOffer[]>([]);
+  const [offers, setOffers] = useState<FlightOfferDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Trạng thái vé máy bay đang được chọn
-  const [selectedOffer, setSelectedOffer] = useState<DuffelOffer | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<FlightOfferDto | null>(null);
 
   // Trạng thái modal thông tin hành khách
   const [isPassengerModalOpen, setIsPassengerModalOpen] = useState(false);
@@ -88,10 +88,9 @@ export const SearchFlights: React.FC = () => {
         returnOffers: true
       });
       
-      const flightOffers = response?.data?.offers || [];
-      setOffers(flightOffers);
+      setOffers(response);
 
-      if (flightOffers.length === 0) {
+      if (response.length === 0) {
         setError('Không tìm thấy chuyến bay khả dụng cho chặng bay này trong ngày đã chọn.');
       }
     } catch (err: any) {
@@ -138,13 +137,13 @@ export const SearchFlights: React.FC = () => {
 
     setBookingLoading(true);
     try {
-      // Duffel Offer chứa ID của hành khách mock từ kết quả tìm kiếm
-      const duffelPassengerId = selectedOffer.passengers[0]?.id || 'pas_default';
+      // Duffel Offer chứa ID của hành khách mock từ kết quả tìm kiếm DTO
+      const duffelPassengerId = selectedOffer.passengerId || 'pas_default';
 
       const bookingRequest = {
         userId: 1, // Mock User ID đã đăng nhập
         offerId: selectedOffer.id,
-        totalPrice: parseFloat(selectedOffer.total_amount),
+        totalPrice: selectedOffer.totalAmount,
         passengers: [
           {
             id: duffelPassengerId,
@@ -302,9 +301,6 @@ export const SearchFlights: React.FC = () => {
             {!loading && !error && offers.length > 0 && (
               <div className="space-y-6">
                 {offers.map((offer) => {
-                  const slice = offer.slices[0];
-                  const segment = slice?.segments[0];
-                  const carrier = offer.owner;
                   const isSelected = selectedOffer?.id === offer.id;
 
                   return (
@@ -319,20 +315,20 @@ export const SearchFlights: React.FC = () => {
                       <div className="p-8 flex flex-col lg:flex-row items-center justify-between gap-8">
                         {/* Thông tin Hãng hàng không */}
                         <div className="flex items-center gap-6 lg:w-1/4 w-full">
-                          {carrier.logo_symbol_url ? (
+                          {offer.carrierLogoUrl ? (
                             <img 
-                              src={carrier.logo_symbol_url} 
-                              alt={carrier.name} 
+                              src={offer.carrierLogoUrl} 
+                              alt={offer.carrierName} 
                               className="w-12 h-12 object-contain rounded"
                             />
                           ) : (
                             <div className="w-12 h-12 bg-primary flex items-center justify-center text-on-primary rounded font-bold">
-                              {carrier.iata_code}
+                              {offer.carrierCode}
                             </div>
                           )}
                           <div>
                             <h3 className="font-label-md text-label-md uppercase tracking-wider text-primary">
-                              {carrier.name}
+                              {offer.carrierName}
                             </h3>
                             <p className="text-caption text-on-surface-variant font-medium">Hạng Thượng gia</p>
                           </div>
@@ -343,17 +339,17 @@ export const SearchFlights: React.FC = () => {
                           {/* Điểm đi */}
                           <div className="text-center md:text-left">
                             <div className="font-headline-md text-headline-md text-primary">
-                              {segment ? formatTime(segment.departing_at) : '08:30'}
+                              {formatTime(offer.departingAt)}
                             </div>
                             <div className="text-caption font-bold text-secondary uppercase tracking-widest mt-1">
-                              {origin}
+                              {offer.originCode}
                             </div>
                           </div>
 
                           {/* Trục bay đồ họa */}
                           <div className="flex flex-col items-center flex-1 max-w-[240px] relative">
                             <div className="text-[10px] uppercase tracking-tighter text-on-surface-variant mb-1.5 font-semibold">
-                              {slice ? formatDuration(slice.duration) : '1h 20m'} • Trực tiếp
+                              {formatDuration(offer.duration)} • Trực tiếp
                             </div>
                             <div className="w-full h-px bg-outline/25 relative">
                               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-outline"></div>
@@ -361,17 +357,17 @@ export const SearchFlights: React.FC = () => {
                               <Plane className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-primary h-4 w-4 bg-surface px-1.5 box-content rotate-90" />
                             </div>
                             <div className="text-[10px] mt-1.5 text-on-surface-variant select-none">
-                              {segment?.aircraft?.name || 'Airbus A350-900'}
+                              {offer.aircraftName || 'Airbus A350-900'}
                             </div>
                           </div>
 
                           {/* Điểm đến */}
                           <div className="text-center md:text-right">
                             <div className="font-headline-md text-headline-md text-primary">
-                              {segment ? formatTime(segment.arriving_at) : '09:50'}
+                              {formatTime(offer.arrivingAt)}
                             </div>
                             <div className="text-caption font-bold text-secondary uppercase tracking-widest mt-1">
-                              {destination}
+                              {offer.destinationCode}
                             </div>
                           </div>
                         </div>
@@ -380,7 +376,7 @@ export const SearchFlights: React.FC = () => {
                         <div className="lg:w-1/4 w-full flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-4">
                           <div className="text-left lg:text-right">
                             <div className="font-headline-md text-headline-lg text-primary">
-                              ${parseFloat(offer.total_amount).toFixed(2)} <span className="text-caption font-normal text-on-surface-variant">USD /khách</span>
+                              ${offer.totalAmount.toFixed(2)} <span className="text-caption font-normal text-on-surface-variant">USD /khách</span>
                             </div>
                           </div>
                           <button
@@ -430,7 +426,7 @@ export const SearchFlights: React.FC = () => {
             <div className="flex flex-col pl-6">
               <span className="text-[10px] uppercase tracking-tighter opacity-60">Tổng chi phí</span>
               <span className="font-label-md text-label-md text-white">
-                ${parseFloat(selectedOffer.total_amount).toFixed(2)} USD
+                ${selectedOffer.totalAmount.toFixed(2)} USD
               </span>
             </div>
           </div>

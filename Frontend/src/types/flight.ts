@@ -8,55 +8,22 @@ export interface FlightSearchQuery {
   returnOffers?: boolean;
 }
 
-export interface DuffelCarrier {
-  iata_code: string;
-  name: string;
-  logo_symbol_url: string | null;
-}
-
-export interface DuffelAircraft {
-  name: string;
-}
-
-export interface DuffelLocation {
-  iata_code: string;
-  name: string;
-  city_name: string;
-}
-
-export interface DuffelSegment {
-  id: string;
-  duration: string;
-  origin: DuffelLocation;
-  destination: DuffelLocation;
-  departing_at: string;
-  arriving_at: string;
-  operating_carrier: DuffelCarrier;
-  aircraft: DuffelAircraft | null;
-}
-
-export interface DuffelSlice {
-  id: string;
-  duration: string;
-  segments: DuffelSegment[];
-}
-
-export interface DuffelOffer {
-  id: string;
-  total_amount: string;
-  total_currency: string;
-  passengers: {
-    id: string;
-    type: string;
-  }[];
-  slices: DuffelSlice[];
-  owner: DuffelCarrier;
-}
-
-export interface DuffelResponse {
-  data: {
-    offers: DuffelOffer[];
-  };
+export interface FlightOfferDto {
+  id: string; // ID của ưu đãi Duffel (off_...)
+  totalAmount: number; // Tổng chi phí đã quy đổi
+  totalCurrency: string; // Đồng tiền thanh toán (ví dụ: USD, VND)
+  passengerId: string; // ID hành khách mock
+  duration: string; // Thời lượng bay (ví dụ: PT2H15M)
+  originCode: string; // Mã sân bay đi (ví dụ: HAN)
+  originName: string; // Tên sân bay đi
+  destinationCode: string; // Mã sân bay đến (ví dụ: SGN)
+  destinationName: string; // Tên sân bay đến
+  departingAt: string; // Thời gian khởi hành (ISO string)
+  arrivingAt: string; // Thời gian đến nơi (ISO string)
+  carrierCode: string; // Mã hãng bay (ví dụ: VN, VJ)
+  carrierName: string; // Tên hãng bay
+  carrierLogoUrl: string; // URL Logo thương gia
+  aircraftName: string; // Dòng máy bay
 }
 
 export interface PassengerDto {
