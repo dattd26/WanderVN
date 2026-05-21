@@ -24,6 +24,8 @@ export interface FlightOfferDto {
   carrierName: string; // Tên hãng bay
   carrierLogoUrl: string; // URL Logo thương gia
   aircraftName: string; // Dòng máy bay
+  duffelAirwaysOfferId: string; // ID Duffel Airways Offer dùng để đặt vé sandbox thành công 100%
+  duffelAirwaysPassengerId: string; // ID hành khách tương ứng của Duffel Airways
 }
 
 export interface PassengerDto {

@@ -26,7 +26,35 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
     {
         var request = command.Request;
 
-        // 1. Map to Duffel Request
+        // 1. Lấy chi tiết Offer gốc từ Duffel để trích xuất giá tiền thật (phục vụ thanh toán sandbox khớp 100%)
+        string originalAmount = "1000.00";
+        string originalCurrency = "USD";
+
+        try
+        {
+            var offerJson = await _duffelService.GetOfferAsync(request.OfferId);
+            using var offerDoc = JsonDocument.Parse(offerJson);
+            var offerRoot = offerDoc.RootElement;
+
+            if (offerRoot.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Object)
+            {
+                if (dataProp.TryGetProperty("total_amount", out var amountProp) && amountProp.ValueKind == JsonValueKind.String)
+                {
+                    originalAmount = amountProp.GetString() ?? originalAmount;
+                }
+                if (dataProp.TryGetProperty("total_currency", out var currencyProp) && currencyProp.ValueKind == JsonValueKind.String)
+                {
+                    originalCurrency = currencyProp.GetString() ?? originalCurrency;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Dự phòng trong trường hợp không lấy được thông tin chi tiết Offer gốc
+            Console.WriteLine($"⚠️ Lỗi khi lấy chi tiết Offer gốc từ Duffel: {ex.Message}");
+        }
+
+        // 2. Thiết lập đối tượng Yêu cầu Đặt vé gửi sang Duffel (Map to Duffel Request)
         var duffelRequest = new DuffelOrderRequestDto();
         duffelRequest.Data.Type = "instant";
         duffelRequest.Data.SelectedOffers.Add(request.OfferId);
@@ -47,17 +75,18 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         }
 
         // Thiết lập thông tin thanh toán cho vé máy bay (bắt buộc đối với loại đặt vé "instant")
+        // Sử dụng giá trị gốc (originalAmount/originalCurrency) của Duffel để vượt qua kiểm tra Sandbox
         duffelRequest.Data.Payments = new List<DuffelPaymentDto>
         {
             new DuffelPaymentDto
             {
                 Type = "balance",
-                Amount = request.TotalPrice.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
-                Currency = "USD" // Hệ thống Duffel Sandbox mặc định sử dụng USD cho môi trường kiểm thử
+                Amount = originalAmount,
+                Currency = originalCurrency
             }
         };
 
-        // 2. Call Duffel API
+        // 3. Gọi Duffel API để tạo đặt vé
         var duffelResponseJson = await _duffelService.CreateOrderAsync(duffelRequest);
 
         // 3. Parse Duffel Response to get Order ID

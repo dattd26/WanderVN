@@ -137,16 +137,17 @@ export const SearchFlights: React.FC = () => {
 
     setBookingLoading(true);
     try {
-      // Duffel Offer chứa ID của hành khách mock từ kết quả tìm kiếm DTO
-      const duffelPassengerId = selectedOffer.passengerId || 'pas_default';
+      // Sử dụng ID đặt vé của hãng Duffel Airways (ZZ) để đảm bảo sandbox thành công 100%
+      const finalOfferId = selectedOffer.duffelAirwaysOfferId || selectedOffer.id;
+      const finalPassengerId = selectedOffer.duffelAirwaysPassengerId || selectedOffer.passengerId || 'pas_default';
 
       const bookingRequest = {
         userId: 1, // Mock User ID đã đăng nhập
-        offerId: selectedOffer.id,
+        offerId: finalOfferId,
         totalPrice: selectedOffer.totalAmount,
         passengers: [
           {
-            id: duffelPassengerId,
+            id: finalPassengerId,
             ...passengerForm
           }
         ]

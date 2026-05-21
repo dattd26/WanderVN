@@ -17,4 +17,9 @@ public interface IDuffelService
     /// Gửi request tạo Order (đặt vé) và nhận lại chuỗi JSON chứa thông tin Order từ Duffel.
     /// </summary>
     Task<string> CreateOrderAsync(DuffelOrderRequestDto request);
+
+    /// <summary>
+    /// Lấy chi tiết thông tin một Offer bằng ID (phục vụ đồng bộ giá sandbox).
+    /// </summary>
+    Task<string> GetOfferAsync(string offerId);
 }

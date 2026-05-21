@@ -52,4 +52,10 @@ public class FlightOfferDto
 
     // Tên dòng máy bay vận hành (ví dụ: Airbus A350)
     public string AircraftName { get; set; } = string.Empty;
+
+    // ID của ưu đãi Duffel Airways chuyên dùng để đặt vé sandbox thành công 100%
+    public string DuffelAirwaysOfferId { get; set; } = string.Empty;
+
+    // ID hành khách tương ứng của ưu đãi Duffel Airways
+    public string DuffelAirwaysPassengerId { get; set; } = string.Empty;
 }
