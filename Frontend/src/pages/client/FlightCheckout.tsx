@@ -17,7 +17,7 @@ import {
 export const FlightCheckout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
+  const WANDER_SELECTED_OFFER = 'wander_selected_offer';
   // Trạng thái vé máy bay đang được thanh toán
   const [offer, setOffer] = useState<FlightOfferDto | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -40,9 +40,9 @@ export const FlightCheckout: React.FC = () => {
     const stateOffer = location.state?.offer as FlightOfferDto | undefined;
     if (stateOffer) {
       setOffer(stateOffer);
-      sessionStorage.setItem('wander_selected_offer', JSON.stringify(stateOffer));
+      sessionStorage.setItem(WANDER_SELECTED_OFFER, JSON.stringify(stateOffer));
     } else {
-      const cachedOffer = sessionStorage.getItem('wander_selected_offer');
+      const cachedOffer = sessionStorage.getItem(WANDER_SELECTED_OFFER);
       if (cachedOffer) {
         try {
           setOffer(JSON.parse(cachedOffer));
@@ -97,7 +97,7 @@ export const FlightCheckout: React.FC = () => {
       const result = await flightService.createBooking(bookingRequest);
 
       // Xóa cache offer sau khi đã tạo booking thành công
-      sessionStorage.removeItem('wander_selected_offer');
+      sessionStorage.removeItem(WANDER_SELECTED_OFFER);
 
       // 2. Nếu phương thức thanh toán là VNPay, chuyển hướng sang sandbox
       if (paymentMethod === 'vnpay') {
@@ -273,11 +273,10 @@ export const FlightCheckout: React.FC = () => {
                 {/* VNPay */}
                 <label
                   onClick={() => setPaymentMethod('vnpay')}
-                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${
-                    paymentMethod === 'vnpay'
-                      ? 'border-primary bg-surface shadow-md'
-                      : 'border-outline-variant/30 hover:border-primary bg-transparent'
-                  }`}
+                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${paymentMethod === 'vnpay'
+                    ? 'border-primary bg-surface shadow-md'
+                    : 'border-outline-variant/30 hover:border-primary bg-transparent'
+                    }`}
                 >
                   <div className="flex items-center gap-4">
                     <input
@@ -300,11 +299,10 @@ export const FlightCheckout: React.FC = () => {
                 {/* Momo */}
                 <label
                   onClick={() => setPaymentMethod('momo')}
-                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${
-                    paymentMethod === 'momo'
-                      ? 'border-primary bg-surface shadow-md'
-                      : 'border-outline-variant/30 hover:border-primary bg-transparent'
-                  }`}
+                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${paymentMethod === 'momo'
+                    ? 'border-primary bg-surface shadow-md'
+                    : 'border-outline-variant/30 hover:border-primary bg-transparent'
+                    }`}
                 >
                   <div className="flex items-center gap-4">
                     <input
@@ -327,11 +325,10 @@ export const FlightCheckout: React.FC = () => {
                 {/* Thẻ tín dụng */}
                 <label
                   onClick={() => setPaymentMethod('credit')}
-                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${
-                    paymentMethod === 'credit'
-                      ? 'border-primary bg-surface shadow-md'
-                      : 'border-outline-variant/30 hover:border-primary bg-transparent'
-                  }`}
+                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${paymentMethod === 'credit'
+                    ? 'border-primary bg-surface shadow-md'
+                    : 'border-outline-variant/30 hover:border-primary bg-transparent'
+                    }`}
                 >
                   <div className="flex items-center gap-4">
                     <input

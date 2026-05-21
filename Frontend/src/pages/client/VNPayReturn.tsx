@@ -80,7 +80,7 @@ export const VNPayReturn: React.FC = () => {
               <h3 className="font-label-md text-sm text-primary border-b border-outline-variant/20 pb-3 uppercase tracking-wider">
                 Chi Tiết Giao Dịch
               </h3>
-              
+
               <div className="flex justify-between items-center text-body-md">
                 <span className="text-on-surface-variant flex items-center gap-2">
                   Mã đặt vé (Booking ID):
@@ -164,7 +164,7 @@ export const VNPayReturn: React.FC = () => {
               <h3 className="font-label-md text-sm text-red-600 border-b border-outline-variant/20 pb-3 uppercase tracking-wider">
                 Thông Tin Chi Tiết Lỗi
               </h3>
-              
+
               <div className="flex justify-between items-center text-body-md">
                 <span className="text-on-surface-variant">Mã đặt vé liên kết:</span>
                 <span className="font-semibold text-primary">#{bookingId}</span>
