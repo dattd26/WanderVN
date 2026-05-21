@@ -21,7 +21,6 @@ export const Navbar: React.FC = () => {
   }, []);
 
   const navLinks = [
-    { name: 'Điểm đến', path: '#' },
     { name: 'Khách sạn', path: '/stays' },
     { name: 'Vé máy bay', path: '/flights' },
     { name: 'Trải nghiệm', path: '#' },
@@ -30,11 +29,10 @@ export const Navbar: React.FC = () => {
 
   return (
     <nav
-      className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${
-        isScrolled || location.pathname !== '/'
+      className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${isScrolled || location.pathname !== '/'
           ? 'bg-background/95 backdrop-blur-md border-b border-surface-variant/40 py-5 shadow-sm'
           : 'bg-transparent py-8'
-      }`}
+        }`}
     >
       <div className="flex justify-between items-center px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto">
         {/* Brand Logo */}
@@ -55,11 +53,10 @@ export const Navbar: React.FC = () => {
               <li key={link.name}>
                 <Link
                   to={link.path}
-                  className={`font-label-md text-label-md uppercase tracking-widest transition-all duration-300 ${
-                    isActive
+                  className={`font-label-md text-label-md uppercase tracking-widest transition-all duration-300 ${isActive
                       ? 'text-secondary border-b-2 border-secondary pb-1 font-semibold'
                       : 'text-primary hover:text-secondary hover:opacity-80'
-                  }`}
+                    }`}
                 >
                   {link.name}
                 </Link>

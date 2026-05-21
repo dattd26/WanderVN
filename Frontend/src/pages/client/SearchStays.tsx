@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { SearchForm } from '../../components/client/SearchForm';
+import { HotelSearchForm } from '../../components/client/HotelSearchForm';
 import { FiltersSidebar } from '../../components/client/FiltersSidebar';
 import { HotelCard } from '../../components/client/HotelCard';
 import type { SearchHotelsDto } from '../../types';
@@ -85,7 +85,7 @@ export const SearchStays: React.FC = () => {
             <span className="font-label-md text-caption uppercase tracking-wider text-secondary">Hành trình của bạn</span>
             <h1 className="font-display-lg text-headline-lg text-primary">Thay đổi tìm kiếm lưu trú</h1>
           </div>
-          <SearchForm compact />
+          <HotelSearchForm compact theme="light" />
         </div>
       </header>
 
