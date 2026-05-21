@@ -3,33 +3,33 @@ import { useSearchParams } from 'react-router-dom';
 import { FlightSearchForm } from '../../components/client/FlightSearchForm';
 import { flightService } from '../../services';
 import type { FlightOfferDto, PassengerDto } from '../../types';
-import { 
-  Plane, 
-  Utensils, 
-  BedDouble, 
-  Wifi, 
-  Loader2, 
-  CheckCircle, 
-  ArrowRight, 
-  Calendar, 
-  User, 
-  Mail, 
-  Phone, 
+import {
+  Plane,
+  Utensils,
+  BedDouble,
+  Wifi,
+  Loader2,
+  CheckCircle,
+  ArrowRight,
+  Calendar,
+  User,
+  Mail,
+  Phone,
   FileText
 } from 'lucide-react';
 
 export const SearchFlights: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Khai báo các trạng thái React
-  const [origin, setOrigin] = useState(() => searchParams.get('origin') || 'HAN');
-  const [destination, setDestination] = useState(() => searchParams.get('destination') || 'SGN');
-  const [departureDate, setDepartureDate] = useState(() => {
+  // Lấy dữ liệu trực tiếp từ searchParams trên URL để tránh đồng bộ state trùng lặp không cần thiết
+  const origin = searchParams.get('origin') || 'HAN';
+  const destination = searchParams.get('destination') || 'SGN';
+  const departureDate = (() => {
     if (searchParams.get('departureDate')) return searchParams.get('departureDate')!;
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 7);
     return futureDate.toISOString().split('T')[0];
-  });
+  })();
 
   const [offers, setOffers] = useState<FlightOfferDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,21 +60,7 @@ export const SearchFlights: React.FC = () => {
     passportNumber: 'B1234567'
   });
 
-  // Tự động kích hoạt tìm kiếm khi có tham số trên URL
-  useEffect(() => {
-    const o = searchParams.get('origin');
-    const d = searchParams.get('destination');
-    const dt = searchParams.get('departureDate');
-
-    if (o && d && dt) {
-      setOrigin(o);
-      setDestination(d);
-      setDepartureDate(dt);
-      executeSearch(o, d, dt);
-    }
-  }, [searchParams]);
-
-  // Thực hiện tìm kiếm chuyến bay từ C# API
+  // Thực hiện tìm kiếm chuyến bay từ C# API (khai báo trước useEffect để tránh lỗi truy cập trước khi khai báo)
   const executeSearch = async (o: string, d: string, date: string) => {
     setLoading(true);
     setError(null);
@@ -87,19 +73,31 @@ export const SearchFlights: React.FC = () => {
         passengerType: 'adult',
         returnOffers: true
       });
-      
+
       setOffers(response);
 
       if (response.length === 0) {
         setError('Không tìm thấy chuyến bay khả dụng cho chặng bay này trong ngày đã chọn.');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err?.message || 'Có lỗi xảy ra khi tìm kiếm chuyến bay. Vui lòng thử lại sau.');
+      const message = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tìm kiếm chuyến bay. Vui lòng thử lại sau.';
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
+
+  // Tự động kích hoạt tìm kiếm khi có tham số trên URL
+  useEffect(() => {
+    const o = searchParams.get('origin');
+    const d = searchParams.get('destination');
+    const dt = searchParams.get('departureDate');
+
+    if (o && d && dt) {
+      executeSearch(o, d, dt);
+    }
+  }, [searchParams]);
 
   // Đồng bộ hóa URL khi thực hiện lượt tìm kiếm mới
   const handleSearchSubmit = (newOrigin: string, newDest: string, newDate: string) => {
@@ -156,8 +154,9 @@ export const SearchFlights: React.FC = () => {
       const result = await flightService.createBooking(bookingRequest);
       setBookingSuccessData(result);
       setIsPassengerModalOpen(false);
-    } catch (err: any) {
-      alert(`⚠️ Lỗi đặt vé máy bay: ${err?.message || 'Có lỗi xảy ra'}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Có lỗi xảy ra';
+      alert(`⚠️ Lỗi đặt vé máy bay: ${message}`);
     } finally {
       setBookingLoading(false);
     }
@@ -168,9 +167,9 @@ export const SearchFlights: React.FC = () => {
       {/* Cinematic Hero Section */}
       <section className="relative h-[65vh] flex items-center justify-center">
         <div className="absolute inset-0 z-0 overflow-hidden">
-          <img 
-            alt="Mây trời phi cơ nghệ thuật" 
-            className="w-full h-full object-cover grayscale-[15%] brightness-[65%]" 
+          <img
+            alt="Mây trời phi cơ nghệ thuật"
+            className="w-full h-full object-cover grayscale-[15%] brightness-[65%]"
             src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=80"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#fdf9f4]"></div>
@@ -185,7 +184,7 @@ export const SearchFlights: React.FC = () => {
         </div>
         {/* Floating Search Widget */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-full max-w-container-max px-margin-desktop hidden md:block z-20">
-          <FlightSearchForm 
+          <FlightSearchForm
             initialOrigin={origin}
             initialDestination={destination}
             initialDepartureDate={departureDate}
@@ -196,7 +195,7 @@ export const SearchFlights: React.FC = () => {
 
       {/* Mobile Search Widget Display */}
       <div className="block md:hidden px-margin-mobile mt-10 z-10">
-        <FlightSearchForm 
+        <FlightSearchForm
           initialOrigin={origin}
           initialDestination={destination}
           initialDepartureDate={departureDate}
@@ -307,19 +306,18 @@ export const SearchFlights: React.FC = () => {
                   return (
                     <div
                       key={offer.id}
-                      className={`group bg-surface border transition-all duration-500 overflow-hidden rounded-lg limestone-shadow ${
-                        isSelected 
-                          ? 'border-secondary ring-1 ring-secondary/20 bg-surface-container-low' 
-                          : 'border-outline/10 hover:border-primary/20'
-                      }`}
+                      className={`group bg-surface border transition-all duration-500 overflow-hidden rounded-lg limestone-shadow ${isSelected
+                        ? 'border-secondary ring-1 ring-secondary/20 bg-surface-container-low'
+                        : 'border-outline/10 hover:border-primary/20'
+                        }`}
                     >
                       <div className="p-8 flex flex-col lg:flex-row items-center justify-between gap-8">
                         {/* Thông tin Hãng hàng không */}
                         <div className="flex items-center gap-6 lg:w-1/4 w-full">
                           {offer.carrierLogoUrl ? (
-                            <img 
-                              src={offer.carrierLogoUrl} 
-                              alt={offer.carrierName} 
+                            <img
+                              src={offer.carrierLogoUrl}
+                              alt={offer.carrierName}
                               className="w-12 h-12 object-contain rounded"
                             />
                           ) : (
@@ -382,11 +380,10 @@ export const SearchFlights: React.FC = () => {
                           </div>
                           <button
                             onClick={() => setSelectedOffer(isSelected ? null : offer)}
-                            className={`px-8 py-3 border font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none ${
-                              isSelected 
-                                ? 'bg-primary text-on-primary border-primary' 
-                                : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
-                            }`}
+                            className={`px-8 py-3 border font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none ${isSelected
+                              ? 'bg-primary text-on-primary border-primary'
+                              : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
+                              }`}
                           >
                             {isSelected ? 'ĐÃ CHỌN' : 'CHỌN CHUYẾN BAY'}
                           </button>
@@ -449,7 +446,7 @@ export const SearchFlights: React.FC = () => {
                 <h3 className="font-display-lg text-headline-md text-primary">Thông Tin Hành Khách</h3>
                 <p className="text-caption text-on-surface-variant italic mt-0.5">Vui lòng nhập thông tin chính xác theo Hộ chiếu hoặc CCCD.</p>
               </div>
-              <button 
+              <button
                 onClick={() => setIsPassengerModalOpen(false)}
                 className="text-on-surface-variant hover:text-primary font-bold text-lg select-none"
               >
@@ -464,7 +461,7 @@ export const SearchFlights: React.FC = () => {
                   <label className="font-label-md text-caption uppercase tracking-wider text-on-surface-variant block mb-2">Danh xưng</label>
                   <select
                     value={passengerForm.title}
-                    onChange={(e) => setPassengerForm({...passengerForm, title: e.target.value})}
+                    onChange={(e) => setPassengerForm({ ...passengerForm, title: e.target.value })}
                     className="w-full bg-surface border border-outline-variant/30 rounded px-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary cursor-pointer"
                   >
                     <option value="mr">Ông (Mr)</option>
@@ -482,7 +479,7 @@ export const SearchFlights: React.FC = () => {
                       type="text"
                       required
                       value={passengerForm.familyName}
-                      onChange={(e) => setPassengerForm({...passengerForm, familyName: e.target.value})}
+                      onChange={(e) => setPassengerForm({ ...passengerForm, familyName: e.target.value })}
                       placeholder="e.g. NGUYEN"
                       className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary uppercase"
                     />
@@ -499,7 +496,7 @@ export const SearchFlights: React.FC = () => {
                     type="text"
                     required
                     value={passengerForm.givenName}
-                    onChange={(e) => setPassengerForm({...passengerForm, givenName: e.target.value})}
+                    onChange={(e) => setPassengerForm({ ...passengerForm, givenName: e.target.value })}
                     placeholder="e.g. VAN A"
                     className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary uppercase"
                   />
@@ -516,7 +513,7 @@ export const SearchFlights: React.FC = () => {
                       type="date"
                       required
                       value={passengerForm.bornOn}
-                      onChange={(e) => setPassengerForm({...passengerForm, bornOn: e.target.value})}
+                      onChange={(e) => setPassengerForm({ ...passengerForm, bornOn: e.target.value })}
                       className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary"
                     />
                   </div>
@@ -527,7 +524,7 @@ export const SearchFlights: React.FC = () => {
                   <label className="font-label-md text-caption uppercase tracking-wider text-on-surface-variant block mb-2">Giới tính</label>
                   <select
                     value={passengerForm.gender}
-                    onChange={(e) => setPassengerForm({...passengerForm, gender: e.target.value})}
+                    onChange={(e) => setPassengerForm({ ...passengerForm, gender: e.target.value })}
                     className="w-full bg-surface border border-outline-variant/30 rounded px-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary cursor-pointer"
                   >
                     <option value="m">Nam (Male)</option>
@@ -546,7 +543,7 @@ export const SearchFlights: React.FC = () => {
                       type="email"
                       required
                       value={passengerForm.email}
-                      onChange={(e) => setPassengerForm({...passengerForm, email: e.target.value})}
+                      onChange={(e) => setPassengerForm({ ...passengerForm, email: e.target.value })}
                       placeholder="nguyenvana@example.com"
                       className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary"
                     />
@@ -562,7 +559,7 @@ export const SearchFlights: React.FC = () => {
                       type="tel"
                       required
                       value={passengerForm.phoneNumber}
-                      onChange={(e) => setPassengerForm({...passengerForm, phoneNumber: e.target.value})}
+                      onChange={(e) => setPassengerForm({ ...passengerForm, phoneNumber: e.target.value })}
                       placeholder="+84901234567"
                       className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary"
                     />
@@ -579,7 +576,7 @@ export const SearchFlights: React.FC = () => {
                     type="text"
                     required
                     value={passengerForm.passportNumber}
-                    onChange={(e) => setPassengerForm({...passengerForm, passportNumber: e.target.value})}
+                    onChange={(e) => setPassengerForm({ ...passengerForm, passportNumber: e.target.value })}
                     placeholder="e.g. B1234567"
                     className="w-full bg-surface border border-outline-variant/30 rounded pl-10 pr-4 py-2.5 font-body-md focus:ring-secondary focus:border-secondary uppercase"
                   />
