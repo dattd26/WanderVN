@@ -95,7 +95,11 @@ export const SearchFlights: React.FC = () => {
     const dt = searchParams.get('departureDate');
 
     if (o && d && dt) {
-      executeSearch(o, d, dt);
+      // Chạy tìm kiếm bất đồng bộ ngoài luồng render đồng bộ để tránh cảnh báo cascading render
+      const timer = setTimeout(() => {
+        executeSearch(o, d, dt);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [searchParams]);
 
