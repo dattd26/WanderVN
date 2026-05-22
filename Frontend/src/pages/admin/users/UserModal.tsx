@@ -1,209 +1,237 @@
-import React, { useState, useEffect } from 'react';
-
-export interface UserRecord {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  joined: string;
-  status: 'Active' | 'Locked';
-  avatarUrl?: string;
-  initials?: string;
-  role?: 'Traveler' | 'Admin';
-}
+import { useState, useEffect } from 'react';
+import { userService } from '../../../services';
+import type { UserDetailsDto } from '../../../types';
 
 interface UserModalProps {
   isOpen: boolean;
-  mode: 'create' | 'edit';
-  initialData: UserRecord | null;
+  userId: number | null;
   onClose: () => void;
-  onSave: (userData: Partial<UserRecord>) => void;
 }
 
-export function UserModal({ isOpen, mode, initialData, onClose, onSave }: UserModalProps) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [role, setRole] = useState<'Traveler' | 'Admin'>('Traveler');
-  const [status, setStatus] = useState<'Active' | 'Locked'>('Active');
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+export function UserModal({ isOpen, userId, onClose }: UserModalProps) {
+  const [user, setUser] = useState<UserDetailsDto | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      if (mode === 'edit' && initialData) {
-        setName(initialData.name || '');
-        setEmail(initialData.email || '');
-        setPhone(initialData.phone || '');
-        setRole(initialData.role || 'Traveler');
-        setStatus(initialData.status || 'Active');
-        setAvatarUrl(initialData.avatarUrl);
-      } else {
-        setName('');
-        setEmail('');
-        setPhone('');
-        setRole('Traveler');
-        setStatus('Active');
-        setAvatarUrl(undefined);
-      }
+    if (isOpen && userId) {
+      setIsLoading(true);
+      setError(null);
+      setUser(null);
+      userService
+        .getCustomerById(userId)
+        .then((data) => setUser(data))
+        .catch((err) => setError(err instanceof Error ? err.message : 'Không thể tải thông tin người dùng'))
+        .finally(() => setIsLoading(false));
     }
-  }, [isOpen, mode, initialData]);
+  }, [isOpen, userId]);
 
   if (!isOpen) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const getInitials = (name?: string) => {
+    if (!name) return '??';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !email || !phone) return;
-
-    onSave({
-      name,
-      email,
-      phone,
-      role,
-      status,
-      avatarUrl,
-    });
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
-        <div className="px-admin-xl py-admin-md border-b border-admin-outline-variant flex items-center justify-between bg-admin-surface-bright select-none">
+        <div className="px-admin-xl py-admin-md border-b border-admin-outline-variant flex items-center justify-between bg-admin-surface-bright select-none shrink-0">
           <h3 className="font-admin-sans text-admin-headline-md text-admin-primary">
-            {mode === 'create' ? 'Thêm Người Dùng Mới' : 'Chỉnh Sửa Người Dùng'}
+            Chi Tiết Người Dùng
           </h3>
-          <button 
+          <button
             type="button"
-            onClick={onClose} 
+            onClick={onClose}
             className="text-admin-on-surface-variant hover:text-error transition-colors"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        {/* Modal Body / Form */}
+        {/* Modal Body */}
         <div className="p-admin-xl overflow-y-auto custom-scrollbar flex-grow">
-          <form id="user-form" onSubmit={handleSubmit} className="space-y-admin-lg">
-            {/* Profile Image Upload Placeholder */}
-            <div className="flex flex-col items-center gap-admin-sm pb-admin-md border-b border-admin-outline-variant/30 select-none">
-              <input 
-                type="file" 
-                id="modal-avatar-upload" 
-                accept="image/*" 
-                className="hidden" 
-                onChange={handleFileChange} 
-              />
-              <label 
-                htmlFor="modal-avatar-upload"
-                className="w-24 h-24 rounded-full border-2 border-dashed border-admin-outline-variant flex flex-col items-center justify-center bg-admin-surface-container-low group cursor-pointer hover:border-admin-secondary transition-colors overflow-hidden relative"
+          {isLoading ? (
+            /* Loading state */
+            <div className="space-y-admin-lg animate-pulse">
+              <div className="flex flex-col items-center gap-admin-sm pb-admin-md border-b border-admin-outline-variant/30">
+                <div className="w-24 h-24 rounded-full bg-admin-surface-container-low" />
+                <div className="h-5 w-40 bg-admin-surface-container-low rounded" />
+                <div className="h-4 w-32 bg-admin-surface-container-low rounded" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-admin-lg">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-3 w-20 bg-admin-surface-container-low rounded" />
+                    <div className="h-5 w-full bg-admin-surface-container-low rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : error ? (
+            /* Error state */
+            <div className="flex flex-col items-center gap-admin-md py-admin-xl">
+              <span className="material-symbols-outlined text-error text-[48px]">error</span>
+              <p className="text-error font-admin-sans font-bold text-admin-body-md">{error}</p>
+              <button
+                onClick={() => {
+                  if (userId) {
+                    setIsLoading(true);
+                    setError(null);
+                    userService
+                      .getCustomerById(userId)
+                      .then((data) => setUser(data))
+                      .catch((err) => setError(err instanceof Error ? err.message : 'Lỗi'))
+                      .finally(() => setIsLoading(false));
+                  }
+                }}
+                className="px-admin-lg py-admin-sm bg-admin-primary-container text-admin-on-primary font-bold rounded-lg hover:bg-admin-primary transition-all"
               >
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar Preview" className="w-full h-full object-cover animate-fade-in" />
+                Thử lại
+              </button>
+            </div>
+          ) : user ? (
+            /* User detail content */
+            <div className="space-y-admin-lg">
+              {/* Avatar & Name Header */}
+              <div className="flex flex-col items-center gap-admin-sm pb-admin-md border-b border-admin-outline-variant/30 select-none">
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.fullName || ''}
+                    className="w-24 h-24 rounded-full border-2 border-admin-outline-variant object-cover shadow-md"
+                  />
                 ) : (
-                  <>
-                    <span className="material-symbols-outlined text-admin-outline group-hover:text-admin-secondary transition-colors">add_a_photo</span>
-                    <span className="text-[10px] font-admin-sans text-admin-on-surface-variant font-bold uppercase tracking-wider">TẢI ẢNH</span>
-                  </>
+                  <div className="w-24 h-24 rounded-full bg-admin-primary-container flex items-center justify-center text-admin-on-primary font-bold text-2xl shadow-md">
+                    {getInitials(user.fullName)}
+                  </div>
                 )}
-              </label>
-              <p className="text-admin-body-sm text-admin-on-surface-variant">Ảnh đại diện (JPG, PNG)</p>
+                <h4 className="font-admin-sans text-admin-headline-sm text-admin-primary font-bold">
+                  {user.fullName || '(Chưa có tên)'}
+                </h4>
+                <div className="flex items-center gap-admin-sm">
+                  {user.isActive !== false ? (
+                    <span className="inline-flex items-center gap-admin-xs px-admin-sm py-0.5 rounded-full bg-green-100 text-green-800 text-[11px] font-bold border border-green-200 uppercase tracking-wider font-admin-sans">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                      Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-admin-xs px-admin-sm py-0.5 rounded-full bg-error-container text-error text-[11px] font-bold border border-error/20 uppercase tracking-wider font-admin-sans">
+                      <span className="w-1.5 h-1.5 bg-error rounded-full"></span>
+                      Locked
+                    </span>
+                  )}
+                  {user.roleName && (
+                    <span className="inline-flex items-center px-admin-sm py-0.5 rounded-full bg-admin-surface-container-low text-admin-on-surface-variant text-[11px] font-bold border border-admin-outline-variant uppercase tracking-wider font-admin-sans">
+                      {user.roleName}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Detail Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-admin-lg">
+                <div className="flex flex-col gap-admin-xs">
+                  <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">ID</label>
+                  <p className="px-admin-md py-admin-sm bg-admin-surface-container-low border border-admin-outline-variant/50 rounded-lg text-admin-body-md text-admin-on-surface font-admin-mono">
+                    #{user.id}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-admin-xs">
+                  <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">HỌ VÀ TÊN</label>
+                  <p className="px-admin-md py-admin-sm bg-admin-surface-container-low border border-admin-outline-variant/50 rounded-lg text-admin-body-md text-admin-on-surface">
+                    {user.fullName || '—'}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-admin-xs">
+                  <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">EMAIL</label>
+                  <p className="px-admin-md py-admin-sm bg-admin-surface-container-low border border-admin-outline-variant/50 rounded-lg text-admin-body-md text-admin-on-surface break-all">
+                    {user.email}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-admin-xs">
+                  <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">SỐ ĐIỆN THOẠI</label>
+                  <p className="px-admin-md py-admin-sm bg-admin-surface-container-low border border-admin-outline-variant/50 rounded-lg text-admin-body-md text-admin-on-surface">
+                    {user.phoneNumber || '—'}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-admin-xs">
+                  <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">VAI TRÒ</label>
+                  <p className="px-admin-md py-admin-sm bg-admin-surface-container-low border border-admin-outline-variant/50 rounded-lg text-admin-body-md text-admin-on-surface">
+                    {user.roleName || '—'}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-admin-xs">
+                  <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">NGÀY TẠO</label>
+                  <p className="px-admin-md py-admin-sm bg-admin-surface-container-low border border-admin-outline-variant/50 rounded-lg text-admin-body-md text-admin-on-surface">
+                    {formatDate(user.createdAt)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Hotels section (if any) */}
+              {user.hotels && user.hotels.length > 0 && (
+                <div className="pt-admin-md border-t border-admin-outline-variant/30">
+                  <h5 className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold mb-admin-md uppercase">
+                    Khách sạn liên kết ({user.hotels.length})
+                  </h5>
+                  <div className="space-y-admin-sm">
+                    {user.hotels.map((hotel) => (
+                      <div
+                        key={hotel.id}
+                        className="flex items-center justify-between p-admin-md bg-admin-surface-container-low border border-admin-outline-variant/50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-admin-md">
+                          <span className="material-symbols-outlined text-admin-primary text-[20px]">hotel</span>
+                          <div>
+                            <p className="font-admin-sans text-admin-body-md font-bold text-admin-on-surface">
+                              {hotel.name}
+                            </p>
+                            {hotel.address && (
+                              <p className="text-admin-body-sm text-admin-on-surface-variant font-admin-sans">
+                                {hotel.address}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {hotel.starRating && (
+                          <div className="flex items-center gap-0.5">
+                            {Array.from({ length: hotel.starRating }).map((_, i) => (
+                              <span key={i} className="material-symbols-outlined text-[16px] text-[#F59E0B]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                star
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-admin-lg">
-              {/* Full Name */}
-              <div className="flex flex-col gap-admin-xs">
-                <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">HỌ VÀ TÊN</label>
-                <input 
-                  type="text" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  placeholder="Nhập tên đầy đủ" 
-                  className="px-admin-md py-admin-sm border border-admin-outline-variant rounded-lg text-admin-body-md focus:ring-2 focus:ring-admin-secondary focus:outline-none bg-white text-admin-on-surface transition-all"
-                />
-              </div>
-
-              {/* Email */}
-              <div className="flex flex-col gap-admin-xs">
-                <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">EMAIL</label>
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="example@wandervn.com" 
-                  className="px-admin-md py-admin-sm border border-admin-outline-variant rounded-lg text-admin-body-md focus:ring-2 focus:ring-admin-secondary focus:outline-none bg-white text-admin-on-surface transition-all"
-                />
-              </div>
-
-              {/* Phone Number */}
-              <div className="flex flex-col gap-admin-xs">
-                <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">SỐ ĐIỆN THOẠI</label>
-                <input 
-                  type="tel" 
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                  placeholder="+84 ..." 
-                  className="px-admin-md py-admin-sm border border-admin-outline-variant rounded-lg text-admin-body-md focus:ring-2 focus:ring-admin-secondary focus:outline-none bg-white text-admin-on-surface transition-all"
-                />
-              </div>
-
-              {/* Role */}
-              <div className="flex flex-col gap-admin-xs">
-                <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">VAI TRÒ</label>
-                <select 
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as 'Traveler' | 'Admin')}
-                  className="px-admin-md py-admin-sm border border-admin-outline-variant rounded-lg text-admin-body-md focus:ring-2 focus:ring-admin-secondary focus:outline-none bg-white text-admin-on-surface transition-all"
-                >
-                  <option value="Traveler">Traveler</option>
-                  <option value="Admin">Admin</option>
-                </select>
-              </div>
-
-              {/* Status */}
-              <div className="flex flex-col gap-admin-xs">
-                <label className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant font-bold">TRẠNG THÁI</label>
-                <select 
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as 'Active' | 'Locked')}
-                  className="px-admin-md py-admin-sm border border-admin-outline-variant rounded-lg text-admin-body-md focus:ring-2 focus:ring-admin-secondary focus:outline-none bg-white text-admin-on-surface transition-all"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Locked">Locked</option>
-                </select>
-              </div>
-            </div>
-          </form>
+          ) : null}
         </div>
 
         {/* Modal Footer */}
-        <div className="px-admin-xl py-admin-lg border-t border-admin-outline-variant bg-admin-surface-container-low flex justify-end gap-admin-md select-none">
-          <button 
+        <div className="px-admin-xl py-admin-lg border-t border-admin-outline-variant bg-admin-surface-container-low flex justify-end gap-admin-md select-none shrink-0">
+          <button
             type="button"
             onClick={onClose}
             className="px-admin-lg py-admin-sm border border-admin-outline-variant text-admin-on-surface-variant font-bold rounded-lg hover:bg-admin-surface-container transition-colors"
           >
-            Hủy
-          </button>
-          <button 
-            type="submit"
-            form="user-form"
-            className="px-admin-lg py-admin-sm bg-admin-primary-container text-admin-on-primary font-bold rounded-lg hover:bg-admin-primary shadow-md transition-all active:scale-95"
-          >
-            Lưu thay đổi
+            Đóng
           </button>
         </div>
       </div>
