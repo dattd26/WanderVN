@@ -10,21 +10,26 @@ interface HotelMapProps {
   hotels: SearchHotelsDto[];
 }
 
-// Marker hình lá cờ vàng — khớp design "Atmospheric Heritage" (gold #735c00)
-const goldenMarker = L.divIcon({
-  className: '',
-  html: `
-    <div class="relative" style="transform: translate(-50%, -100%);">
-      <div class="w-9 h-9 rounded-full bg-secondary border-2 border-on-primary shadow-md flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M19 9.3V4h-3v2.6L12 3 2 12h3v8h6v-6h2v6h6v-8h3z"/></svg>
+// Hàm tạo Marker hiển thị giá phòng — nền trắng/kem (#fdf9f4) viền vàng gold (#735c00), bo góc, hiển thị đầy đủ giá kèm đơn vị "đ"
+const createPriceTagMarker = (price: number) => {
+  const formattedPrice = price.toLocaleString('vi-VN') + ' đ';
+  return L.divIcon({
+    className: '',
+    html: `
+      <div class="relative flex flex-col items-center group" style="transform: translate(-50%, -100%);">
+        <!-- Khung thẻ giá bo góc nền trắng/kem, viền vàng gold -->
+        <div class="px-2.5 py-1.5 rounded bg-[#fdf9f4] border border-[#735c00] shadow-md group-hover:bg-[#735c00] text-[#735c00] group-hover:text-white transition-all duration-200 cursor-pointer select-none font-sans font-semibold text-[13px] whitespace-nowrap">
+          ${formattedPrice}
+        </div>
+        <!-- Mũi tên chỉ xuống màu trắng/kem có viền vàng gold -->
+        <div class="w-1.5 h-1.5 bg-[#fdf9f4] border-r border-b border-[#735c00] -mt-[4px] rotate-45 shadow-sm transition-colors duration-200 group-hover:bg-[#735c00]"></div>
       </div>
-      <div class="w-2 h-2 bg-secondary mx-auto -mt-1.5 rotate-45 shadow-sm"></div>
-    </div>
-  `,
-  iconSize: [36, 44],
-  iconAnchor: [18, 44],
-  popupAnchor: [0, -42]
-});
+    `,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+    popupAnchor: [0, -36]
+  });
+};
 
 // Tự động fit map bounds khi hotels hoặc center thay đổi
 const FitBounds: React.FC<{ hotels: SearchHotelsDto[]; center: [number, number] }> = ({ hotels, center }) => {
@@ -76,7 +81,7 @@ export const HotelMap: React.FC<HotelMapProps> = ({ center, hotels }) => {
           <Marker
             key={hotel.id}
             position={[hotel.latitude as number, hotel.longitude as number]}
-            icon={goldenMarker}
+            icon={createPriceTagMarker(hotel.minPrice)}
           >
             <Popup>
               <div className="w-56">
