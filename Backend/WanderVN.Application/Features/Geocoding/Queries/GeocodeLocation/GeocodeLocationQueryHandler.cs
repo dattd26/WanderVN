@@ -1,33 +1,37 @@
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using WanderVN.Application.Common.Interfaces;
+using WanderVN.Domain.Entities;
+using WanderVN.Domain.Repositories;
 
 namespace WanderVN.Application.Features.Geocoding.Queries.GeocodeLocation;
 
 /// <summary>
 /// Handler cho GeocodeLocationQuery — kết hợp cache (DB) và gọi Nominatim khi cần.
 /// Flow:
-///   1. Đọc Location từ DB.
+///   1. Đọc Location từ DB thông qua Repository.
 ///   2. Nếu đã có Latitude/Longitude → trả về luôn (không gọi external API).
 ///   3. Nếu chưa → gọi Nominatim với tên location, UPSERT kết quả vào DB.
 /// </summary>
 public class GeocodeLocationQueryHandler : IRequestHandler<GeocodeLocationQuery, GeocodeLocationDto?>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IGeocodingService _geocodingService;
 
-    public GeocodeLocationQueryHandler(IApplicationDbContext dbContext, IGeocodingService geocodingService)
+    public GeocodeLocationQueryHandler(IUnitOfWork unitOfWork, IGeocodingService geocodingService)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
         _geocodingService = geocodingService;
     }
 
     public async Task<GeocodeLocationDto?> Handle(GeocodeLocationQuery request, CancellationToken cancellationToken)
     {
-        var location = await _dbContext.Locations
-            .FirstOrDefaultAsync(l => l.Id == request.LocationId, cancellationToken);
+        var locationRepository = _unitOfWork.Repository<Locations>();
+        
+        var location = await locationRepository.FindFirstOrDefaultAsync(
+            l => l.Id == request.LocationId,
+            cancellationToken: cancellationToken);
 
         if (location == null)
         {
@@ -54,7 +58,9 @@ public class GeocodeLocationQueryHandler : IRequestHandler<GeocodeLocationQuery,
 
         location.Latitude = geo.Latitude;
         location.Longitude = geo.Longitude;
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        
+        locationRepository.Update(location);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new GeocodeLocationDto
         {
