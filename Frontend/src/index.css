@@ -2,34 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .paper-texture {
-    background-color: #fdf9f4;
-    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuBK-wXGzbs4YPHN1iBQB5j2Dlzw7vJG4qXFIQ0NY98YtLKAbiRY3i2vQrQ76UV2i8QrB2g5dYcBA4IbtgrSX-nSBHinvZYaXa423Lqj88gmC793tfHxmu8E1VPtSTZkS03kzMFMYpkVWIU4RDMyK4v8bCIGoGZ-KWHjrELDt9tMLnFzD9ZL3qMpaU6sbUpJvUyEqUNh3sX6rcIkzwW_FjEVWQ22xiay5Wd8ta1XmV7Q-gCLhT2B3D6jgbkiqGNoTzKAGku_mT36yz0);
-    background-repeat: repeat;
+@layer base {
+  body {
+    @apply bg-background text-on-background antialiased relative selection:bg-secondary selection:text-on-primary;
   }
+}
 
-  .paper-grain {
-    position: relative;
-  }
-  
-  .paper-grain::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0.03;
-    pointer-events: none;
-    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuBORWSOwJWdC2AZKV_J2kWXt3-z0BF8niKP6UoZghIOLEo0WFBU2gsgEtfeF43rMgJJjZR1CVfTAiGkDvTIQl7_rvZkO0QZDuzaOH6soAT5DuvxSxNKkX-LjsIl6horqxbfCk7U4AiKMOg9s7QUxF01Dl7fJWT3G0S5d5BCiK6-sI95rpj41O4s5z75ldd44qfGXTU_v1QNZHicOp5Kj2d-wPtc0BauTUPgZZ-JGefoZAkU-p_sbpe-wTHrO7hNbhfB2ssKwn-D9fg);
-  }
+/* Hiệu ứng mờ đá vôi đặc trưng của Stitch */
+.texture-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.035;
+  background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+}
 
-  .cinematic-overlay {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
-  }
+/* Đổ bóng đá vôi cao cấp */
+.limestone-shadow {
+  box-shadow: 0 20px 40px rgba(28, 28, 25, 0.04);
+}
 
-  .material-symbols-outlined {
-    font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 24;
-  }
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fdf9f4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c4c7c7;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #747878;
+}
+
+/* Hỗ trợ mờ nhòe kính mờ trên Safari */
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* =============================================
+   CINEMATIC HERO — Heritage Alley Edition
+   ============================================= */
+
+/* Ken Burns: phóng đại rồi thu về, tạo cảm giác thở */
+@keyframes hero-ken-burns {
+  0%   { transform: scale(1.08); }
+  100% { transform: scale(1.0); }
+}
+.hero-ken-burns {
+  animation: hero-ken-burns 9s ease-out forwards;
+}
+
+/* Vignette bốn góc: tối dần viền màn hình */
+.hero-vignette {
+  background: radial-gradient(ellipse 130% 130% at 50% 50%, transparent 55%, rgba(17, 16, 14, 0.65) 100%);
+  pointer-events: none;
+}
+
+/* Film grain noise texture phủ nhẹ toàn bộ hero */
+.hero-film-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* Transition text: trượt lên nhẹ khi đổi destination */
+@keyframes text-enter {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.hero-text-enter {
+  animation: text-enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Fade-up utilities cho initial page load */
+@keyframes cinematic-fade-up {
+  0%   { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: cinematic-fade-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-fade-up-delay-1 {
+  animation: cinematic-fade-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.35s;
+  opacity: 0;
+}
+.animate-fade-up-delay-2 {
+  animation: cinematic-fade-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.7s;
+  opacity: 0;
 }
