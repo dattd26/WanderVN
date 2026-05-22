@@ -63,10 +63,11 @@ export const LoginPage: React.FC = () => {
         window.location.reload();
       }, 1500);
 
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as Error;
       setIsLoading(false);
       setErrors({
-        general: err.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại email hoặc mật khẩu.'
+        general: error.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại email hoặc mật khẩu.'
       });
     }
   };

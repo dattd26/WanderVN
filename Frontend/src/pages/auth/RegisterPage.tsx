@@ -105,11 +105,12 @@ export const RegisterPage: React.FC = () => {
       // 2. Nếu API đăng ký thành công, khởi động luồng Stepper di sản tuyệt đẹp
       runStaggeredSteps(false);
 
-    } catch (err: any) {
-      console.warn('Backend API registration failed, falling back to rich simulation mode...', err);
+    } catch (err) {
+      const error = err as Error;
+      console.warn('Backend API registration failed, falling back to rich simulation mode...', error);
       
       // Kiểm tra xem có phải lỗi kết nối mạng (chưa bật backend) không
-      const isConnectionError = err.message?.includes('Failed to fetch') || err.message?.includes('Lỗi kết nối API');
+      const isConnectionError = error.message?.includes('Failed to fetch') || error.message?.includes('Lỗi kết nối API');
       
       if (isConnectionError) {
         // Lỗi kết nối -> Kích hoạt chế độ giả lập thông minh (Smart Fallback Mode) để giữ trải nghiệm mượt mà cho khách lữ hành
@@ -118,7 +119,7 @@ export const RegisterPage: React.FC = () => {
       } else {
         // Lỗi nghiệp vụ thực tế từ C# Backend (ví dụ: Trùng email)
         setErrors({
-          general: err.message || 'Đăng ký không thành công. Vui lòng thử lại.'
+          general: error.message || 'Đăng ký không thành công. Vui lòng thử lại.'
         });
       }
     }

@@ -5,23 +5,14 @@ import { Menu, X, Hotel, User, LogOut } from 'lucide-react';
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Kiểm tra trạng thái đăng nhập
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const email = localStorage.getItem('userEmail');
-    if (token && email) {
-      setIsLoggedIn(true);
-      setUserEmail(email);
-    } else {
-      setIsLoggedIn(false);
-      setUserEmail('');
-    }
-  }, [location]); // Chạy lại khi chuyển trang để cập nhật trạng thái mới nhất
+  // Kiểm tra trạng thái đăng nhập trực tiếp từ localStorage
+  const token = localStorage.getItem('token');
+  const email = localStorage.getItem('userEmail');
+  const isLoggedIn = !!(token && email);
+  const userEmail = email || '';
 
   // Khi cuộn trang qua 50px, thanh navbar sẽ đổi sang màu nền mờ nhòe kính mờ sang trọng
   useEffect(() => {
@@ -40,8 +31,6 @@ export const Navbar: React.FC = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('userEmail');
-    setIsLoggedIn(false);
-    setUserEmail('');
     navigate('/login');
   };
 
