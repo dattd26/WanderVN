@@ -7,6 +7,7 @@ skills-lock.json
 local_data
 .stitch/
 # dotenv files
+DESIGN.md
 .env
 .agents/
 project_context.md
