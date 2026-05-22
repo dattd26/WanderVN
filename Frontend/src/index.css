@@ -1,3 +1,6 @@
+/* Leaflet base styles cho map OpenStreetMap — phải đặt trước @tailwind */
+@import 'leaflet/dist/leaflet.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
