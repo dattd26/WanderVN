@@ -7,15 +7,8 @@ import { HotelDetail } from './pages/client/HotelDetail';
 import { SearchFlights } from './pages/client/SearchFlights';
 import { FlightCheckout } from './pages/client/FlightCheckout';
 import { VNPayReturn } from './pages/client/VNPayReturn';
-
-type ViewType = 'login' | 'register'
-
-interface FormErrors {
-  fullName?: string;
-  email?: string;
-  password?: string;
-  terms?: string;
-}
+import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
 
 function App() {
   return (
@@ -36,9 +29,10 @@ function App() {
             <Route path="/flights" element={<SearchFlights />} />
             <Route path="/flights/checkout" element={<FlightCheckout />} />
             <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
           </Routes>
         </div>
-
 
         {/* Chân trang toàn cục */}
         <Footer />
@@ -48,3 +42,4 @@ function App() {
 }
 
 export default App;
+

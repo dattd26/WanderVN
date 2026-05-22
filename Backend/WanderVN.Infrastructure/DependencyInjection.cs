@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WanderVN.Application.Common.Interfaces;
+using WanderVN.Application.Common.Models;
 using WanderVN.Domain.Repositories;
 using WanderVN.Infrastructure.Data;
 using WanderVN.Infrastructure.Repositories;
@@ -25,6 +26,10 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<WanderVNDbContext>());
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Cấu hình & đăng ký dịch vụ gửi email tự động xác nhận
+        services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
+        services.AddTransient<IEmailService, EmailService>();
 
         // Đăng ký Duffel Service với HttpClient
         services.AddHttpClient<IDuffelService, DuffelService>(c =>
