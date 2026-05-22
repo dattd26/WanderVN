@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Navbar } from './components/shared/Navbar';
 import { Footer } from './components/shared/Footer';
+import ChatWidget from './components/ChatWidget';
 import { Home } from './pages/client/Home';
 import { SearchStays } from './pages/client/SearchStays';
 import { HotelDetail } from './pages/client/HotelDetail';
@@ -36,6 +37,9 @@ function App() {
 
         {/* Chân trang toàn cục */}
         <Footer />
+
+        {/* AI Chatbot Widget */}
+        <ChatWidget />
       </div>
     </Router>
   );
