@@ -24,24 +24,33 @@ interface HotelDetailDto {
   roomTypes: RoomTypeInfo[];
 }
 // Component Slider vuốt ảnh siêu nhẹ (Chỉ dùng riêng trong trang này)
-const RoomImageSlider = ({ images, fallback }: { images?: string[], fallback: string }) => {
+// Component Slider vuốt ảnh lấy chuẩn từ RoomTypeImages, có bộ đếm ảnh
+const RoomImageSlider = ({ images }: { images?: string[] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const displayImages = images && images.length > 0 ? images : [fallback];
 
-  const next = () => setCurrentIndex((prev) => (prev + 1) % displayImages.length);
-  const prev = () => setCurrentIndex((prev) => (prev - 1 + displayImages.length) % displayImages.length);
+  // Nếu không có ảnh hoặc mảng rỗng, hiển thị khung trống báo lỗi (Không lấy ké ảnh khách sạn)
+  if (!images || images.length === 0) {
+    return (
+      <div className="aspect-[4/3] w-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs rounded-md border border-gray-200 mb-3">
+        Chưa cập nhật ảnh phòng
+      </div>
+    );
+  }
+
+  const next = (e: React.MouseEvent) => { e.preventDefault(); setCurrentIndex((prev) => (prev + 1) % images.length); };
+  const prev = (e: React.MouseEvent) => { e.preventDefault(); setCurrentIndex((prev) => (prev - 1 + images.length) % images.length); };
 
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden mb-3 group rounded-md">
-      <img src={displayImages[currentIndex]} alt="Room" className="w-full h-full object-cover transition-all duration-500" />
-      {displayImages.length > 1 && (
+    <div className="relative aspect-[4/3] w-full overflow-hidden mb-3 group rounded-md border border-gray-200 shadow-sm">
+      <img src={images[currentIndex]} alt="Room view" className="w-full h-full object-cover transition-all duration-300 select-none" />
+      {images.length > 1 && (
         <>
-          <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"><ChevronLeft className="w-4 h-4"/></button>
-          <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"><ChevronRight className="w-4 h-4"/></button>
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {displayImages.map((_, idx) => (
-              <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentIndex ? 'bg-white scale-110' : 'bg-white/50'}`} />
-            ))}
+          <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"><ChevronLeft className="w-4 h-4"/></button>
+          <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"><ChevronRight className="w-4 h-4"/></button>
+          
+          {/* Số đếm góc phải ảnh chuẩn Agoda / Traveloka */}
+          <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium z-10">
+            {currentIndex + 1}/{images.length}
           </div>
         </>
       )}
@@ -154,7 +163,7 @@ export const HotelDetail: React.FC = () => {
       {/* 4. Danh sách Hạng Phòng (Layout chuẩn OTA - Tách riêng từng phòng) */}
       <div>
         <h3 className="text-2xl font-serif text-[#1c1c19] mb-6">
-          Các lựa chọn phòng trống
+          Các Phòng có sẵn tại {hotel.name.split(' ')[0]} {}
         </h3>
 
         <div className="space-y-6">
@@ -172,7 +181,7 @@ export const HotelDetail: React.FC = () => {
                     <h4 className="font-bold text-[#1c1c19] text-lg mb-3 leading-tight">{room.name}</h4>
                     
                     {/* Sử dụng Component Slider vừa tạo ở trên */}
-                    <RoomImageSlider images={room.images} fallback={hotel.images[0]} />
+                    <RoomImageSlider images={room.images}  />
                     
                     <div className="text-sm text-[#555] space-y-2 mt-4">
                       <p className="flex items-center gap-2 text-gray-800"><Users className="w-4 h-4 text-gray-500" /> Tối đa {room.capacity} khách</p>
@@ -255,7 +264,7 @@ export const HotelDetail: React.FC = () => {
             })
           )}
         </div>
-      </div>
+      </div>  
         </div>
      
   );
