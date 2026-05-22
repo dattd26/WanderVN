@@ -19,7 +19,6 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     IGenericRepository<Rooms> Rooms { get; }
     IGenericRepository<RoomTypes> RoomTypes { get; }
     IGenericRepository<Flights> Flights { get; }
-    IGenericRepository<Tours> Tours { get; }
     IGenericRepository<Payments> Payments { get; }
 
     /// <summary>

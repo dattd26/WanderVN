@@ -3,6 +3,9 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+skills-lock.json
+local_data
+.stitch/
 # dotenv files
 DESIGN.md
 .env
@@ -483,3 +486,6 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 node_modules/\ndist/\n.env\n
+DESIGN.md
+response_1779263368811.json
+/Backend/WanderVN.API/appsettings.Development.json

@@ -1,211 +1,92 @@
-
-CREATE DATABASE WanderVN;
+USE [master]
 GO
-USE WanderVN;
+/****** Object:  Database [WanderVN]    Script Date: 18-May-26 6:31:12 PM ******/
+-- Sửa đổi: Loại bỏ đường dẫn vật lý Windows để tương thích với Linux/Docker
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'WanderVN')
+BEGIN
+    CREATE DATABASE [WanderVN] WITH CATALOG_COLLATION = DATABASE_DEFAULT;
+END
 GO
-
----------------------------------------------------------
--- 1. IDENTITY & AUTHORIZATION
----------------------------------------------------------
-CREATE TABLE Roles (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(50) NOT NULL UNIQUE
-);
-
-CREATE TABLE Users (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    RoleId INT FOREIGN KEY REFERENCES Roles(Id),
-    Email NVARCHAR(255) NOT NULL UNIQUE,
-    PasswordHash NVARCHAR(MAX) NOT NULL,
-    FullName NVARCHAR(100),
-    PhoneNumber VARCHAR(20),
-    AvatarUrl NVARCHAR(500),
-    IsActive BIT DEFAULT 1,
-    CreatedAt DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET(),
-    UpdatedAt DATETIMEOFFSET
-);
-
----------------------------------------------------------
--- 2. GEOGRAPHY & MASTER DATA
----------------------------------------------------------
-CREATE TABLE Locations (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(100) NOT NULL,
-    Description NVARCHAR(MAX),
-    ImageUrl NVARCHAR(500)
-);
-
-CREATE TABLE Amenities (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(100) NOT NULL,
-    IconName VARCHAR(50) -- Ví dụ: 'wifi', 'pool', 'parking' (map với Lucide/FontAwesome)
-);
-
----------------------------------------------------------
--- 3. HOTELS & ROOMS
----------------------------------------------------------
-CREATE TABLE Hotels (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    LocationId INT FOREIGN KEY REFERENCES Locations(Id),
-    Name NVARCHAR(200) NOT NULL,
-    Address NVARCHAR(500),
-    StarRating INT CHECK (StarRating BETWEEN 1 AND 5),
-    Description NVARCHAR(MAX),
-    IsActive BIT DEFAULT 1,
-    CreatedAt DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET()
-);
-
--- Bảng trung gian quản lý tiện ích khách sạn (N-N)
-CREATE TABLE HotelAmenities (
-    HotelId INT FOREIGN KEY REFERENCES Hotels(Id),
-    AmenityId INT FOREIGN KEY REFERENCES Amenities(Id),
-    PRIMARY KEY (HotelId, AmenityId)
-);
-
-CREATE TABLE RoomTypes (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    HotelId INT FOREIGN KEY REFERENCES Hotels(Id),
-    Name NVARCHAR(100) NOT NULL, 
-    BasePrice DECIMAL(18, 2) NOT NULL,
-    Capacity INT NOT NULL,
-    TotalRooms INT NOT NULL
-);
-
-CREATE TABLE Rooms (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    RoomTypeId INT FOREIGN KEY REFERENCES RoomTypes(Id),
-    RoomNumber VARCHAR(20) NOT NULL,
-    Status NVARCHAR(50) DEFAULT 'Available'
-);
-
----------------------------------------------------------
--- 4. MEDIA GALLERY 
----------------------------------------------------------
-CREATE TABLE HotelImages (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    HotelId INT FOREIGN KEY REFERENCES Hotels(Id),
-    ImageUrl NVARCHAR(500) NOT NULL,
-    IsPrimary BIT DEFAULT 0,
-    CreatedAt DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET()
-);
-
-CREATE TABLE RoomTypeImages (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    RoomTypeId INT FOREIGN KEY REFERENCES RoomTypes(Id),
-    ImageUrl NVARCHAR(500) NOT NULL,
-    IsPrimary BIT DEFAULT 0
-);
-
----------------------------------------------------------
--- 5. TRANSPORTATION & EXPERIENCES
----------------------------------------------------------
-CREATE TABLE Airlines (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(100) NOT NULL,
-    LogoUrl NVARCHAR(500)
-);
-
-CREATE TABLE Airports (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    IataCode VARCHAR(5) UNIQUE NOT NULL,
-    Name NVARCHAR(200),
-    City NVARCHAR(100)
-);
-
-CREATE TABLE Flights (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    AirlineId INT FOREIGN KEY REFERENCES Airlines(Id),
-    FlightNumber VARCHAR(20) NOT NULL,
-    DepAirportId INT FOREIGN KEY REFERENCES Airports(Id),
-    ArrAirportId INT FOREIGN KEY REFERENCES Airports(Id),
-    DepTime DATETIME NOT NULL,
-    ArrTime DATETIME NOT NULL,
-    Price DECIMAL(18, 2) NOT NULL,
-    Status NVARCHAR(50) DEFAULT 'OnTime'
-);
-
-CREATE TABLE Tours (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    LocationId INT FOREIGN KEY REFERENCES Locations(Id),
-    Name NVARCHAR(200) NOT NULL,
-    DurationDays INT,
-    Price DECIMAL(18, 2) NOT NULL,
-    Description NVARCHAR(MAX)
-);
-
-CREATE TABLE TourImages (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    TourId INT FOREIGN KEY REFERENCES Tours(Id),
-    ImageUrl NVARCHAR(500) NOT NULL,
-    IsPrimary BIT DEFAULT 0
-);
-
----------------------------------------------------------
--- 6. BOOKING & TRANSACTIONS
----------------------------------------------------------
-CREATE TABLE Bookings (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    UserId INT FOREIGN KEY REFERENCES Users(Id),
-    BookingCode VARCHAR(20) UNIQUE NOT NULL,
-    ServiceType NVARCHAR(20) NOT NULL, -- Hotel, Flight, Tour
-    TotalPrice DECIMAL(18, 2) NOT NULL,
-    Status NVARCHAR(50) DEFAULT 'Pending',
-    PaymentStatus NVARCHAR(50) DEFAULT 'Unpaid',
-    CreatedAt DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET()
-);
-
-CREATE TABLE BookingHotels (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    BookingId INT FOREIGN KEY REFERENCES Bookings(Id),
-    RoomId INT FOREIGN KEY REFERENCES Rooms(Id),
-    CheckInDate DATE NOT NULL,
-    CheckOutDate DATE NOT NULL
-);
-
-CREATE TABLE BookingFlights (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    BookingId INT FOREIGN KEY REFERENCES Bookings(Id),
-    FlightId INT FOREIGN KEY REFERENCES Flights(Id),
-    PassengerName NVARCHAR(100),
-    PassportNumber VARCHAR(50),
-    SeatNumber VARCHAR(10)
-);
-
-CREATE TABLE Payments (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    BookingId INT FOREIGN KEY REFERENCES Bookings(Id),
-    Amount DECIMAL(18, 2) NOT NULL,
-    Method NVARCHAR(50), -- VNPay, MoMo
-    TransactionId VARCHAR(100),
-    PaymentDate DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET()
-);
-
----------------------------------------------------------
--- 7. Tương tác người dùng & AI LOGS
----------------------------------------------------------
-CREATE TABLE Wishlists (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    UserId INT FOREIGN KEY REFERENCES Users(Id),
-    ServiceId INT, 
-    ServiceType NVARCHAR(20)
-);
-
-CREATE TABLE ChatLogs (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    UserId INT FOREIGN KEY REFERENCES Users(Id),
-    MessageText NVARCHAR(MAX),
-    IsFromBot BIT DEFAULT 0,
-    SentAt DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET()
-);
-
+ALTER DATABASE [WanderVN] SET COMPATIBILITY_LEVEL = 150
+GO
+IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
+begin
+EXEC [WanderVN].[dbo].[sp_fulltext_database] @action = 'enable'
+end
+GO
+ALTER DATABASE [WanderVN] SET ANSI_NULL_DEFAULT OFF 
+GO
+ALTER DATABASE [WanderVN] SET ANSI_NULLS OFF 
+GO
+ALTER DATABASE [WanderVN] SET ANSI_PADDING OFF 
+GO
+ALTER DATABASE [WanderVN] SET ANSI_WARNINGS OFF 
+GO
+ALTER DATABASE [WanderVN] SET ARITHABORT OFF 
+GO
+ALTER DATABASE [WanderVN] SET AUTO_CLOSE OFF 
+GO
+ALTER DATABASE [WanderVN] SET AUTO_SHRINK OFF 
+GO
+ALTER DATABASE [WanderVN] SET AUTO_UPDATE_STATISTICS ON 
+GO
+ALTER DATABASE [WanderVN] SET CURSOR_CLOSE_ON_COMMIT OFF 
+GO
+ALTER DATABASE [WanderVN] SET CURSOR_DEFAULT  GLOBAL 
+GO
+ALTER DATABASE [WanderVN] SET CONCAT_NULL_YIELDS_NULL OFF 
+GO
+ALTER DATABASE [WanderVN] SET NUMERIC_ROUNDABORT OFF 
+GO
+ALTER DATABASE [WanderVN] SET QUOTED_IDENTIFIER OFF 
+GO
+ALTER DATABASE [WanderVN] SET RECURSIVE_TRIGGERS OFF 
+GO
+ALTER DATABASE [WanderVN] SET  ENABLE_BROKER 
+GO
+ALTER DATABASE [WanderVN] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
+GO
+ALTER DATABASE [WanderVN] SET DATE_CORRELATION_OPTIMIZATION OFF 
+GO
+ALTER DATABASE [WanderVN] SET TRUSTWORTHY OFF 
+GO
+ALTER DATABASE [WanderVN] SET ALLOW_SNAPSHOT_ISOLATION OFF 
+GO
+ALTER DATABASE [WanderVN] SET PARAMETERIZATION SIMPLE 
+GO
+ALTER DATABASE [WanderVN] SET READ_COMMITTED_SNAPSHOT OFF 
+GO
+ALTER DATABASE [WanderVN] SET HONOR_BROKER_PRIORITY OFF 
+GO
+ALTER DATABASE [WanderVN] SET RECOVERY FULL 
+GO
+ALTER DATABASE [WanderVN] SET  MULTI_USER 
+GO
+ALTER DATABASE [WanderVN] SET PAGE_VERIFY CHECKSUM  
+GO
+ALTER DATABASE [WanderVN] SET DB_CHAINING OFF 
+GO
+ALTER DATABASE [WanderVN] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+ALTER DATABASE [WanderVN] SET TARGET_RECOVERY_TIME = 60 SECONDS 
+GO
+ALTER DATABASE [WanderVN] SET DELAYED_DURABILITY = DISABLED 
+GO
+ALTER DATABASE [WanderVN] SET ACCELERATED_DATABASE_RECOVERY = OFF  
+GO
+EXEC sys.sp_db_vardecimal_storage_format N'WanderVN', N'ON'
+GO
+ALTER DATABASE [WanderVN] SET QUERY_STORE = OFF
+GO
+USE [WanderVN]
+GO
+/****** Object:  UserDefinedFunction [dbo].[fn_GetAvailableRoomCount]    Script Date: 18-May-26 6:31:12 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
 GO
 
----------------------------------------------------------
--- 8. BUSINESS LOGIC (FUNCTIONS & PROCEDURES)
----------------------------------------------------------
-
--- Hàm kiểm tra phòng trống
-CREATE OR ALTER FUNCTION fn_GetAvailableRoomCount 
+CREATE OR ALTER FUNCTION [dbo].[fn_GetAvailableRoomCount] 
 (
     @RoomTypeId INT,
     @CheckIn DATE,
@@ -214,6 +95,12 @@ CREATE OR ALTER FUNCTION fn_GetAvailableRoomCount
 RETURNS INT
 AS
 BEGIN
+    -- Kiểm tra tính hợp lệ của ngày đặt phòng (Check-in phải trước Check-out)
+    IF @CheckIn IS NULL OR @CheckOut IS NULL OR @CheckIn >= @CheckOut
+    BEGIN
+        RETURN 0;
+    END;
+
     DECLARE @TotalRooms INT;
     DECLARE @BookedRooms INT;
     SELECT @TotalRooms = TotalRooms FROM RoomTypes WHERE Id = @RoomTypeId;
@@ -229,67 +116,628 @@ BEGIN
     RETURN ISNULL(@TotalRooms, 0) - ISNULL(@BookedRooms, 0);
 END;
 GO
+/****** Object:  Table [dbo].[Airlines]    Script Date: 18-May-26 6:31:12 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Airlines](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [Name] [nvarchar](100) NOT NULL,
+    [LogoUrl] [nvarchar](500) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Airports]    Script Date: 18-May-26 6:31:12 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Airports](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [IataCode] [varchar](5) NOT NULL,
+    [Name] [nvarchar](200) NULL,
+    [City] [nvarchar](100) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+),
+UNIQUE NONCLUSTERED 
+(
+    [IataCode] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Amenities]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Amenities](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [Name] [nvarchar](100) NOT NULL,
+    [IconName] [varchar](50) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BookingFlights]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BookingFlights](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [BookingId] [int] NULL,
+    [FlightId] [int] NULL,
+    [PassengerName] [nvarchar](100) NULL,
+    [PassportNumber] [varchar](50) NULL,
+    [SeatNumber] [varchar](10) NULL,
+    [DuffelOrderId] [varchar](100) NULL,
+    [DuffelOfferId] [varchar](100) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BookingHotels]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BookingHotels](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [BookingId] [int] NULL,
+    [RoomId] [int] NULL,
+    [CheckInDate] [date] NOT NULL,
+    [CheckOutDate] [date] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Bookings]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Bookings](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [UserId] [int] NULL,
+    [BookingCode] [varchar](20) NOT NULL,
+    [ServiceType] [nvarchar](20) NOT NULL,
+    [TotalPrice] [decimal](18, 2) NOT NULL,
+    [Status] [nvarchar](50) NULL,
+    [PaymentStatus] [nvarchar](50) NULL,
+    [CreatedAt] [datetimeoffset](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+),
+UNIQUE NONCLUSTERED 
+(
+    [BookingCode] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ChatLogs]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ChatLogs](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [UserId] [int] NULL,
+    [MessageText] [nvarchar](max) NULL,
+    [IsFromBot] [bit] NULL,
+    [SentAt] [datetimeoffset](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Flights]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Flights](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [AirlineId] [int] NULL,
+    [FlightNumber] [varchar](20) NOT NULL,
+    [DepAirportId] [int] NULL,
+    [ArrAirportId] [int] NULL,
+    [DepTime] [datetime] NOT NULL,
+    [ArrTime] [datetime] NOT NULL,
+    [Price] [decimal](18, 2) NOT NULL,
+    [Status] [nvarchar](50) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[HotelAmenities]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[HotelAmenities](
+    [HotelId] [int] NOT NULL,
+    [AmenityId] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [HotelId] ASC,
+    [AmenityId] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[HotelImages]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[HotelImages](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [HotelId] [int] NULL,
+    [ImageUrl] [nvarchar](500) NOT NULL,
+    [IsPrimary] [bit] NULL,
+    [CreatedAt] [datetimeoffset](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[PropertyTypes]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PropertyTypes](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [Name] [nvarchar](100) NOT NULL,
+    [Code] [varchar](50) NOT NULL UNIQUE,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Hotels]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Hotels](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [LocationId] [int] NULL,
+    [Name] [nvarchar](200) NOT NULL,
+    [Address] [nvarchar](500) NULL,
+    [StarRating] [int] NULL,
+    [Description] [nvarchar](max) NULL,
+    [IsActive] [bit] NULL,
+    [CreatedAt] [datetimeoffset](7) NULL,
+    [OwnerId] [int] NULL,
+    [PropertyTypeId] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Locations]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Locations](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [Name] [nvarchar](100) NOT NULL,
+    [Type] [nvarchar](50) NOT NULL,
+    [ParentId] [int] NULL,
+    [Description] [nvarchar](max) NULL,
+    [ImageUrl] [nvarchar](500) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Locations]  WITH CHECK ADD FOREIGN KEY([ParentId])
+REFERENCES [dbo].[Locations] ([Id])
+GO
+/****** Object:  Table [dbo].[Payments]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Payments](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [BookingId] [int] NULL,
+    [Amount] [decimal](18, 2) NOT NULL,
+    [Method] [nvarchar](50) NULL,
+    [TransactionId] [varchar](100) NULL,
+    [PaymentDate] [datetimeoffset](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Roles]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Roles](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [Name] [nvarchar](50) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+),
+UNIQUE NONCLUSTERED 
+(
+    [Name] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Rooms]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Rooms](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [HotelId] [int] NOT NULL, -- Liên kết trực tiếp với Hotels để tối ưu truy vấn hoặc hỗ trợ homestay
+    [RoomTypeId] [int] NULL, -- Cho phép NULL đối với Homestay/Villa không cần loại phòng
+    [RoomNumber] [varchar](20) NOT NULL,
+    [Status] [nvarchar](50) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[RoomTypeImages]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[RoomTypeImages](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [RoomTypeId] [int] NULL,
+    [ImageUrl] [nvarchar](500) NOT NULL,
+    [IsPrimary] [bit] NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[RoomTypes]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[RoomTypes](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [HotelId] [int] NULL,
+    [Name] [nvarchar](100) NOT NULL,
+    [BasePrice] [decimal](18, 2) NOT NULL,
+    [Capacity] [int] NOT NULL,
+    [TotalRooms] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
 
--- SP Tìm kiếm khách sạn (Kèm ảnh chính)
-CREATE OR ALTER PROCEDURE sp_SearchHotels
-    @LocationId INT,
-    @CheckIn DATE,
-    @CheckOut DATE,
+/****** Object:  Table [dbo].[Users]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Users](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [RoleId] [int] NULL,
+    [Email] [nvarchar](255) NOT NULL,
+    [PasswordHash] [nvarchar](max) NOT NULL,
+    [FullName] [nvarchar](100) NULL,
+    [PhoneNumber] [varchar](20) NULL,
+    [AvatarUrl] [nvarchar](500) NULL,
+    [IsActive] [bit] NULL,
+    [CreatedAt] [datetimeoffset](7) NULL,
+    [UpdatedAt] [datetimeoffset](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+),
+UNIQUE NONCLUSTERED 
+(
+    [Email] ASC
+)) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Wishlists]    Script Date: 18-May-26 6:31:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Wishlists](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [UserId] [int] NULL,
+    [ServiceId] [int] NULL,
+    [ServiceType] [nvarchar](20) NULL,
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [IX_Booking_Code]    Script Date: 18-May-26 6:31:13 PM ******/
+CREATE NONCLUSTERED INDEX [IX_Booking_Code] ON [dbo].[Bookings]
+(
+    [BookingCode] ASC
+)
+GO
+/****** Object:  Index [IX_Booking_User]    Script Date: 18-May-26 6:31:13 PM ******/
+CREATE NONCLUSTERED INDEX [IX_Booking_User] ON [dbo].[Bookings]
+(
+    [UserId] ASC
+)
+GO
+/****** Object:  Index [IX_HotelImages_Primary]    Script Date: 18-May-26 6:31:13 PM ******/
+CREATE NONCLUSTERED INDEX [IX_HotelImages_Primary] ON [dbo].[HotelImages]
+(
+    [HotelId] ASC
+)
+WHERE ([IsPrimary]=(1))
+GO
+/****** Object:  Index [IX_Hotels_Location]    Script Date: 18-May-26 6:31:13 PM ******/
+CREATE NONCLUSTERED INDEX [IX_Hotels_Location] ON [dbo].[Hotels]
+(
+    [LocationId] ASC
+)
+GO
+/****** Object:  Index [IX_Hotels_Owner]    Script Date: 18-May-26 6:31:13 PM ******/
+CREATE NONCLUSTERED INDEX [IX_Hotels_Owner] ON [dbo].[Hotels]
+(
+    [OwnerId] ASC
+)
+GO
+/****** Object:  Index [IX_RoomTypes_Hotel]    Script Date: 18-May-26 6:31:13 PM ******/
+CREATE NONCLUSTERED INDEX [IX_RoomTypes_Hotel] ON [dbo].[RoomTypes]
+(
+    [HotelId] ASC
+)
+GO
+ALTER TABLE [dbo].[Bookings] ADD  DEFAULT ('Pending') FOR [Status]
+GO
+ALTER TABLE [dbo].[Bookings] ADD  DEFAULT ('Unpaid') FOR [PaymentStatus]
+GO
+ALTER TABLE [dbo].[Bookings] ADD  DEFAULT (sysdatetimeoffset()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[ChatLogs] ADD  DEFAULT ((0)) FOR [IsFromBot]
+GO
+ALTER TABLE [dbo].[ChatLogs] ADD  DEFAULT (sysdatetimeoffset()) FOR [SentAt]
+GO
+ALTER TABLE [dbo].[Flights] ADD  DEFAULT ('OnTime') FOR [Status]
+GO
+ALTER TABLE [dbo].[HotelImages] ADD  DEFAULT ((0)) FOR [IsPrimary]
+GO
+ALTER TABLE [dbo].[HotelImages] ADD  DEFAULT (sysdatetimeoffset()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[Hotels] ADD  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[Hotels] ADD  DEFAULT (sysdatetimeoffset()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[Payments] ADD  DEFAULT (sysdatetimeoffset()) FOR [PaymentDate]
+GO
+ALTER TABLE [dbo].[Rooms] ADD  DEFAULT ('Available') FOR [Status]
+GO
+ALTER TABLE [dbo].[RoomTypeImages] ADD  DEFAULT ((0)) FOR [IsPrimary]
+GO
+
+ALTER TABLE [dbo].[Users] ADD  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[Users] ADD  DEFAULT (sysdatetimeoffset()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[BookingFlights]  WITH CHECK ADD FOREIGN KEY([BookingId])
+REFERENCES [dbo].[Bookings] ([Id])
+GO
+ALTER TABLE [dbo].[BookingFlights]  WITH CHECK ADD FOREIGN KEY([FlightId])
+REFERENCES [dbo].[Flights] ([Id])
+GO
+ALTER TABLE [dbo].[BookingHotels]  WITH CHECK ADD FOREIGN KEY([BookingId])
+REFERENCES [dbo].[Bookings] ([Id])
+GO
+ALTER TABLE [dbo].[BookingHotels]  WITH CHECK ADD FOREIGN KEY([RoomId])
+REFERENCES [dbo].[Rooms] ([Id])
+GO
+ALTER TABLE [dbo].[Bookings]  WITH CHECK ADD FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[ChatLogs]  WITH CHECK ADD FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[Flights]  WITH CHECK ADD FOREIGN KEY([AirlineId])
+REFERENCES [dbo].[Airlines] ([Id])
+GO
+ALTER TABLE [dbo].[Flights]  WITH CHECK ADD FOREIGN KEY([ArrAirportId])
+REFERENCES [dbo].[Airports] ([Id])
+GO
+ALTER TABLE [dbo].[Flights]  WITH CHECK ADD FOREIGN KEY([DepAirportId])
+REFERENCES [dbo].[Airports] ([Id])
+GO
+ALTER TABLE [dbo].[HotelAmenities]  WITH CHECK ADD FOREIGN KEY([AmenityId])
+REFERENCES [dbo].[Amenities] ([Id])
+GO
+ALTER TABLE [dbo].[HotelAmenities]  WITH CHECK ADD FOREIGN KEY([HotelId])
+REFERENCES [dbo].[Hotels] ([Id])
+GO
+ALTER TABLE [dbo].[HotelImages]  WITH CHECK ADD FOREIGN KEY([HotelId])
+REFERENCES [dbo].[Hotels] ([Id])
+GO
+ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD FOREIGN KEY([LocationId])
+REFERENCES [dbo].[Locations] ([Id])
+GO
+ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD FOREIGN KEY([OwnerId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD FOREIGN KEY([PropertyTypeId])
+REFERENCES [dbo].[PropertyTypes] ([Id])
+GO
+ALTER TABLE [dbo].[Payments]  WITH CHECK ADD FOREIGN KEY([BookingId])
+REFERENCES [dbo].[Bookings] ([Id])
+GO
+ALTER TABLE [dbo].[Rooms]  WITH CHECK ADD FOREIGN KEY([RoomTypeId])
+REFERENCES [dbo].[RoomTypes] ([Id])
+GO
+ALTER TABLE [dbo].[Rooms]  WITH CHECK ADD FOREIGN KEY([HotelId])
+REFERENCES [dbo].[Hotels] ([Id])
+GO
+ALTER TABLE [dbo].[RoomTypeImages]  WITH CHECK ADD FOREIGN KEY([RoomTypeId])
+REFERENCES [dbo].[RoomTypes] ([Id])
+GO
+ALTER TABLE [dbo].[RoomTypes]  WITH CHECK ADD FOREIGN KEY([HotelId])
+REFERENCES [dbo].[Hotels] ([Id])
+GO
+
+ALTER TABLE [dbo].[Users]  WITH CHECK ADD FOREIGN KEY([RoleId])
+REFERENCES [dbo].[Roles] ([Id])
+GO
+ALTER TABLE [dbo].[Wishlists]  WITH CHECK ADD FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD CHECK  (([StarRating]>=(1) AND [StarRating]<=(5)))
+GO
+
+/****** Object:  StoredProcedure [dbo].[sp_Partner_UpdateRoomType] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE sp_Partner_UpdateRoomType
+    @PartnerId INT,
+    @RoomTypeId INT,
+    @Name NVARCHAR(100),
+    @BasePrice DECIMAL(18,2),
     @Capacity INT
 AS
 BEGIN
-    SELECT DISTINCT h.*, l.Name AS LocationName, 
-           img.ImageUrl AS PrimaryImage,
-           (SELECT MIN(BasePrice) FROM RoomTypes WHERE HotelId = h.Id) AS MinPrice
-    FROM Hotels h
-    JOIN Locations l ON h.LocationId = l.Id
-    JOIN RoomTypes rt ON rt.HotelId = h.Id
-    LEFT JOIN HotelImages img ON h.Id = img.HotelId AND img.IsPrimary = 1
-    WHERE h.LocationId = @LocationId
-      AND h.IsActive = 1
-      AND rt.Capacity >= @Capacity
-      AND dbo.fn_GetAvailableRoomCount(rt.Id, @CheckIn, @CheckOut) > 0;
+    SET NOCOUNT ON;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM RoomTypes rt
+        JOIN Hotels h ON rt.HotelId = h.Id
+        WHERE rt.Id = @RoomTypeId AND h.OwnerId = @PartnerId
+    )
+    BEGIN
+        RAISERROR('403: Bạn không có quyền chỉnh sửa loại phòng này!', 16, 1);
+        RETURN;
+    END
+
+    UPDATE RoomTypes
+    SET Name = @Name,
+        BasePrice = @BasePrice,
+        Capacity = @Capacity
+    WHERE Id = @RoomTypeId;
+    
+    SELECT @@ROWCOUNT AS UpdatedRows;
 END;
 GO
 
--- SP Tạo đơn đặt phòng (Transaction & Overbooking)
-CREATE OR ALTER PROCEDURE sp_CreateHotelBooking
-    @UserId INT,
-    @RoomTypeId INT,
-    @CheckIn DATE,
-    @CheckOut DATE,
-    @TotalPrice DECIMAL(18,2),
-    @BookingCode VARCHAR(20)
+/****** Object:  StoredProcedure [dbo].[sp_Partner_AddHotelImage] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE sp_Partner_AddHotelImage
+    @PartnerId INT,
+    @HotelId INT,
+    @ImageUrl NVARCHAR(500),
+    @IsPrimary BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Hotels WHERE Id = @HotelId AND OwnerId = @PartnerId)
+    BEGIN
+        RAISERROR('403: Bạn không có quyền quản lý hình ảnh của khách sạn này!', 16, 1);
+        RETURN;
+    END
+
+    IF @IsPrimary = 1
+    BEGIN
+        UPDATE HotelImages SET IsPrimary = 0 WHERE HotelId = @HotelId;
+    END
+
+    INSERT INTO HotelImages (HotelId, ImageUrl, IsPrimary)
+    VALUES (@HotelId, @ImageUrl, @IsPrimary);
+    
+    SELECT SCOPE_IDENTITY() AS NewImageId;
+END;
+GO
+
+/****** Object:  StoredProcedure [dbo].[sp_Partner_GetDashboardStats] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE sp_Partner_GetDashboardStats
+    @PartnerId INT,
+    @HotelId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Hotels WHERE Id = @HotelId AND OwnerId = @PartnerId)
+    BEGIN
+        RAISERROR('403: Bạn không có quyền truy cập dữ liệu của khách sạn này!', 16, 1);
+        RETURN;
+    END
+
+    SELECT 
+        COUNT(CASE WHEN b.Status = 'Pending' THEN 1 END) AS TotalPendingBookings,
+        COUNT(CASE WHEN b.Status = 'Confirmed' THEN 1 END) AS TotalConfirmedBookings,
+        ISNULL(SUM(CASE WHEN b.PaymentStatus = 'Paid' THEN b.TotalPrice END), 0) AS TotalRevenue
+    FROM Bookings b
+    JOIN BookingHotels bh ON b.Id = bh.BookingId
+    JOIN Rooms r ON bh.RoomId = r.Id
+    JOIN RoomTypes rt ON r.RoomTypeId = rt.Id
+    WHERE rt.HotelId = @HotelId;
+END;
+GO
+
+/****** Object:  StoredProcedure [dbo].[sp_RegisterPartner] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[sp_RegisterPartner]
+    @Email NVARCHAR(255),
+    @PasswordHash NVARCHAR(MAX),
+    @FullName NVARCHAR(100),
+    @PhoneNumber VARCHAR(20),
+    @HotelName NVARCHAR(200),
+    @Address NVARCHAR(500),
+    @LocationId INT
 AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRANSACTION;
     BEGIN TRY
-        IF dbo.fn_GetAvailableRoomCount(@RoomTypeId, @CheckIn, @CheckOut) <= 0
+        DECLARE @RoleId INT;
+        SELECT @RoleId = Id FROM Roles WHERE Name = 'Partner';
+        IF @RoleId IS NULL
         BEGIN
-            ROLLBACK TRANSACTION;
-            RAISERROR('Phòng đã hết!', 16, 1);
-            RETURN;
+            INSERT INTO Roles (Name) VALUES ('Partner');
+            SET @RoleId = SCOPE_IDENTITY();
         END
 
-        DECLARE @RoomId INT;
-        SELECT TOP 1 @RoomId = r.Id FROM Rooms r
-        WHERE r.RoomTypeId = @RoomTypeId 
-          AND r.Id NOT IN (
-              SELECT bd.RoomId FROM BookingHotels bd
-              WHERE NOT (bd.CheckOutDate <= @CheckIn OR bd.CheckInDate >= @CheckOut)
-          );
-
-        INSERT INTO Bookings (UserId, BookingCode, ServiceType, TotalPrice, Status)
-        VALUES (@UserId, @BookingCode, 'Hotel', @TotalPrice, 'Pending');
+        INSERT INTO Users (RoleId, Email, PasswordHash, FullName, PhoneNumber, IsActive)
+        VALUES (@RoleId, @Email, @PasswordHash, @FullName, @PhoneNumber, 1);
         
-        DECLARE @BookingId INT = SCOPE_IDENTITY();
+        DECLARE @UserId INT = SCOPE_IDENTITY();
 
-        INSERT INTO BookingHotels (BookingId, RoomId, CheckInDate, CheckOutDate)
-        VALUES (@BookingId, @RoomId, @CheckIn, @CheckOut);
+        INSERT INTO Hotels (LocationId, Name, Address, IsActive, OwnerId)
+        VALUES (@LocationId, @HotelName, @Address, 1, @UserId);
 
         COMMIT TRANSACTION;
-        SELECT @BookingId AS NewBookingId;
+        SELECT @UserId AS NewPartnerId, SCOPE_IDENTITY() AS NewHotelId;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
@@ -298,12 +746,59 @@ BEGIN
 END;
 GO
 
----------------------------------------------------------
--- 9. PERFORMANCE INDEXING
----------------------------------------------------------
-CREATE INDEX IX_Hotels_Location ON Hotels(LocationId);
-CREATE INDEX IX_HotelImages_Primary ON HotelImages(HotelId) WHERE IsPrimary = 1;
-CREATE INDEX IX_RoomTypes_Hotel ON RoomTypes(HotelId);
-CREATE INDEX IX_Booking_User ON Bookings(UserId);
-CREATE INDEX IX_Booking_Code ON Bookings(BookingCode);
+/****** Object:  StoredProcedure [dbo].[sp_SearchHotels] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[sp_SearchHotels]
+    @LocationId INT,
+    @CheckIn DATE,
+    @CheckOut DATE,
+    @Capacity INT,
+    @MinPrice DECIMAL(18,2) = NULL,
+    @MaxPrice DECIMAL(18,2) = NULL,
+    @PageNumber INT = 1,
+    @PageSize INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
+
+    -- Sử dụng CTE đệ quy để lấy toàn bộ các địa điểm con thuộc địa điểm được tìm kiếm (ví dụ: các Quận thuộc Hà Nội)
+    WITH LocationHierarchy AS (
+        SELECT Id FROM Locations WHERE Id = @LocationId
+        UNION ALL
+        SELECT l.Id FROM Locations l
+        INNER JOIN LocationHierarchy lh ON l.ParentId = lh.Id
+    )
+    SELECT DISTINCT h.Id, h.Name, h.Address, h.StarRating, h.Description, l.Name AS LocationName, 
+           img.ImageUrl AS PrimaryImage,
+           rt_min.MinPrice,
+           pt.Name AS PropertyTypeName,
+           pt.Code AS PropertyTypeCode
+    FROM Hotels h
+    JOIN Locations l ON h.LocationId = l.Id
+    LEFT JOIN PropertyTypes pt ON h.PropertyTypeId = pt.Id
+    JOIN RoomTypes rt ON rt.HotelId = h.Id
+    LEFT JOIN HotelImages img ON h.Id = img.HotelId AND img.IsPrimary = 1
+    CROSS APPLY (
+        SELECT MIN(BasePrice) AS MinPrice 
+        FROM RoomTypes 
+        WHERE HotelId = h.Id
+    ) rt_min
+    WHERE h.LocationId IN (SELECT Id FROM LocationHierarchy)
+      AND h.IsActive = 1
+      AND rt.Capacity >= @Capacity
+      AND dbo.fn_GetAvailableRoomCount(rt.Id, @CheckIn, @CheckOut) > 0
+      AND (@MinPrice IS NULL OR rt_min.MinPrice >= @MinPrice)
+      AND (@MaxPrice IS NULL OR rt_min.MinPrice <= @MaxPrice)
+    ORDER BY rt_min.MinPrice ASC
+    OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
+END;
+GO
+USE [master]
+GO
+ALTER DATABASE [WanderVN] SET  READ_WRITE 
 GO

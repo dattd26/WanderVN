@@ -23,7 +23,6 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<Rooms> Rooms => Repository<Rooms>();
     public IGenericRepository<RoomTypes> RoomTypes => Repository<RoomTypes>();
     public IGenericRepository<Flights> Flights => Repository<Flights>();
-    public IGenericRepository<Tours> Tours => Repository<Tours>();
     public IGenericRepository<Payments> Payments => Repository<Payments>();
 
     public UnitOfWork(WanderVNDbContext context)
