@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Star, Users, AlertCircle, Check, ChevronLeft, ChevronRight  } from 'lucide-react';
+import { MapPin, Star, Users, AlertCircle, Check, ChevronLeft, ChevronRight ,X } from 'lucide-react';
 
 
 // 1. Interfaces ánh xạ chính xác 100% với DTO trong C# của anh
@@ -64,9 +64,17 @@ export const HotelDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   // Thêm state quản lý số lượng phòng đang chọn cho từng hạng phòng
   const [selectedRooms, setSelectedRooms] = useState<Record<number, number>>({});
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const openGallery = (index: number) => {
+    setCurrentImageIndex(index);
+    setIsGalleryOpen(true);
+  };
 
   const handleQtyChange = (roomId: number, qty: number) => {
     setSelectedRooms(prev => ({ ...prev, [roomId]: qty }));
+    
   };
 
   useEffect(() => {
@@ -121,30 +129,37 @@ export const HotelDetail: React.FC = () => {
         )}
       </div>
 
-      {/* 2. Ảnh Gallery (Tận dụng list Images từ Backend) */}
+      {/* 2. Ảnh Gallery (Đã có sự kiện Click mở Modal) */}
       {hotel.images && hotel.images.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
-          <div className="md:col-span-2 h-[500px] overflow-hidden">
-            <img 
-              src={hotel.images[0]} 
-              alt={hotel.name} 
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" 
-            />
+          {/* Ảnh lớn bên trái */}
+          <div 
+            className="md:col-span-2 h-[500px] overflow-hidden rounded-l-lg cursor-pointer group"
+            onClick={() => openGallery(0)}
+          >
+            <img src={hotel.images[0]} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
           </div>
+
           <div className="grid grid-rows-2 gap-4 h-[500px]">
-            <div className="overflow-hidden">
-              <img 
-                src={hotel.images[1] || hotel.images[0]} 
-                alt="Chi tiết 1" 
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" 
-              />
+            {/* Ảnh nhỏ phía trên */}
+            <div 
+              className="overflow-hidden rounded-tr-lg cursor-pointer group"
+              onClick={() => openGallery(1)}
+            >
+              <img src={hotel.images[1] || hotel.images[0]} alt="Chi tiết 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             </div>
-            <div className="overflow-hidden">
-              <img 
-                src={hotel.images[2] || hotel.images[0]} 
-                alt="Chi tiết 2" 
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" 
-              />
+
+            {/* Ô ảnh thứ 3 (Có overlay +5) */}
+            <div 
+              className="overflow-hidden rounded-br-lg relative group cursor-pointer"
+              onClick={() => openGallery(2)}
+            >
+              <img src={hotel.images[2] || hotel.images[0]} alt="Chi tiết 2" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              {hotel.images.length > 3 && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center transition-colors group-hover:bg-black/50">
+                  <span className="text-white text-3xl font-bold">+{hotel.images.length - 3}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -264,7 +279,49 @@ export const HotelDetail: React.FC = () => {
             })
           )}
         </div>
+        
       </div>  
+{/* 🔥 BƯỚC 3: GIAO DIỆN MODAL XEM ẢNH FULL MÀN HÌNH */}
+      {isGalleryOpen && hotel.images && (
+        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center">
+          {/* Nút Tắt */}
+          <button 
+            onClick={() => setIsGalleryOpen(false)} 
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+          >
+            <X className="w-8 h-8" />
+          </button>
+
+          {/* Nút Lùi */}
+          <button 
+            onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev - 1 + hotel.images.length) % hotel.images.length); }} 
+            className="absolute left-4 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+          >
+            <ChevronLeft className="w-10 h-10" />
+          </button>
+
+          {/* Ảnh đang xem */}
+          <img 
+            src={hotel.images[currentImageIndex]} 
+            alt={`Gallery ${currentImageIndex}`} 
+            className="max-h-[90vh] max-w-[90vw] object-contain select-none"
+          />
+
+          {/* Nút Tiến */}
+          <button 
+            onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev + 1) % hotel.images.length); }} 
+            className="absolute right-4 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+          >
+            <ChevronRight className="w-10 h-10" />
+          </button>
+
+          {/* Bộ đếm dưới đáy */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white font-medium bg-black/50 px-4 py-2 rounded-full text-sm">
+            {currentImageIndex + 1} / {hotel.images.length}
+          </div>
+        </div>
+      )}
+      
         </div>
      
   );
