@@ -32,6 +32,7 @@ export const SearchStays: React.FC = () => {
     const fetchHotels = async () => {
       setLoading(true);
       setError(null);
+      setHotels([]); // 🧹 QUAN TRỌNG: Dọn sạch danh sách cũ (Hà Nội) trước khi gọi API mới (Đà Nẵng)
       try {
         const finalCheckIn = checkInDate || new Date().toISOString().split('T')[0];
         const finalCheckOut = checkOutDate || new Date(Date.now() + 86400000).toISOString().split('T')[0];
