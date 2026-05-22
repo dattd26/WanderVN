@@ -53,3 +53,11 @@ export interface FlightBookingResponse {
   totalPrice: number;
   status: string;
 }
+
+export interface FlightOfferDetailDto extends FlightOfferDto {
+  availableSeats: number;
+  expiresAt: string;
+  isExpired: boolean;
+  status: string;
+  validationStatus: string;
+}

@@ -1,5 +1,5 @@
 import { request } from '../shared/apiClient';
-import type { FlightSearchQuery, FlightOfferDto, CreateFlightBookingRequest, FlightBookingResponse } from '../../types';
+import type { FlightSearchQuery, FlightOfferDto, FlightOfferDetailDto, CreateFlightBookingRequest, FlightBookingResponse } from '../../types';
 
 export const flightService = {
   /**
@@ -10,6 +10,13 @@ export const flightService = {
       method: 'POST',
       body: JSON.stringify(query),
     });
+  },
+
+  /**
+    * Lấy chi tiết và xác thực offer từ backend.
+    */
+  async getOfferById(offerId: string): Promise<FlightOfferDetailDto> {
+    return request<FlightOfferDetailDto>(`/search/validate-offer/${offerId}`);
   },
 
   /**

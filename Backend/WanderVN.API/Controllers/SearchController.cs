@@ -1,8 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using WanderVN.API.Common.Responses;
+using WanderVN.Application.DTOs.Response;
+using WanderVN.Application.Features.Flights.Queries.GetFlightOfferDetail;
 using WanderVN.Application.Features.Flights.Queries.SearchFlights;
 using WanderVN.Application.Features.Hotels.Queries.SearchHotels;
 using WanderVN.Application.Features.Hotels.Queries.SearchAutocomplete;
@@ -62,5 +65,31 @@ public class SearchController : ControllerBase
             data
         );
         return Ok(response);
+    }
+
+    /// <summary>
+    /// GET: api/v1/search/validate-offer/{offerId}
+    /// Lấy chi tiết offer và xác thực trạng thái với Duffel API.
+    /// </summary>
+    [HttpGet("validate-offer/{offerId}")]
+    public async Task<IActionResult> ValidateOffer([FromRoute] string offerId)
+    {
+        try
+        {
+            var query = new GetFlightOfferDetailQuery { OfferId = offerId };
+            var data = await _mediator.Send(query);
+            var response = new ApiResponse<FlightOfferDetailDto>(true, "Xác thực offer thành công", 200, data);
+            return Ok(response);
+        }
+        catch (HttpRequestException ex)
+        {
+            var response = new ApiResponse<FlightOfferDetailDto>(false, ex.Message, 404, default);
+            return NotFound(response);
+        }
+        catch (Exception ex)
+        {
+            var response = new ApiResponse<FlightOfferDetailDto>(false, ex.Message, 400, default);
+            return BadRequest(response);
+        }
     }
 }

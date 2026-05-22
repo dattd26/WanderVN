@@ -160,7 +160,7 @@ export const SearchFlights: React.FC = () => {
               Khám Phá Các Chặng Bay Thượng Lưu
             </h3>
             <p className="text-body-md text-on-surface-variant max-w-xl leading-relaxed">
-              WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam. 
+              WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam.
               Hãy điền thông tin chặng bay và ngày khởi hành ở thanh tìm kiếm phía trên để chúng tôi tìm kiếm các ưu đãi chuyến bay tốt nhất dành cho hành trình tinh hoa của bạn.
             </p>
             <div className="w-full border-t border-outline/10 my-4" />
@@ -323,13 +323,10 @@ export const SearchFlights: React.FC = () => {
                             </div>
                           </div>
                           <button
-                            onClick={() => setSelectedOffer(isSelected ? null : offer)}
-                            className={`px-8 py-3 border font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none ${isSelected
-                              ? 'bg-primary text-on-primary border-primary'
-                              : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
-                              }`}
+                            onClick={() => navigate(`/flights/${offer.id}`, { state: { offer } })}
+                            className="px-8 py-3 border border-primary text-primary font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all hover:bg-primary hover:text-on-primary hover:border-primary/90"
                           >
-                            {isSelected ? 'ĐÃ CHỌN' : 'CHỌN CHUYẾN BAY'}
+                            CHỌN CHUYẾN BAY
                           </button>
                         </div>
                       </div>
@@ -373,10 +370,10 @@ export const SearchFlights: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={() => navigate('/flights/checkout', { state: { offer: selectedOffer } })}
+            onClick={() => selectedOffer && navigate(`/flights/${selectedOffer.id}`, { state: { offer: selectedOffer } })}
             className="bg-secondary-container text-on-secondary-container px-8 py-3 rounded-full font-label-md text-label-md hover:scale-105 transition-transform w-full sm:w-auto uppercase tracking-wider text-center select-none"
           >
-            ĐẶT VÉ &amp; THANH TOÁN
+            XEM CHI TIẾT &amp; ĐẶT VÉ
           </button>
         </div>
       )}
