@@ -1,30 +1,35 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Navbar } from './components/Navbar';
-import { Footer } from './components/Footer';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ConsumerLayout } from './components/ConsumerLayout';
 import { Home } from './pages/Home';
 import { SearchStays } from './pages/SearchStays';
+
+import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminDashboard } from './pages/admin/dashboard/AdminDashboard';
+import { AdminUsers } from './pages/admin/users/AdminUsers';
+import { AdminPartners } from './pages/admin/partners/AdminPartners';
+import { AdminContent } from './pages/admin/content/AdminContent';
+import { AdminFinance } from './pages/admin/finance/AdminFinance';
 
 function App() {
   return (
     <Router>
-      <div className="flex flex-col min-h-screen bg-background text-on-background relative overflow-x-hidden">
-        {/* Lớp phủ kết cấu nhiễu đá vôi sang trọng đặc trưng từ thiết kế Stitch */}
-        <div className="texture-overlay" />
+      <Routes>
+        {/* Consumer Portal Routes */}
+        <Route element={<ConsumerLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/stays" element={<SearchStays />} />
+        </Route>
 
-        {/* Thanh điều hướng nổi toàn cục */}
-        <Navbar />
-
-        {/* Nội dung chính của các Trang */}
-        <div className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/stays" element={<SearchStays />} />
-          </Routes>
-        </div>
-
-        {/* Chân trang toàn cục */}
-        <Footer />
-      </div>
+        {/* Admin Console Nested Routes */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="partners" element={<AdminPartners />} />
+          <Route path="content" element={<AdminContent />} />
+          <Route path="finance" element={<AdminFinance />} />
+        </Route>
+      </Routes>
     </Router>
   );
 }

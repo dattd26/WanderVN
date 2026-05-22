@@ -53,7 +53,52 @@ export default {
         "on-surface": "#1c1c19",
         "outline": "#747878",
         "outline-variant": "#c4c7c7",
-        "surface-tint": "#5f5e5e"
+        "surface-tint": "#5f5e5e",
+
+        // Admin Design System Colors
+        "admin-primary": "#001736",
+        "admin-on-primary": "#ffffff",
+        "admin-primary-container": "#002b5b",
+        "admin-on-primary-container": "#7594ca",
+        "admin-secondary": "#115cb9",
+        "admin-on-secondary": "#ffffff",
+        "admin-secondary-container": "#659dfe",
+        "admin-on-secondary-container": "#003370",
+        "admin-tertiary": "#2f0c00",
+        "admin-on-tertiary": "#ffffff",
+        "admin-tertiary-container": "#4f1c02",
+        "admin-on-tertiary-container": "#cd805d",
+        "admin-background": "#f8f9ff",
+        "admin-on-background": "#0b1c30",
+        "admin-surface": "#f8f9ff",
+        "admin-on-surface": "#0b1c30",
+        "admin-surface-variant": "#d3e4fe",
+        "admin-on-surface-variant": "#43474f",
+        "admin-outline": "#747780",
+        "admin-outline-variant": "#c4c6d0",
+        "admin-surface-container-lowest": "#ffffff",
+        "admin-surface-container-low": "#eff4ff",
+        "admin-surface-container": "#e5eeff",
+        "admin-surface-container-high": "#dce9ff",
+        "admin-surface-container-highest": "#d3e4fe",
+        "admin-surface-dim": "#cbdbf5",
+        "admin-surface-bright": "#f8f9ff",
+        "admin-primary-fixed": "#d6e3ff",
+        "admin-primary-fixed-dim": "#a9c7ff",
+        "admin-on-primary-fixed": "#001b3d",
+        "admin-on-primary-fixed-variant": "#264778",
+        "admin-secondary-fixed": "#d7e2ff",
+        "admin-secondary-fixed-dim": "#acc7ff",
+        "admin-on-secondary-fixed": "#001a40",
+        "admin-on-secondary-fixed-variant": "#004491",
+        "admin-tertiary-fixed": "#ffdbcd",
+        "admin-tertiary-fixed-dim": "#ffb596",
+        "admin-on-tertiary-fixed": "#360f00",
+        "admin-on-tertiary-fixed-variant": "#713619",
+        "admin-surface-tint": "#405f91",
+        "admin-inverse-surface": "#213145",
+        "admin-inverse-on-surface": "#eaf1ff",
+        "admin-inverse-primary": "#a9c7ff"
       },
       borderRadius: {
         "DEFAULT": "0.125rem",
@@ -67,7 +112,17 @@ export default {
         "margin-desktop": "64px",
         "unit": "8px",
         "container-max": "1280px",
-        "margin-mobile": "20px"
+        "margin-mobile": "20px",
+
+        // Admin Spacing Extensions
+        "admin-sidebar-width": "260px",
+        "admin-lg": "24px",
+        "admin-md": "16px",
+        "admin-base": "4px",
+        "admin-container-max": "1440px",
+        "admin-xs": "4px",
+        "admin-xl": "32px",
+        "admin-sm": "8px"
       },
       fontFamily: {
         "headline-md": ["EB Garamond", "serif"],
@@ -77,7 +132,11 @@ export default {
         "body-md": ["Inter", "sans-serif"],
         "headline-lg": ["EB Garamond", "serif"],
         "label-md": ["Inter", "sans-serif"],
-        "caption": ["Inter", "sans-serif"]
+        "caption": ["Inter", "sans-serif"],
+
+        // Admin Font Extensions
+        "admin-sans": ["Inter", "sans-serif"],
+        "admin-mono": ["JetBrains Mono", "monospace"]
       },
       fontSize: {
         "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "500" }],
@@ -87,7 +146,17 @@ export default {
         "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
         "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "500" }],
         "label-md": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600" }],
-        "caption": ["12px", { "lineHeight": "1.4", "fontWeight": "400" }]
+        "caption": ["12px", { "lineHeight": "1.4", "fontWeight": "400" }],
+
+        // Admin FontSize Extensions
+        "admin-display-lg": ["36px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+        "admin-headline-md": ["24px", { "lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+        "admin-headline-sm": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+        "admin-body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+        "admin-body-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+        "admin-body-sm": ["13px", { "lineHeight": "1.5", "fontWeight": "400" }],
+        "admin-label-caps": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
+        "admin-data-mono": ["14px", { "lineHeight": "1.4", "fontWeight": "500" }]
       }
     },
   },
