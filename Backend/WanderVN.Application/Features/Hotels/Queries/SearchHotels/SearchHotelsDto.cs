@@ -15,4 +15,8 @@ public class SearchHotelsDto
     public decimal MinPrice { get; set; }
     public string PropertyTypeName { get; set; } = string.Empty; // Tên loại hình lưu trú (Khách sạn, Resort...)
     public string PropertyTypeCode { get; set; } = string.Empty; // Mã loại hình lưu trú (HOTEL, RESORT...)
+
+    // Tọa độ địa lý để render marker trên bản đồ OpenStreetMap (NULL nếu khách sạn chưa được geocode)
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
 }
