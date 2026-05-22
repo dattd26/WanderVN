@@ -40,6 +40,16 @@ public static class DependencyInjection
             c.DefaultRequestHeaders.Add("Duffel-Version", "v2");
         });
 
+        // Đăng ký Nominatim Geocoding Service (OpenStreetMap miễn phí)
+        services.Configure<NominatimSettings>(configuration.GetSection("Nominatim"));
+        services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(c =>
+        {
+            c.BaseAddress = new Uri(configuration["Nominatim:BaseUrl"] ?? "https://nominatim.openstreetmap.org/");
+            // Nominatim TOS BẮT BUỘC User-Agent định danh, vi phạm sẽ bị block IP
+            var userAgent = configuration["Nominatim:UserAgent"] ?? "WanderVN/1.0 (dev@wandervn.local)";
+            c.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
+        });
+
         // Đăng ký VNPay Service
         services.AddScoped<IVNPayService, VNPayService>();
 

@@ -25,6 +25,11 @@ public partial class Hotels
 
     public DateTimeOffset? CreatedAt { get; set; }
 
+    // Tọa độ địa lý dùng để hiển thị marker trên bản đồ OpenStreetMap
+    public decimal? Latitude { get; set; }
+
+    public decimal? Longitude { get; set; }
+
     public virtual ICollection<HotelImages> HotelImages { get; set; } = new List<HotelImages>();
 
     public virtual Locations? Location { get; set; }
