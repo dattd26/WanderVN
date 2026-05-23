@@ -37,7 +37,7 @@ export const FlightCheckout: React.FC = () => {
   });
 
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'momo' | 'credit'>('vnpay');
+  const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'zalopay' | 'momo' | 'credit'>('vnpay');
 
   // Form thông tin hành khách
   const [passengerForm, setPassengerForm] = useState<Omit<PassengerDto, 'id'>>({
@@ -102,6 +102,16 @@ export const FlightCheckout: React.FC = () => {
         const paymentUrl = await paymentService.createVNPayUrl({ bookingId: result.bookingId });
         if (paymentUrl) {
           // Chuyển hướng trình duyệt trực tiếp sang cổng thanh toán VNPay Sandbox
+          window.location.href = paymentUrl;
+          return;
+        }
+      }
+
+      // 3. Nếu phương thức thanh toán là ZaloPay, chuyển hướng sang sandbox
+      if (paymentMethod === 'zalopay') {
+        const paymentUrl = await paymentService.createZaloPayUrl({ bookingId: result.bookingId });
+        if (paymentUrl) {
+          // Chuyển hướng trình duyệt trực tiếp sang cổng thanh toán ZaloPay Sandbox
           window.location.href = paymentUrl;
           return;
         }
@@ -294,6 +304,32 @@ export const FlightCheckout: React.FC = () => {
                   </div>
                 </label>
 
+                {/* ZaloPay */}
+                <label
+                  onClick={() => setPaymentMethod('zalopay')}
+                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${paymentMethod === 'zalopay'
+                    ? 'border-primary bg-surface shadow-md'
+                    : 'border-outline-variant/30 hover:border-primary bg-transparent'
+                    }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked={paymentMethod === 'zalopay'}
+                      onChange={() => setPaymentMethod('zalopay')}
+                      className="text-primary focus:ring-primary w-4.5 h-4.5 cursor-pointer animate-none"
+                    />
+                    <div className="flex flex-col">
+                      <span className="font-label-md text-label-md">Ví điện tử ZaloPay</span>
+                      <span className="text-[11px] text-on-surface-variant opacity-75">Thanh toán an toàn, nhanh chóng qua ứng dụng ZaloPay</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-all text-secondary">
+                    <Wallet className="h-6 w-6" />
+                  </div>
+                </label>
+
                 {/* Momo */}
                 <label
                   onClick={() => setPaymentMethod('momo')}
@@ -451,6 +487,11 @@ export const FlightCheckout: React.FC = () => {
                   ) : paymentMethod === 'vnpay' ? (
                     <>
                       TIẾP TỤC THANH TOÁN VNPAY
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  ) : paymentMethod === 'zalopay' ? (
+                    <>
+                      TIẾP TỤC THANH TOÁN ZALOPAY
                       <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </>
                   ) : (
