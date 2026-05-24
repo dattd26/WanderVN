@@ -454,6 +454,7 @@ export function AdminUsers() {
         isOpen={isModalOpen}
         userId={selectedUserId}
         onClose={() => { setIsModalOpen(false); setSelectedUserId(null); }}
+        onSaveSuccess={fetchCustomers}
       />
     </div>
   );

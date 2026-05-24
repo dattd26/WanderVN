@@ -1,51 +1,89 @@
-import { NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
 export function AdminSidebar() {
   const activeClass = "flex items-center gap-admin-md px-admin-md py-admin-sm bg-admin-secondary-container text-admin-on-secondary-container font-bold rounded-lg transition-transform active:scale-95";
   const inactiveClass = "flex items-center gap-admin-md px-admin-md py-admin-sm text-admin-on-surface-variant hover:bg-admin-surface-container-high rounded-lg transition-all duration-200";
 
+  const location = useLocation();
+  const isSubmenuActive = location.pathname === "/admin/customers" || location.pathname === "/admin/partners";
+
+  const [isUsersOpen, setIsUsersOpen] = useState(isSubmenuActive);
+
+  useEffect(() => {
+    if (isSubmenuActive) {
+      setIsUsersOpen(true);
+    }
+  }, [location.pathname, isSubmenuActive]);
+
   return (
-    <aside className="flex flex-col w-[260px] h-screen py-admin-lg px-admin-md bg-admin-surface-container-lowest border-r border-admin-outline-variant sticky top-0 left-0 z-50 shrink-0 select-none">
+    // Đã sửa thành fixed top-0 left-0 h-screen z-50 để cố định sidebar hoàn toàn
+    <aside className="flex flex-col w-[260px] h-screen py-admin-lg px-admin-md bg-admin-surface-container-lowest border-r border-admin-outline-variant fixed top-0 left-0 z-50 shrink-0 select-none">
       <div className="mb-admin-xl px-admin-sm">
         <h1 className="font-admin-sans text-admin-display-lg font-bold text-admin-primary">WanderVN</h1>
         <p className="text-admin-on-surface-variant font-admin-sans text-admin-body-sm">Admin Console</p>
       </div>
 
       <nav className="flex-1 space-y-admin-xs">
-        <NavLink 
-          to="/admin/dashboard" 
+        <NavLink
+          to="/admin/dashboard"
           className={({ isActive }) => isActive ? activeClass : inactiveClass}
         >
           <span className="material-symbols-outlined">dashboard</span>
           <span className="font-admin-sans text-admin-body-md">Dashboard</span>
         </NavLink>
 
-        <NavLink 
-          to="/admin/users" 
-          className={({ isActive }) => isActive ? activeClass : inactiveClass}
-        >
-          <span className="material-symbols-outlined">group</span>
-          <span className="font-admin-sans text-admin-body-md">Users</span>
-        </NavLink>
+        {/* Khối menu Users lồng nhau */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setIsUsersOpen(!isUsersOpen)}
+            className={`w-full flex items-center justify-between px-admin-md py-admin-sm text-admin-on-surface-variant hover:bg-admin-surface-container-high rounded-lg transition-all duration-200 ${isSubmenuActive ? "text-admin-primary font-bold" : ""
+              }`}
+          >
+            <div className="flex items-center gap-admin-md">
+              <span className="material-symbols-outlined">group</span>
+              <span className="font-admin-sans text-admin-body-md">Users</span>
+            </div>
+            <span
+              className="material-symbols-outlined transition-transform duration-200"
+              style={{ transform: isUsersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            >
+              expand_more
+            </span>
+          </button>
 
-        <NavLink 
-          to="/admin/partners" 
-          className={({ isActive }) => isActive ? activeClass : inactiveClass}
-        >
-          <span className="material-symbols-outlined">handshake</span>
-          <span className="font-admin-sans text-admin-body-md">Partners</span>
-        </NavLink>
+          {isUsersOpen && (
+            <div className="pl-admin-md mt-admin-xs space-y-admin-xs border-l border-admin-outline-variant ml-admin-md">
+              <NavLink
+                to="/admin/customers"
+                className={({ isActive }) => isActive ? activeClass : inactiveClass}
+              >
+                <span className="material-symbols-outlined text-[20px]">person</span>
+                <span className="font-admin-sans text-admin-body-md">Customer</span>
+              </NavLink>
 
-        <NavLink 
-          to="/admin/content" 
+              <NavLink
+                to="/admin/partners"
+                className={({ isActive }) => isActive ? activeClass : inactiveClass}
+              >
+                <span className="material-symbols-outlined text-[20px]">handshake</span>
+                <span className="font-admin-sans text-admin-body-md">Partner</span>
+              </NavLink>
+            </div>
+          )}
+        </div>
+
+        <NavLink
+          to="/admin/content"
           className={({ isActive }) => isActive ? activeClass : inactiveClass}
         >
           <span className="material-symbols-outlined">edit_note</span>
           <span className="font-admin-sans text-admin-body-md">Content</span>
         </NavLink>
 
-        <NavLink 
-          to="/admin/finance" 
+        <NavLink
+          to="/admin/finance"
           className={({ isActive }) => isActive ? activeClass : inactiveClass}
         >
           <span className="material-symbols-outlined">payments</span>
@@ -54,15 +92,15 @@ export function AdminSidebar() {
       </nav>
 
       <div className="pt-admin-lg border-t border-admin-outline-variant space-y-admin-xs">
-        <a 
-          href="#settings" 
+        <a
+          href="#settings"
           className="flex items-center gap-admin-md px-admin-md py-admin-sm text-admin-on-surface-variant hover:bg-admin-surface-container-high rounded-lg transition-all duration-200"
         >
           <span className="material-symbols-outlined">settings</span>
           <span className="font-admin-sans text-admin-body-md">Settings</span>
         </a>
-        <NavLink 
-          to="/" 
+        <NavLink
+          to="/"
           className="flex items-center gap-admin-md px-admin-md py-admin-sm text-admin-on-surface-variant hover:bg-admin-surface-container-high rounded-lg transition-all duration-200"
         >
           <span className="material-symbols-outlined">logout</span>

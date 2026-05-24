@@ -7,7 +7,7 @@ export function AdminHeader() {
   const getHeaderTitle = () => {
     const path = location.pathname;
     if (path.includes('/dashboard')) return 'Overview';
-    if (path.includes('/users')) return 'WanderVN Admin';
+    if (path.includes('/users') || path.includes('/customers')) return 'Customer Management';
     if (path.includes('/partners')) return 'Partner Management';
     if (path.includes('/content')) return 'Content & Platform';
     if (path.includes('/finance')) return 'Finance';
@@ -15,7 +15,8 @@ export function AdminHeader() {
   };
 
   return (
-    <header className="flex justify-between items-center h-16 px-admin-xl w-full sticky top-0 z-40 bg-admin-surface border-b border-admin-outline-variant">
+    /* ĐÃ SỬA: Thay đổi z-40 thành z-20 để không đè lên lớp backdrop đen mờ của Modal */
+    <header className="flex justify-between items-center h-16 px-admin-xl w-full sticky top-0 z-20 bg-white shadow-sm border-b border-admin-outline-variant select-none">
       <div className="flex items-center gap-admin-xl flex-1">
         <h2 className="font-admin-sans text-admin-headline-md font-bold text-admin-primary">
           {getHeaderTitle()}
@@ -24,9 +25,9 @@ export function AdminHeader() {
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-admin-outline">
             search
           </span>
-          <input 
-            type="text" 
-            placeholder="Global search..." 
+          <input
+            type="text"
+            placeholder="Global search..."
             className="pl-10 pr-admin-md py-admin-sm bg-admin-surface-container-low border border-admin-outline-variant rounded-full text-admin-body-md w-64 focus:ring-2 focus:ring-admin-secondary focus:border-admin-secondary focus:w-80 outline-none transition-all duration-300"
           />
         </div>
@@ -43,12 +44,16 @@ export function AdminHeader() {
             <p className="font-admin-sans text-admin-label-caps text-admin-on-surface font-bold">Admin User</p>
             <p className="text-[10px] text-admin-on-surface-variant">SUPERADMIN</p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-admin-primary-container flex items-center justify-center overflow-hidden border border-admin-outline-variant">
-            <img 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBG8MasxNf1Z-q1xY-D8tPLRIkzWW1AeOSfZ9uYGFNJXzYTz56iNTEKRrg0Cv9NiEz_lXXLzhcEvMW2B1trdN4ySvdraLeVpAcf4qJb42s8omQL0M9QYrmn2qavTT79B-YKOEx4p_8LhSTpzN3xD3oWhoiBxTZKUI0hj_OFciC7RjZl5hr4EJWn8Tf-5NQCoPk6rxanXmX8kisXXCQwG2xee0iSFgIOEN1zsAMT6eyBuKRa1X0qbUSHWV8tNlmJecY56ttrFLlVfLM" 
-              alt="Admin Profile" 
+          <div className="w-10 h-10 rounded-full bg-admin-primary-container flex items-center justify-center overflow-hidden border border-admin-outline-variant text-admin-on-primary font-bold relative">
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
+              alt="Admin Profile"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
             />
+            <span className="absolute font-admin-sans text-sm">AD</span>
           </div>
         </div>
       </div>

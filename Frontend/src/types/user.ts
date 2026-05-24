@@ -48,3 +48,23 @@ export interface GetUsersQuery {
   pageNumber?: number;
   pageSize?: number;
 }
+
+// Payload cho POST api/v1/users/customers (CreateCustomerCommand)
+export interface CreateCustomerPayload {
+  email: string;
+  password: string;
+  fullName?: string;
+  phoneNumber?: string;
+  avatarUrl?: string | null;
+  isActive: boolean;
+}
+
+// Payload cho PUT api/v1/users/customers/{id} (UpdateCustomerCommand)
+export interface UpdateCustomerPayload {
+  fullName?: string | null;
+  phoneNumber?: string | null;
+  avatarUrl?: string | null;
+  isActive?: boolean;
+  password?: string;
+  roleId?: number | null;
+}

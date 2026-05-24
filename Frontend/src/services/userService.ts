@@ -1,7 +1,7 @@
 // Dịch vụ API quản lý người dùng - kết nối với UsersController ASP.NET Core
 
 import { request } from './apiClient';
-import type { UserDto, UserDetailsDto, PagedResult, GetUsersQuery } from '../types';
+import type { UserDto, UserDetailsDto, PagedResult, GetUsersQuery, CreateCustomerPayload, UpdateCustomerPayload } from '../types';
 
 export const userService = {
   /**
@@ -26,5 +26,29 @@ export const userService = {
    */
   async getCustomerById(id: number): Promise<UserDetailsDto> {
     return request<UserDetailsDto>(`/users/customers/${id}`);
+  },
+
+  /**
+   * Tạo mới một customer
+   * POST api/v1/users/customers
+   */
+  async createCustomer(payload: CreateCustomerPayload): Promise<UserDto> {
+    return request<UserDto>('/users/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Cập nhật thông tin customer theo ID
+   * PUT api/v1/users/customers/{id}
+   */
+  async updateCustomer(id: number, payload: UpdateCustomerPayload): Promise<UserDto> {
+    return request<UserDto>(`/users/customers/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
   },
 };
