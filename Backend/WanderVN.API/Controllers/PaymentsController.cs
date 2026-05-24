@@ -47,6 +47,30 @@ public class PaymentsController : ControllerBase
     }
 
     /// <summary>
+    /// Kênh tạo URL thanh toán ZaloPay cho đơn đặt dịch vụ.
+    /// </summary>
+    [HttpPost("create-zalopay-url")]
+    public async Task<IActionResult> CreateZaloPayUrl([FromBody] WanderVN.Application.DTOs.Request.CreateZaloPayUrlRequestDto request)
+    {
+        var command = new WanderVN.Application.Features.Payments.Commands.CreateZaloPayUrl.CreateZaloPayUrlCommand
+        {
+            BookingId = request.BookingId
+        };
+
+        try
+        {
+            var paymentUrl = await _mediator.Send(command);
+            var response = new ApiResponse<string>(true, "Khoi tao URL thanh toan ZaloPay thanh cong", 200, paymentUrl);
+            return Ok(response);
+        }
+        catch (System.Exception ex)
+        {
+            var response = new ApiResponse<string>(false, ex.Message, 400, string.Empty);
+            return BadRequest(response);
+        }
+    }
+
+    /// <summary>
     /// Đầu nhận Webhook IPN (Server-to-Server) cực kỳ quan trọng từ VNPay để cập nhật tự động trạng thái đơn hàng.
     /// Lưu ý: VNPay yêu cầu định dạng trả về thô (Raw JSON) dạng {"RspCode": "...", "Message": "..."} 
     /// nên không bọc qua lớp ApiResponse.
@@ -68,6 +92,24 @@ public class PaymentsController : ControllerBase
         var result = await _mediator.Send(command);
 
         // Trả về trực tiếp object VNPayIpnResponse thô theo chuẩn của tài liệu VNPay
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Đầu nhận Webhook Callback từ ZaloPay Server khi giao dịch hoàn tất.
+    /// </summary>
+    [HttpPost("zalopay-callback")]
+    public async Task<IActionResult> ZaloPayCallback([FromBody] ZaloPayCallbackRequestDto request)
+    {
+        var command = new WanderVN.Application.Features.Payments.Commands.ProcessZaloPayCallback.ProcessZaloPayCallbackCommand
+        {
+            Data = request.Data,
+            Mac = request.Mac
+        };
+
+        var result = await _mediator.Send(command);
+
+        // Trả về dữ liệu thô dạng JSON theo yêu cầu đặc tả của ZaloPay
         return Ok(result);
     }
 
@@ -97,4 +139,13 @@ public class PaymentsController : ControllerBase
 public class CreateVNPayUrlRequestDto
 {
     public int BookingId { get; set; }
+}
+
+/// <summary>
+/// DTO chứa tham số nhận từ Webhook ZaloPay.
+/// </summary>
+public class ZaloPayCallbackRequestDto
+{
+    public string Data { get; set; } = null!;
+    public string Mac { get; set; } = null!;
 }

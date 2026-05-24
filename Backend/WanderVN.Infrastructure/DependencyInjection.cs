@@ -53,6 +53,9 @@ public static class DependencyInjection
         // Đăng ký VNPay Service
         services.AddScoped<IVNPayService, VNPayService>();
 
+        // Đăng ký ZaloPay Service với HttpClient
+        services.AddHttpClient<IZaloPayService, ZaloPayService>();
+
         services.AddScoped<IHotelRepository, HotelRepository>();
         services.AddScoped<IPropertyTypeRepository, PropertyTypeRepository>();
         services.AddScoped<ISearchAutocompleteRepository, SearchAutocompleteRepository>();
