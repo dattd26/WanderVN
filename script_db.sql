@@ -282,7 +282,8 @@ CREATE TABLE [dbo].[HotelImages](
     [ImageUrl] [nvarchar](500) NOT NULL,
     [IsPrimary] [bit] NULL,
     [CreatedAt] [datetimeoffset](7) NULL,
-PRIMARY KEY CLUSTERED 
+    [PublicId] [nvarchar](255) NULL,
+PRIMARY KEY CLUSTERED
 (
     [Id] ASC
 )) ON [PRIMARY]
@@ -317,7 +318,14 @@ CREATE TABLE [dbo].[Hotels](
     [CreatedAt] [datetimeoffset](7) NULL,
     [OwnerId] [int] NULL,
     [PropertyTypeId] [int] NULL,
-PRIMARY KEY CLUSTERED 
+    [Latitude] [decimal](9, 6) NULL,
+    [Longitude] [decimal](9, 6) NULL,
+    [Status] [int] NOT NULL,                       -- 0=Pending, 1=Approved, 2=Rejected
+    [CancellationPolicy] [nvarchar](20) NULL,      -- 'flexible' | 'moderate' | 'strict'
+    [RejectReason] [nvarchar](500) NULL,
+    [SubmittedAt] [datetimeoffset](7) NULL,
+    [ApprovedAt] [datetimeoffset](7) NULL,
+PRIMARY KEY CLUSTERED
 (
     [Id] ASC
 )) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
@@ -419,7 +427,8 @@ CREATE TABLE [dbo].[RoomTypes](
     [BasePrice] [decimal](18, 2) NOT NULL,
     [Capacity] [int] NOT NULL,
     [TotalRooms] [int] NOT NULL,
-PRIMARY KEY CLUSTERED 
+    [Description] [nvarchar](500) NULL,
+PRIMARY KEY CLUSTERED
 (
     [Id] ASC
 )) ON [PRIMARY]
@@ -498,6 +507,12 @@ CREATE NONCLUSTERED INDEX [IX_Hotels_Owner] ON [dbo].[Hotels]
     [OwnerId] ASC
 )
 GO
+/****** Object:  Index [IX_Hotels_Status]    Phục vụ admin queue + filter Status ******/
+CREATE NONCLUSTERED INDEX [IX_Hotels_Status] ON [dbo].[Hotels]
+(
+    [Status] ASC
+) INCLUDE ([OwnerId])
+GO
 /****** Object:  Index [IX_RoomTypes_Hotel]    Script Date: 18-May-26 6:31:13 PM ******/
 CREATE NONCLUSTERED INDEX [IX_RoomTypes_Hotel] ON [dbo].[RoomTypes]
 (
@@ -523,6 +538,8 @@ GO
 ALTER TABLE [dbo].[Hotels] ADD  DEFAULT ((1)) FOR [IsActive]
 GO
 ALTER TABLE [dbo].[Hotels] ADD  DEFAULT (sysdatetimeoffset()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[Hotels] ADD  CONSTRAINT [DF_Hotels_Status] DEFAULT ((0)) FOR [Status]
 GO
 ALTER TABLE [dbo].[Payments] ADD  DEFAULT (sysdatetimeoffset()) FOR [PaymentDate]
 GO
@@ -603,6 +620,10 @@ ALTER TABLE [dbo].[Wishlists]  WITH CHECK ADD FOREIGN KEY([UserId])
 REFERENCES [dbo].[Users] ([Id])
 GO
 ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD CHECK  (([StarRating]>=(1) AND [StarRating]<=(5)))
+GO
+ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD  CONSTRAINT [CK_Hotels_Status] CHECK  (([Status] IN (0,1,2)))
+GO
+ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD  CONSTRAINT [CK_Hotels_CancellationPolicy] CHECK  (([CancellationPolicy] IS NULL OR [CancellationPolicy] IN ('flexible','moderate','strict')))
 GO
 
 /****** Object:  StoredProcedure [dbo].[sp_Partner_UpdateRoomType] ******/
@@ -790,6 +811,7 @@ BEGIN
     ) rt_min
     WHERE h.LocationId IN (SELECT Id FROM LocationHierarchy)
       AND h.IsActive = 1
+      AND h.[Status] = 1  -- chỉ trả hotel đã được Admin duyệt
       AND rt.Capacity >= @Capacity
       AND dbo.fn_GetAvailableRoomCount(rt.Id, @CheckIn, @CheckOut) > 0
       AND (@MinPrice IS NULL OR rt_min.MinPrice >= @MinPrice)
