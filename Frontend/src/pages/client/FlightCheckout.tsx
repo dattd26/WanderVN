@@ -6,13 +6,15 @@ import {
   Plane,
   CheckCircle,
   ArrowRight,
-  QrCode,
-  Wallet,
   CreditCard,
   Shield,
   Loader2,
   AlertTriangle
 } from 'lucide-react';
+
+import momoLogo from '../../assets/images/momo.png';
+import zalopayLogo from '../../assets/images/zalopay.png';
+import vnpayLogo from '../../assets/images/vnpay.png';
 
 export const FlightCheckout: React.FC = () => {
   const location = useLocation();
@@ -299,62 +301,113 @@ export const FlightCheckout: React.FC = () => {
                       <span className="text-[11px] text-on-surface-variant opacity-75">Thanh toán qua ứng dụng ngân hàng hoặc thẻ nội địa/quốc tế</span>
                     </div>
                   </div>
-                  <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-all text-secondary">
-                    <QrCode className="h-6 w-6" />
+                  <div className="h-8 w-14 bg-white border border-outline-variant/20 rounded flex items-center justify-center p-1 shadow-sm transition-all group-hover:shadow-md">
+                    <img src={vnpayLogo} alt="VNPay" className="h-full w-full object-contain" />
                   </div>
                 </label>
 
-                {/* ZaloPay */}
-                <label
-                  onClick={() => setPaymentMethod('zalopay')}
-                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${paymentMethod === 'zalopay'
+                {/* Nhóm ví điện tử (ZaloPay & MoMo) */}
+                <div
+                  className={`border transition-all rounded-lg overflow-hidden ${paymentMethod === 'zalopay' || paymentMethod === 'momo'
                     ? 'border-primary bg-surface shadow-md'
                     : 'border-outline-variant/30 hover:border-primary bg-transparent'
                     }`}
                 >
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={paymentMethod === 'zalopay'}
-                      onChange={() => setPaymentMethod('zalopay')}
-                      className="text-primary focus:ring-primary w-4.5 h-4.5 cursor-pointer animate-none"
-                    />
-                    <div className="flex flex-col">
-                      <span className="font-label-md text-label-md">Ví điện tử ZaloPay</span>
-                      <span className="text-[11px] text-on-surface-variant opacity-75">Thanh toán an toàn, nhanh chóng qua ứng dụng ZaloPay</span>
+                  {/* Hàng hiển thị chính của nhóm ví điện tử */}
+                  <div
+                    onClick={() => {
+                      if (paymentMethod !== 'zalopay' && paymentMethod !== 'momo') {
+                        setPaymentMethod('zalopay');
+                      }
+                    }}
+                    className="group flex items-center justify-between p-5 cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={paymentMethod === 'zalopay' || paymentMethod === 'momo'}
+                        onChange={() => setPaymentMethod('zalopay')}
+                        className="text-primary focus:ring-primary w-4.5 h-4.5 cursor-pointer animate-none"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-label-md text-label-md">Ví điện tử (ZaloPay / MoMo)</span>
+                        <span className="text-[11px] text-on-surface-variant opacity-75">Thanh toán nhanh qua ví điện tử liên kết tại Việt Nam</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-14 bg-white border border-outline-variant/20 rounded flex items-center justify-center p-1 shadow-sm transition-all group-hover:shadow-md">
+                        <img src={zalopayLogo} alt="ZaloPay" className="h-full w-full object-contain" />
+                      </div>
+                      <div className="h-8 w-14 bg-white border border-outline-variant/20 rounded flex items-center justify-center p-1 shadow-sm transition-all group-hover:shadow-md opacity-70">
+                        <img src={momoLogo} alt="MoMo" className="h-full w-full object-contain rounded grayscale" />
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-all text-secondary">
-                    <Wallet className="h-6 w-6" />
-                  </div>
-                </label>
 
-                {/* Momo */}
-                <label
-                  onClick={() => setPaymentMethod('momo')}
-                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${paymentMethod === 'momo'
-                    ? 'border-primary bg-surface shadow-md'
-                    : 'border-outline-variant/30 hover:border-primary bg-transparent'
-                    }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={paymentMethod === 'momo'}
-                      onChange={() => setPaymentMethod('momo')}
-                      className="text-primary focus:ring-primary w-4.5 h-4.5 cursor-pointer animate-none"
-                    />
-                    <div className="flex flex-col">
-                      <span className="font-label-md text-label-md">Ví điện tử MoMo</span>
-                      <span className="text-[11px] text-on-surface-variant opacity-75">Thanh toán nhanh gọn bằng ví điện tử MoMo</span>
+                  {/* Các tùy chọn chi tiết bên trong nhóm ví điện tử */}
+                  {(paymentMethod === 'zalopay' || paymentMethod === 'momo') && (
+                    <div className="px-5 pb-5 pt-2 border-t border-outline-variant/10 space-y-3 bg-surface-container-low/20">
+                      <p className="text-[10px] uppercase tracking-wider text-on-surface-variant/70 font-semibold mb-1">
+                        Vui lòng chọn ví điện tử thanh toán:
+                      </p>
+
+                      {/* Tùy chọn ví điện tử ZaloPay */}
+                      <div
+                        onClick={() => setPaymentMethod('zalopay')}
+                        className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all ${paymentMethod === 'zalopay'
+                          ? 'border-primary bg-surface shadow-sm'
+                          : 'border-outline-variant/20 hover:border-primary/50 bg-transparent'
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="sub-payment-wallet"
+                            checked={paymentMethod === 'zalopay'}
+                            onChange={() => setPaymentMethod('zalopay')}
+                            className="text-primary focus:ring-primary w-4 h-4 cursor-pointer"
+                          />
+                          <div className="h-8 w-14 bg-white border border-outline-variant/20 rounded flex items-center justify-center p-1 shadow-sm">
+                            <img src={zalopayLogo} alt="ZaloPay" className="h-full w-full object-contain" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-label-md text-xs text-on-surface">Ví điện tử ZaloPay</span>
+                            <span className="text-[10px] text-on-surface-variant/80">Khuyên dùng, xử lý và phê duyệt ngay tức thì</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tùy chọn ví điện tử MoMo (Bị vô hiệu hóa) */}
+                      <div
+                        className="flex items-center justify-between p-3 border border-outline-variant/10 rounded-lg opacity-60 bg-outline-variant/5 cursor-not-allowed select-none relative"
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="sub-payment-wallet"
+                            disabled
+                            checked={paymentMethod === 'momo'}
+                            className="text-primary focus:ring-primary w-4 h-4 cursor-not-allowed"
+                          />
+                          <div className="h-8 w-14 bg-white border border-outline-variant/20 rounded flex items-center justify-center p-1 shadow-sm opacity-60">
+                            <img src={momoLogo} alt="MoMo" className="h-full w-full object-contain rounded grayscale" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-label-md text-xs text-on-surface/85">Ví điện tử MoMo</span>
+                            <span className="text-[10px] text-on-surface-variant/60">Thanh toán bằng ví điện tử MoMo của bạn</span>
+                          </div>
+                        </div>
+                        {/* Nhãn trạng thái chưa hỗ trợ nổi bật với độ tương phản cao */}
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="text-[10px] font-semibold text-red-700 dark:text-red-300 px-2 py-0.5 bg-red-100 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded select-none shadow-sm">
+                            Chưa hỗ trợ
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2 opacity-50 group-hover:opacity-80 transition-all text-on-surface">
-                    <Wallet className="h-6 w-6" />
-                  </div>
-                </label>
+                  )}
+                </div>
 
                 {/* Thẻ tín dụng */}
                 <label
