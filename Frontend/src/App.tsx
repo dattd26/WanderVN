@@ -6,9 +6,11 @@ import { SearchStays } from './pages/client/SearchStays';
 import { HotelDetail } from './pages/client/HotelDetail';
 import { SearchFlights } from './pages/client/SearchFlights';
 import { FlightCheckout } from './pages/client/FlightCheckout';
+import { HotelCheckout } from './pages/client/HotelCheckout';
 import { VNPayReturn } from './pages/client/VNPayReturn';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+
 
 function App() {
   return (
@@ -28,6 +30,7 @@ function App() {
             <Route path="/hotel/:id" element={<HotelDetail />} />
             <Route path="/flights" element={<SearchFlights />} />
             <Route path="/flights/checkout" element={<FlightCheckout />} />
+            <Route path="/booking" element={<HotelCheckout />} />
             <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
