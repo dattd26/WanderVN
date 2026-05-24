@@ -90,6 +90,7 @@ public class HotelRepository : IHotelRepository
                     Name = rt.Name,
                     BasePrice = rt.BasePrice,
                     Capacity = rt.Capacity,
+                    Images = rt.RoomTypeImages.Select(img => img.ImageUrl ?? string.Empty).ToList(),
                     // Calculate available rooms by comparing total rooms with current non-cancelled bookings
                     AvailableRooms = rt.TotalRooms - _dbContext.BookingHotels
                         .Join(_dbContext.Rooms, bh => bh.RoomId, r => r.Id, (bh, r) => new { bh, r })

@@ -26,3 +26,26 @@ export interface SearchHotelsQuery {
   pageNumber?: number;
   pageSize?: number;
 }
+
+// Thông tin chi tiết của từng hạng phòng
+export interface RoomTypeInfo {
+  id: number;
+  name: string;
+  basePrice: number;
+  capacity: number;
+  availableRooms: number;
+  images?: string[];
+}
+
+// Chi tiết khách sạn bao gồm danh sách hạng phòng
+export interface HotelDetailDto {
+  id: number;
+  name: string;
+  address: string | null;
+  starRating: number | null;
+  description: string | null;
+  locationName: string | null;
+  images: string[];
+  roomTypes: RoomTypeInfo[];
+}
+

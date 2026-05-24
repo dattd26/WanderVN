@@ -119,18 +119,16 @@ export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
     let targetHotelId = selectedHotelId;
     let targetLocName = query;
 
-    if (isOpen && query.trim() !== '') {
-      if (suggestions.length > 0) {
-        const bestMatch = suggestions[0];
-        if (bestMatch.type === 'Location') {
-          targetLocId = bestMatch.targetId;
-          targetHotelId = null;
-          targetLocName = bestMatch.name;
-        } else {
-          targetHotelId = bestMatch.targetId;
-          targetLocName = bestMatch.name;
-          targetLocId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
-        }
+    if (query.trim() !== '' && suggestions.length > 0) {
+      const bestMatch = suggestions[0];
+      if (bestMatch.type === 'Location') {
+        targetLocId = bestMatch.targetId;
+        targetHotelId = null;
+        targetLocName = bestMatch.name;
+      } else {
+        targetHotelId = bestMatch.targetId;
+        targetLocName = bestMatch.name;
+        targetLocId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102;
       }
     }
 
