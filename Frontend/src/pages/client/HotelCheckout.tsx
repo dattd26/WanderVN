@@ -34,7 +34,7 @@ export const HotelCheckout: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   // Quản lý phương thức thanh toán đã chọn
   const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'zalopay' | 'momo' | 'credit'>('vnpay');
 
@@ -86,8 +86,7 @@ export const HotelCheckout: React.FC = () => {
   // Tính toán đơn giá tổng chi phí phòng
   const roomBasePrice = room ? room.basePrice : 0;
   const subtotal = roomBasePrice * nights;
-  const taxAndServices = Math.round(subtotal * 0.1); // 10% thuế phí dịch vụ di sản
-  const totalAmount = subtotal + taxAndServices;
+  const totalAmount = subtotal;
 
   // Thực hiện quy trình đặt phòng và thanh toán tương ứng
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -181,10 +180,10 @@ export const HotelCheckout: React.FC = () => {
         )}
 
         <form onSubmit={handleBookingSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          
+
           {/* CỘT TRÁI: THÔNG TIN KHÁCH HÀNG & PHƯƠNG THỨC THANH TOÁN */}
           <div className="lg:col-span-8 space-y-10">
-            
+
             {/* Khối 1: Thông tin khách hàng */}
             <div className="border border-outline-variant/30 p-6 md:p-8 bg-surface-container-lowest rounded-lg">
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-outline-variant/20">
@@ -273,7 +272,7 @@ export const HotelCheckout: React.FC = () => {
                 <h2 className="font-headline-lg text-headline-md text-primary">Chọn Phương Thức Thanh Toán</h2>
               </div>
               <div className="space-y-4">
-                
+
                 {/* VNPay */}
                 <div
                   onClick={() => setPaymentMethod('vnpay')}
@@ -445,7 +444,7 @@ export const HotelCheckout: React.FC = () => {
 
           {/* CỘT PHẢI: THÔNG TIN TÓM TẮT ĐẶT PHÒNG */}
           <div className="lg:col-span-4 space-y-6">
-            
+
             {/* Tóm tắt khách sạn & phòng */}
             {hotel && room && (
               <div className="border border-outline-variant/30 bg-surface-container-lowest p-6 rounded-lg space-y-6 limestone-shadow">
@@ -507,15 +506,10 @@ export const HotelCheckout: React.FC = () => {
                     <span>Đơn giá phòng:</span>
                     <span>{roomBasePrice.toLocaleString('vi-VN')} VND / đêm</span>
                   </div>
-                  
+
                   <div className="flex justify-between text-on-surface-variant">
                     <span>Tổng tiền phòng ({nights} đêm):</span>
                     <span>{subtotal.toLocaleString('vi-VN')} VND</span>
-                  </div>
-
-                  <div className="flex justify-between text-on-surface-variant">
-                    <span>Thuế & Phí dịch vụ di sản (10%):</span>
-                    <span>{taxAndServices.toLocaleString('vi-VN')} VND</span>
                   </div>
 
                   <div className="flex justify-between items-baseline pt-4 border-t border-outline-variant/30 text-primary">
@@ -557,7 +551,7 @@ export const HotelCheckout: React.FC = () => {
         <div className="fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-surface-container-lowest max-w-md w-full border border-outline-variant/30 p-8 rounded-lg text-center shadow-xl space-y-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-[#B59A5A]"></div>
-            
+
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto border border-green-200">
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
