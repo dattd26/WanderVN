@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Hotel } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Hotel, User, LogOut } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Kiểm tra trạng thái đăng nhập trực tiếp từ localStorage
+  const token = localStorage.getItem('token');
+  const email = localStorage.getItem('userEmail');
+  const isLoggedIn = !!(token && email);
+  const userEmail = email || '';
 
   // Khi cuộn trang qua 50px, thanh navbar sẽ đổi sang màu nền mờ nhòe kính mờ sang trọng
   useEffect(() => {
@@ -19,6 +26,13 @@ export const Navbar: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('userEmail');
+    navigate('/login');
+  };
 
   const navLinks = [
     { name: 'Khách sạn', path: '/stays' },
@@ -65,11 +79,41 @@ export const Navbar: React.FC = () => {
           })}
         </ul>
 
-        {/* Desktop CTA */}
-        <div className="hidden md:block">
-          <button className="font-label-md text-label-md uppercase tracking-widest bg-primary text-on-primary px-6 py-3 border border-primary hover:bg-transparent hover:text-primary transition-all duration-300">
-            Đặt phòng ngay
-          </button>
+        {/* Desktop CTA / Auth */}
+        <div className="hidden md:flex items-center gap-6">
+          {isLoggedIn ? (
+            <div className="flex items-center gap-5">
+              {/* User Profile Tag */}
+              <div className="flex items-center gap-2 text-primary font-label-md text-xs uppercase tracking-wider bg-surface-container-low px-4 py-2 border border-outline-variant/30 rounded-md">
+                <User className="h-4 w-4 text-secondary" />
+                <span className="font-semibold max-w-[150px] truncate">{userEmail.split('@')[0]}</span>
+              </div>
+              {/* Logout Button */}
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 font-label-md text-xs uppercase tracking-widest text-on-surface-variant hover:text-error transition-colors duration-300"
+                title="Đăng xuất"
+              >
+                <LogOut className="h-4 w-4" />
+                Đăng xuất
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-6">
+              <Link 
+                to="/login"
+                className="font-label-md text-label-md uppercase tracking-widest text-primary hover:text-secondary hover:opacity-80 transition-all duration-300 font-semibold"
+              >
+                Đăng nhập
+              </Link>
+              <button 
+                onClick={() => navigate('/stays')}
+                className="font-label-md text-label-md uppercase tracking-widest bg-primary text-on-primary px-6 py-3 border border-primary hover:bg-transparent hover:text-primary transition-all duration-300"
+              >
+                Đặt phòng ngay
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile Toggle Button */}
@@ -96,12 +140,50 @@ export const Navbar: React.FC = () => {
               </li>
             ))}
           </ul>
-          <button className="w-full text-center font-label-md text-label-md uppercase tracking-widest bg-primary text-on-primary py-4 hover:bg-secondary transition-colors">
-            Đặt phòng ngay
-          </button>
+          
+          <div className="flex flex-col gap-4 border-t border-surface-variant/30 pt-4">
+            {isLoggedIn ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-primary font-label-md text-xs uppercase tracking-wider bg-surface-container-low px-4 py-3 border border-outline-variant/30 rounded-md">
+                  <User className="h-4 w-4 text-secondary" />
+                  <span className="font-semibold">{userEmail}</span>
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full text-center flex justify-center items-center gap-2 font-label-md text-label-md uppercase tracking-widest bg-red-500/10 text-error py-4 hover:bg-red-500/20 transition-all rounded"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Đăng xuất
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <Link 
+                  to="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full text-center block font-label-md text-label-md uppercase tracking-widest text-primary py-3 hover:text-secondary font-semibold"
+                >
+                  Đăng nhập
+                </Link>
+                <button 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    navigate('/stays');
+                  }}
+                  className="w-full text-center font-label-md text-label-md uppercase tracking-widest bg-primary text-on-primary py-4 hover:bg-secondary transition-colors"
+                >
+                  Đặt phòng ngay
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </nav>
   );
 };
 export default Navbar;
+

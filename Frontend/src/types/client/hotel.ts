@@ -11,6 +11,9 @@ export interface SearchHotelsDto {
   minPrice: number;
   propertyTypeName?: string;
   propertyTypeCode?: string;
+  // Tọa độ địa lý — có thể null nếu khách sạn chưa được geocode
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface SearchHotelsQuery {

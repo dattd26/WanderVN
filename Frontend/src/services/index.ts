@@ -7,4 +7,5 @@ export * from './client/flightService';
 export * from './client/paymentService';
 export * from './client/hotelService';
 
+export * from './client/geocodingService';
 
