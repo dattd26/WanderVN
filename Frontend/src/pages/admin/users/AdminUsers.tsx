@@ -66,7 +66,7 @@ export function AdminUsers() {
     return date.toLocaleDateString('vi-VN', { month: 'short', year: 'numeric' });
   };
 
-  // --- Hardcoded UI Handlers (Xử lý giả lập hoàn toàn trên Frontend) ---
+  // --- UI Handlers ---
 
   // Mở modal tạo mới người dùng
   const handleCreateUser = () => {
@@ -80,35 +80,41 @@ export function AdminUsers() {
     setIsModalOpen(true);
   };
 
-  // Giả lập chức năng Khoá / Mở khoá trực tiếp trên UI State
-  const handleToggleLockUserHardcoded = (userId: number, currentActive: boolean) => {
+  // --- MỚI: Gọi API thật để Khoá / Mở khoá người dùng ---
+  const handleToggleLockUser = async (userId: number, currentActive: boolean) => {
     const actionText = currentActive ? 'khoá' : 'mở khoá';
-    if (!window.confirm(`[DEMO] Bạn có chắc chắn muốn ${actionText} người dùng này không?`)) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản này không?`)) return;
 
-    setPagedResult(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        items: prev.items.map(user =>
-          user.id === userId ? { ...user, isActive: !currentActive } : user
-        )
-      };
-    });
+    try {
+      // Gọi API Update có sẵn, CHỈ TRUYỀN đúng trường isActive mới
+      await userService.updateCustomer(userId, {
+        isActive: !currentActive
+      });
+
+      // Nạp lại danh sách từ Backend để cập nhật giao diện ngay lập tức
+      fetchCustomers();
+    } catch (err: any) {
+      console.error('Lỗi khi thay đổi trạng thái:', err);
+      alert(err.message || `Có lỗi xảy ra khi ${actionText} người dùng.`);
+    }
   };
 
-  // Giả lập chức năng Xoá người dùng trực tiếp trên UI State
-  const handleDeleteUserHardcoded = (userId: number) => {
-    if (!window.confirm('[DEMO] Bạn có chắc chắn muốn xoá người dùng này? Thao tác này sẽ biến mất trên giao diện hiện tại.')) return;
+  // --- Gọi API Xoá người dùng thật ---
+  const handleDeleteUser = async (userId: number, email: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xoá người dùng [${email}] không? Thao tác này không thể hoàn tác.`)) return;
 
-    setPagedResult(prev => {
-      if (!prev) return null;
-      const updatedItems = prev.items.filter(user => user.id !== userId);
-      return {
-        ...prev,
-        items: updatedItems,
-        totalItems: prev.totalItems - 1 // Giảm tổng số lượng user đi 1
-      };
-    });
+    try {
+      // Gọi lên Service để kích hoạt API DELETE
+      await userService.deleteCustomer(userId);
+
+      alert('Xóa khách hàng thành công!');
+
+      // Nạp lại danh sách từ Backend ngay sau khi xoá thành công
+      fetchCustomers();
+    } catch (err: any) {
+      console.error('Lỗi khi xóa người dùng:', err);
+      alert(err.message || 'Có lỗi xảy ra khi xóa người dùng này.');
+    }
   };
 
   // --- Phân trang & Thống kê ---
@@ -117,7 +123,7 @@ export function AdminUsers() {
   const totalPages = pagedResult?.totalPages ?? 0;
   const currentPage = pagedResult?.pageNumber ?? 1;
 
-  // Bento grid tự động tính toán lại khi bạn ấn nút Khoá/Mở khoá giả lập ở trên
+  // Bento grid tự động tính toán lại
   const totalActive = users.filter(u => u.isActive === true).length;
   const totalLocked = users.filter(u => u.isActive === false).length;
 
@@ -228,7 +234,6 @@ export function AdminUsers() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-admin-surface-container-low border-b border-admin-outline-variant select-none">
-                {/* Đổi tiêu đề từ ID thành STT */}
                 <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">STT</th>
                 <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">Người dùng</th>
                 <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">Liên hệ</th>
@@ -283,7 +288,6 @@ export function AdminUsers() {
 
                   return (
                     <tr key={user.id} className="hover:bg-admin-surface-container-low transition-colors group">
-                      {/* Thay đổi ô ID thành hiển thị biến đếm STT tăng dần */}
                       <td className="px-admin-lg py-admin-md font-admin-mono text-admin-data-mono text-admin-on-surface-variant">
                         {stt}
                       </td>
@@ -342,9 +346,9 @@ export function AdminUsers() {
                             <span className="material-symbols-outlined text-[20px]">visibility</span>
                           </button>
 
-                          {/* Nút Khoá / Mở khoá giả lập UI */}
+                          {/* --- MỚI: Nút Khoá / Mở khoá gọi API thật --- */}
                           <button
-                            onClick={() => handleToggleLockUserHardcoded(user.id, user.isActive !== false)}
+                            onClick={() => handleToggleLockUser(user.id, user.isActive !== false)}
                             className={`p-1 hover:bg-admin-surface-container-high rounded-lg transition-colors ${user.isActive !== false ? 'text-amber-500 hover:text-amber-700' : 'text-green-600 hover:text-green-800'}`}
                             title={user.isActive !== false ? 'Khoá tài khoản' : 'Mở khoá tài khoản'}
                           >
@@ -353,9 +357,9 @@ export function AdminUsers() {
                             </span>
                           </button>
 
-                          {/* Nút Xoá người dùng giả lập UI */}
+                          {/* Nút Xoá người dùng gọi API thật --- */}
                           <button
-                            onClick={() => handleDeleteUserHardcoded(user.id)}
+                            onClick={() => handleDeleteUser(user.id, user.email)}
                             className="p-1 hover:bg-admin-surface-container-high rounded-lg text-red-500 hover:text-red-700 transition-colors"
                             title="Xoá người dùng"
                           >

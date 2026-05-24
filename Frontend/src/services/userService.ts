@@ -4,10 +4,6 @@ import { request } from './apiClient';
 import type { UserDto, UserDetailsDto, PagedResult, GetUsersQuery, CreateCustomerPayload, UpdateCustomerPayload } from '../types';
 
 export const userService = {
-  /**
-   * Lấy danh sách khách hàng (Customer) với tìm kiếm và phân trang
-   * GET api/v1/users/customers?FullName=...&Email=...&PageNumber=1&PageSize=10
-   */
   async getCustomers(query?: GetUsersQuery): Promise<PagedResult<UserDto>> {
     const params = new URLSearchParams();
     if (query?.fullName) params.append('FullName', query.fullName);
@@ -19,19 +15,10 @@ export const userService = {
     const queryString = params.toString();
     return request<PagedResult<UserDto>>(`/users/customers${queryString ? `?${queryString}` : ''}`);
   },
-
-  /**
-   * Lấy thông tin chi tiết 1 khách hàng theo ID
-   * GET api/v1/users/customers/{id}
-   */
   async getCustomerById(id: number): Promise<UserDetailsDto> {
     return request<UserDetailsDto>(`/users/customers/${id}`);
   },
 
-  /**
-   * Tạo mới một customer
-   * POST api/v1/users/customers
-   */
   async createCustomer(payload: CreateCustomerPayload): Promise<UserDto> {
     return request<UserDto>('/users/customers', {
       method: 'POST',
@@ -40,10 +27,6 @@ export const userService = {
     });
   },
 
-  /**
-   * Cập nhật thông tin customer theo ID
-   * PUT api/v1/users/customers/{id}
-   */
   async updateCustomer(id: number, payload: UpdateCustomerPayload): Promise<UserDto> {
     return request<UserDto>(`/users/customers/${id}`, {
       method: 'PUT',
@@ -51,4 +34,10 @@ export const userService = {
       body: JSON.stringify(payload),
     });
   },
+
+  async deleteCustomer(id: number): Promise<boolean> {
+    return request<boolean>(`/users/customers/${id}`, {
+      method: 'DELETE',
+    });
+  }
 };

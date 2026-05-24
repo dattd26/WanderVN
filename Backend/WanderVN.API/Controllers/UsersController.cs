@@ -5,6 +5,7 @@ using WanderVN.Application.DTOs.Response;
 using WanderVN.Application.Features.Users.Queries;
 using WanderVN.Application.Features.Users.Queries.GetUserById;
 using WanderVN.Application.Features.Users.Queries.GetUsers;
+using WanderVN.Application.Features.Users.Commands.DeleteCustomer;
 using System.Threading;
 
 namespace WanderVN.API.Controllers;
@@ -24,7 +25,6 @@ public class UsersController : ControllerBase
     [HttpGet("customers")]
     public async Task<IActionResult> GetCustomers([FromQuery] GetUsersQuery query, CancellationToken cancellationToken)
     {
-        // Ghi đè RoleName để đảm bảo luôn lấy đúng Customer dù Client có truyền bậy
         query.RoleName = "Customer"; 
         
         var users = await _mediator.Send(query, cancellationToken);
@@ -43,14 +43,21 @@ public class UsersController : ControllerBase
         var response = new ApiResponse<UserDetailsDto>(true, "Lấy thông tin khách hàng thành công.", 200, data);
         return Ok(response);
     }
-
+[HttpDelete("customers/{id}")]
+public async Task<IActionResult> DeleteCustomer(int id, CancellationToken cancellationToken)
+{
+    var result = await _mediator.Send(new DeleteCustomerCommand(id), cancellationToken);
+    
+    var response = new ApiResponse<bool>(true, "Xóa khách hàng thành công.", 200, result);
+    
+    return Ok(response);
+}
     /// GET api/v1/users/partners
     [HttpGet("partners")]
     public async Task<IActionResult> GetPartners([FromQuery] GetUsersQuery query, CancellationToken cancellationToken)
     {
-        // Ghi đè RoleName để đảm bảo luôn lấy đúng Partner
+
         query.RoleName = "Partner";
-        
         var users = await _mediator.Send(query, cancellationToken);
         var response = new ApiResponse<PagedResult<UserDto>>(true, "Lấy danh sách đối tác (Partner) thành công.", 200, users);
         
