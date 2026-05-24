@@ -5,4 +5,6 @@ export * from './client/searchService';
 export * from './client/propertyTypeService';
 export * from './client/flightService';
 export * from './client/paymentService';
+export * from './client/hotelService';
+
 

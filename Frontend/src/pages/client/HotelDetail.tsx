@@ -1,28 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Star, Users, AlertCircle, Check, ChevronLeft, ChevronRight ,X } from 'lucide-react';
+import { MapPin, Star, Users, AlertCircle, Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
-
-// 1. Interfaces ánh xạ chính xác 100% với DTO trong C# của anh
-interface RoomTypeInfo {
-  id: number;
-  name: string;
-  basePrice: number;
-  capacity: number;
-  availableRooms: number;
-  images?: string[];
-}
-
-interface HotelDetailDto {
-  id: number;
-  name: string;
-  address: string | null;
-  starRating: number | null;
-  description: string | null;
-  locationName: string | null;
-  images: string[];
-  roomTypes: RoomTypeInfo[];
-}
+// Nhập service và kiểu dữ liệu dùng chung của hệ thống
+import { hotelService } from '../../services';
+import type { HotelDetailDto } from '../../types';
 // Component Slider vuốt ảnh siêu nhẹ (Chỉ dùng riêng trong trang này)
 // Component Slider vuốt ảnh lấy chuẩn từ RoomTypeImages, có bộ đếm ảnh
 const RoomImageSlider = ({ images }: { images?: string[] }) => {
@@ -45,9 +27,9 @@ const RoomImageSlider = ({ images }: { images?: string[] }) => {
       <img src={images[currentIndex]} alt="Room view" className="w-full h-full object-cover transition-all duration-300 select-none" />
       {images.length > 1 && (
         <>
-          <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"><ChevronLeft className="w-4 h-4"/></button>
-          <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"><ChevronRight className="w-4 h-4"/></button>
-          
+          <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"><ChevronLeft className="w-4 h-4" /></button>
+          <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"><ChevronRight className="w-4 h-4" /></button>
+
           {/* Số đếm góc phải ảnh chuẩn Agoda / Traveloka */}
           <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium z-10">
             {currentIndex + 1}/{images.length}
@@ -63,7 +45,6 @@ export const HotelDetail: React.FC = () => {
   const [hotel, setHotel] = useState<HotelDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   // Thêm state quản lý số lượng phòng đang chọn cho từng hạng phòng
-  const [selectedRooms, setSelectedRooms] = useState<Record<number, number>>({});
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -72,30 +53,17 @@ export const HotelDetail: React.FC = () => {
     setIsGalleryOpen(true);
   };
 
-  const handleQtyChange = (roomId: number, qty: number) => {
-    setSelectedRooms(prev => ({ ...prev, [roomId]: qty }));
-    
-  };
-
   useEffect(() => {
-    // 1. Cập nhật lại đường dẫn với đúng Port 5096 (HTTP) của Backend
-    fetch(`http://localhost:5096/api/v1/hotels/${id}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Lỗi mạng hoặc không tìm thấy khách sạn');
-        return res.json();
-      })
-      .then(result => {
-        // 2. Bóc tách lớp vỏ API Response: Lấy dữ liệu thật từ result.data
-        if (result.success && result.data) {
-          setHotel(result.data);
-        } else {
-          // Nếu success = false (ví dụ truyền sai ID)
-          setHotel(null);
-        }
+    if (!id) return;
+
+    // Sử dụng hotelService tập trung thông qua apiClient để gọn nhẹ và tự động hóa xử lý
+    hotelService.getHotelDetail(id)
+      .then(data => {
+        setHotel(data);
         setLoading(false);
       })
       .catch(err => {
-        console.error("Lỗi fetch dữ liệu:", err);
+        console.error("Lỗi lấy thông tin khách sạn từ hệ thống:", err);
         setHotel(null);
         setLoading(false);
       });
@@ -119,9 +87,9 @@ export const HotelDetail: React.FC = () => {
             </span>
           )}
         </div>
-        
+
         <h1 className="text-3xl md:text-5xl font-serif text-[#1c1c19] mb-4">{hotel.name}</h1>
-        
+
         {hotel.address && (
           <p className="flex items-center gap-2 text-sm text-[#747878]">
             <MapPin className="h-4 w-4 text-[#B59A5A]" /> {hotel.address}
@@ -133,7 +101,7 @@ export const HotelDetail: React.FC = () => {
       {hotel.images && hotel.images.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
           {/* Ảnh lớn bên trái */}
-          <div 
+          <div
             className="md:col-span-2 h-[500px] overflow-hidden rounded-l-lg cursor-pointer group"
             onClick={() => openGallery(0)}
           >
@@ -142,7 +110,7 @@ export const HotelDetail: React.FC = () => {
 
           <div className="grid grid-rows-2 gap-4 h-[500px]">
             {/* Ảnh nhỏ phía trên */}
-            <div 
+            <div
               className="overflow-hidden rounded-tr-lg cursor-pointer group"
               onClick={() => openGallery(1)}
             >
@@ -150,7 +118,7 @@ export const HotelDetail: React.FC = () => {
             </div>
 
             {/* Ô ảnh thứ 3 (Có overlay +5) */}
-            <div 
+            <div
               className="overflow-hidden rounded-br-lg relative group cursor-pointer"
               onClick={() => openGallery(2)}
             >
@@ -165,7 +133,7 @@ export const HotelDetail: React.FC = () => {
         </div>
       )}
 
-     {/* 3. Nội dung Mô tả (Đã cho full width) */}
+      {/* 3. Nội dung Mô tả (Đã cho full width) */}
       <div className="mb-16">
         <h3 className="text-sm uppercase tracking-[0.2em] font-semibold text-[#1c1c19] mb-4 border-b border-[#e5e0d8] pb-4">
           Về không gian này
@@ -178,7 +146,7 @@ export const HotelDetail: React.FC = () => {
       {/* 4. Danh sách Hạng Phòng (Layout chuẩn OTA - Tách riêng từng phòng) */}
       <div>
         <h3 className="text-2xl font-serif text-[#1c1c19] mb-6">
-          Các Phòng có sẵn tại {hotel.name.split(' ')[0]} {}
+          Các Phòng có sẵn tại {hotel.name.split(' ')[0]} { }
         </h3>
 
         <div className="space-y-6">
@@ -190,18 +158,18 @@ export const HotelDetail: React.FC = () => {
 
               return (
                 <div key={room.id} className="border border-[#e5e0d8] bg-white rounded-lg shadow-sm overflow-hidden flex flex-col md:flex-row">
-                  
+
                   {/* Cột Trái: Thông tin phòng & Ảnh Slider */}
                   <div className="w-full md:w-[320px] p-4 bg-[#f2f6fa] border-r border-[#e5e0d8] shrink-0">
                     <h4 className="font-bold text-[#1c1c19] text-lg mb-3 leading-tight">{room.name}</h4>
-                    
+
                     {/* Sử dụng Component Slider vừa tạo ở trên */}
-                    <RoomImageSlider images={room.images}  />
-                    
+                    <RoomImageSlider images={room.images} />
+
                     <div className="text-sm text-[#555] space-y-2 mt-4">
                       <p className="flex items-center gap-2 text-gray-800"><Users className="w-4 h-4 text-gray-500" /> Tối đa {room.capacity} khách</p>
-                      <p className="flex items-center gap-2"><Check className="w-4 h-4 text-green-600"/> Không hút thuốc</p>
-                      <p className="flex items-center gap-2"><Check className="w-4 h-4 text-green-600"/> Wifi miễn phí</p>
+                      <p className="flex items-center gap-2"><Check className="w-4 h-4 text-green-600" /> Không hút thuốc</p>
+                      <p className="flex items-center gap-2"><Check className="w-4 h-4 text-green-600" /> Wifi miễn phí</p>
                     </div>
                   </div>
 
@@ -220,15 +188,15 @@ export const HotelDetail: React.FC = () => {
                       {isAvailable ? (
                         Array.from({ length: room.availableRooms }).map((_, index) => (
                           <div key={index} className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center hover:bg-blue-50/50 transition-colors ${index !== room.availableRooms - 1 ? 'border-b border-[#e5e0d8]/50' : ''}`}>
-                            
+
                             {/* Option Info */}
                             <div className="col-span-5 space-y-1.5">
                               <p className="font-semibold text-[15px] text-gray-800">
                                 Phòng {index + 1}
                               </p>
                               <div className="text-xs text-[#0071c2] space-y-1 mt-2">
-                                <p className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 shrink-0"/> Thanh toán tại khách sạn</p>
-                                <p className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 shrink-0"/> Không được hoàn tiền</p>
+                                <p className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 shrink-0" /> Thanh toán tại khách sạn</p>
+                                <p className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 shrink-0" /> Không được hoàn tiền</p>
                               </div>
                             </div>
 
@@ -255,7 +223,7 @@ export const HotelDetail: React.FC = () => {
                             {/* Action (Button màu xanh chuẩn Agoda/Traveloka) */}
                             <div className="col-span-2 flex flex-col items-center justify-center gap-2 md:pl-2">
                               <span className="text-xs text-gray-600 font-medium hidden md:block">x1</span>
-                              <Link 
+                              <Link
                                 to={`/booking?roomId=${room.id}&roomIndex=${index + 1}`}
                                 className="px-6 py-2 w-full md:w-auto text-center bg-[#0071c2] hover:bg-[#005999] text-white text-sm font-semibold rounded shadow-sm transition-all"
                               >
@@ -279,37 +247,37 @@ export const HotelDetail: React.FC = () => {
             })
           )}
         </div>
-        
-      </div>  
-{/* 🔥 BƯỚC 3: GIAO DIỆN MODAL XEM ẢNH FULL MÀN HÌNH */}
+
+      </div>
+      {/* 🔥 BƯỚC 3: GIAO DIỆN MODAL XEM ẢNH FULL MÀN HÌNH */}
       {isGalleryOpen && hotel.images && (
         <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center">
           {/* Nút Tắt */}
-          <button 
-            onClick={() => setIsGalleryOpen(false)} 
+          <button
+            onClick={() => setIsGalleryOpen(false)}
             className="absolute top-4 right-4 p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
           >
             <X className="w-8 h-8" />
           </button>
 
           {/* Nút Lùi */}
-          <button 
-            onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev - 1 + hotel.images.length) % hotel.images.length); }} 
+          <button
+            onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev - 1 + hotel.images.length) % hotel.images.length); }}
             className="absolute left-4 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
           >
             <ChevronLeft className="w-10 h-10" />
           </button>
 
           {/* Ảnh đang xem */}
-          <img 
-            src={hotel.images[currentImageIndex]} 
-            alt={`Gallery ${currentImageIndex}`} 
+          <img
+            src={hotel.images[currentImageIndex]}
+            alt={`Gallery ${currentImageIndex}`}
             className="max-h-[90vh] max-w-[90vw] object-contain select-none"
           />
 
           {/* Nút Tiến */}
-          <button 
-            onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev + 1) % hotel.images.length); }} 
+          <button
+            onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev + 1) % hotel.images.length); }}
             className="absolute right-4 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
           >
             <ChevronRight className="w-10 h-10" />
@@ -321,8 +289,8 @@ export const HotelDetail: React.FC = () => {
           </div>
         </div>
       )}
-      
-        </div>
-     
+
+    </div>
+
   );
 };
