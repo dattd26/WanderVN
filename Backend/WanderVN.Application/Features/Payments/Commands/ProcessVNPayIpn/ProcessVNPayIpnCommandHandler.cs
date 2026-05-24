@@ -58,7 +58,7 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
         command.Parameters.TryGetValue("vnp_TransactionNo", out var transactionNo);
 
         try
-         {
+        {
             // 3. Tìm kiếm đơn đặt hàng trong Database thông qua repository
             var booking = await _unitOfWork.Bookings.FindFirstOrDefaultAsync(
                 b => b.Id == bookingId,
@@ -69,9 +69,9 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
                 return new VNPayIpnResponse { Success = false, RspCode = "01", Message = "Order not found" };
             }
 
-            // 4. Kiểm tra số tiền thanh toán từ VNPay có trùng khớp với giá trị của hóa đơn hay không (quy đổi sang VND để so sánh)
-            decimal expectedAmountInVnd = WanderVN.Application.Common.Utils.CurrencyConverter.ConvertUsdToVnd(booking.TotalPrice);
-            if (expectedAmountInVnd != amountPaid)
+            // 4. Kiểm tra số tiền thanh toán từ VNPay có trùng khớp với giá trị của hóa đơn hay không
+            // Số tiền trong booking.TotalPrice hiện tại luôn luôn được lưu bằng VND thống nhất trong cơ sở dữ liệu.
+            if (booking.TotalPrice != amountPaid)
             {
                 return new VNPayIpnResponse { Success = false, RspCode = "04", Message = "Invalid Amount" };
             }
@@ -88,11 +88,11 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
                 booking.PaymentStatus = "Paid";
                 booking.Status = "Confirmed";
 
-                // Lưu thông tin giao dịch vào bảng Payments làm lịch sử giao dịch (sử dụng đơn vị USD nhất quán)
+                // Lưu thông tin giao dịch vào bảng Payments làm lịch sử giao dịch (sử dụng đơn vị VND thống nhất)
                 var payment = new WanderVN.Domain.Entities.Payments
                 {
                     BookingId = booking.Id,
-                    Amount = booking.TotalPrice,
+                    Amount = amountPaid,
                     Method = "VNPAY",
                     TransactionId = transactionNo,
                     PaymentDate = DateTimeOffset.UtcNow

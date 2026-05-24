@@ -74,9 +74,9 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
                 return new ZaloPayCallbackResponse { ReturnCode = 2, ReturnMessage = $"Không tìm thấy đơn đặt hàng #{bookingId}" };
             }
 
-            // 5. Kiểm tra chênh lệch số tiền (quy đổi số tiền trong hệ thống USD sang VND để so khớp với ZaloPay)
-            decimal expectedAmountInVnd = CurrencyConverter.ConvertUsdToVnd(booking.TotalPrice);
-            if ((long)expectedAmountInVnd != amountPaid)
+            // 5. Kiểm tra chênh lệch số tiền
+            // Số tiền trong booking.TotalPrice hiện tại luôn luôn được lưu bằng VND thống nhất trong cơ sở dữ liệu.
+            if ((long)booking.TotalPrice != amountPaid)
             {
                 return new ZaloPayCallbackResponse { ReturnCode = 2, ReturnMessage = "Số tiền thanh toán từ ZaloPay không trùng khớp với hóa đơn" };
             }
@@ -91,11 +91,11 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
             booking.PaymentStatus = "Paid";
             booking.Status = "Confirmed";
 
-            // 8. Lưu lịch sử giao dịch vào bảng Payments (sử dụng USD nhất quán với cơ sở dữ liệu)
+            // 8. Lưu lịch sử giao dịch vào bảng Payments (sử dụng đơn vị VND để thống nhất dòng tiền thực tế)
             var payment = new WanderVN.Domain.Entities.Payments
             {
                 BookingId = booking.Id,
-                Amount = booking.TotalPrice,
+                Amount = (decimal)amountPaid,
                 Method = "ZALOPAY",
                 TransactionId = zpTransId,
                 PaymentDate = DateTimeOffset.UtcNow
