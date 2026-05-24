@@ -39,6 +39,7 @@ export const Navbar: React.FC = () => {
     { name: 'Vé máy bay', path: '/flights' },
     { name: 'Trải nghiệm', path: '#' },
     { name: 'Nhật ký hành trình', path: '#' },
+    { name: 'Trở thành Partner', path: '/partner' },
   ];
 
   return (
