@@ -15,4 +15,11 @@ export const authService = {
       body: JSON.stringify(data),
     });
   },
+
+  verifyEmail: async (token: string): Promise<void> => {
+    return request<void>('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
 };

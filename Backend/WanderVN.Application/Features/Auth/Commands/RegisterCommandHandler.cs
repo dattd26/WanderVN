@@ -1,7 +1,13 @@
 using MediatR;
 using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using WanderVN.Application.Common;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Domain.Entities;
 using WanderVN.Domain.Repositories;
@@ -13,12 +19,14 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
     private readonly IAuthRepository _authRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
+    private readonly JwtSettings _jwtSettings;
 
-    public RegisterCommandHandler(IAuthRepository authRepository, IUnitOfWork unitOfWork, IEmailService emailService)
+    public RegisterCommandHandler(IAuthRepository authRepository, IUnitOfWork unitOfWork, IEmailService emailService, IOptions<JwtSettings> jwtOptions)
     {
         _authRepository = authRepository;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
+        _jwtSettings = jwtOptions.Value;
     }
 
     public async Task<Unit> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -44,49 +52,32 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
             FullName = request.FullName,
             PhoneNumber = request.PhoneNumber,
             RoleId = role.Id,
-            IsActive = true,
+            IsActive = false, // Yêu cầu xác nhận email trước khi đăng nhập
             CreatedAt = DateTimeOffset.UtcNow
         };
 
         await _authRepository.AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Tạo JWT Token phục vụ mục đích xác nhận Email (hết hạn sau 24 giờ)
+        var token = GenerateEmailVerificationToken(user.Email);
+        var verificationLink = $"http://localhost:5173/verify-email?token={token}";
+
         // Gửi email xác nhận tự động dạng HTML chạy nền (Fire-and-Forget) để không chặn luồng HTTP Response của khách
         _ = Task.Run(async () =>
         {
             try
             {
-                var isPartner = request.Role == "Partner";
-                var emailSubject = isPartner
-                    ? "Chào mừng đối tác mới đến với WanderVN Partner Portal"
-                    : "Chào mừng lữ khách đến với WanderVN - Hành trình di sản bắt đầu";
-
-                var welcomeIntro = isPartner
-                    ? "Chào mừng bạn đã chính thức trở thành đối tác của <strong>WanderVN Partner Portal</strong>. Hãy hoàn tất hồ sơ cơ sở lưu trú để được duyệt và đón những lữ khách đầu tiên."
-                    : "Chào mừng bạn đã chính thức tham gia vào cộng đồng lữ khách tinh hoa của <strong>WanderVN</strong>.";
-
+                var emailSubject = "[WanderVN] Xác thực tài khoản của bạn";
                 var emailBody = $@"
                     <p>Kính gửi quý khách <strong>{request.FullName}</strong>,</p>
-                    <p>{welcomeIntro}</p>
-                    <p>Tài khoản của bạn đã được thiết lập thành công với thông tin đăng ký như sau:</p>
-                    <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
-                        <tr>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 150px;'>Email đăng nhập:</td>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee;'>{request.Email}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Họ tên:</td>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee;'>{request.FullName}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Vai trò:</td>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee;'>{(isPartner ? "Đối tác cơ sở lưu trú" : "Khách lữ hành")}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Thời gian kích hoạt:</td>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee;'>{DateTimeOffset.UtcNow:dd/MM/yyyy HH:mm:ss} (UTC)</td>
-                        </tr>
-                    </table>";
+                    <p>Chào mừng bạn đã chính thức tham gia vào cộng đồng lữ khách tinh hoa của <strong>WanderVN</strong>.</p>
+                    <p>Để hoàn tất quá trình đăng ký và kích hoạt tài khoản của bạn, vui lòng nhấn vào nút bên dưới:</p>
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='{verificationLink}' style='background-color: #735c00; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;'>Xác Nhận Email</a>
+                    </div>
+                    <p>Link xác nhận này sẽ hết hạn trong vòng 24 giờ.</p>
+                    <p>Nếu bạn không thực hiện đăng ký, vui lòng bỏ qua email này.</p>";
 
                 await _emailService.SendEmailAsync(request.Email, emailSubject, emailBody, isHtml: true);
             }
@@ -97,6 +88,26 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
         }, cancellationToken);
 
         return Unit.Value;
+    }
+
+    private string GenerateEmailVerificationToken(string email)
+    {
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.Email, email),
+            new Claim("purpose", "email_verification")
+        };
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(24),
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
 

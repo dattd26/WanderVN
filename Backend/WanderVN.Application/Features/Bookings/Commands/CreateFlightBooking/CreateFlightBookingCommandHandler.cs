@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Application.DTOs.Request;
 using WanderVN.Application.DTOs.Response;
@@ -15,11 +16,13 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
 {
     private readonly IApplicationDbContext _dbContext;
     private readonly IDuffelService _duffelService;
+    private readonly IEmailService _emailService;
 
-    public CreateFlightBookingCommandHandler(IApplicationDbContext dbContext, IDuffelService duffelService)
+    public CreateFlightBookingCommandHandler(IApplicationDbContext dbContext, IDuffelService duffelService, IEmailService emailService)
     {
         _dbContext = dbContext;
         _duffelService = duffelService;
+        _emailService = emailService;
     }
 
     public async Task<FlightBookingResponse> Handle(CreateFlightBookingCommand command, CancellationToken cancellationToken)
@@ -131,6 +134,58 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // Lấy thông tin user để gửi email xác nhận
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+            if (user != null && !string.IsNullOrEmpty(user.Email))
+            {
+                var userEmail = user.Email;
+                var userFullName = user.FullName ?? "Quý khách";
+                var bookingCode = booking.BookingCode;
+                var totalPrice = booking.TotalPrice;
+                var passengerNames = request.Passengers.Select(p => $"{p.Title.ToUpper()} {p.GivenName} {p.FamilyName}").ToList();
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var emailSubject = $"[WanderVN] Xác nhận yêu cầu đặt vé máy bay #{bookingCode}";
+                        var passengerListHtml = string.Join("<br/>", passengerNames.Select(name => $"• {name}"));
+                        var emailBody = $@"
+                            <p>Kính gửi quý khách <strong>{userFullName}</strong>,</p>
+                            <p>Cảm ơn bạn đã lựa chọn <strong>WanderVN</strong> làm bạn đồng hành. Yêu cầu đặt vé máy bay của bạn đã được tiếp nhận thành công và đang chờ thanh toán.</p>
+                            <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
+                                <tr>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 150px;'>Mã đặt vé:</td>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #735c00;'>{bookingCode}</td>
+                                </tr>
+                                <tr>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Loại dịch vụ:</td>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee;'>Vé máy bay (Flight Booking)</td>
+                                </tr>
+                                <tr>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Danh sách hành khách:</td>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee;'>{passengerListHtml}</td>
+                                </tr>
+                                <tr>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Tổng tiền:</td>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #d32f2f;'>${totalPrice:N2} USD</td>
+                                </tr>
+                                <tr>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Trạng thái đơn:</td>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee;'><span style='background-color: #ffe0b2; color: #e65100; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>Chờ thanh toán</span></td>
+                                </tr>
+                            </table>
+                            <p>Vui lòng tiến hành thanh toán trong thời gian sớm nhất để hoàn tất việc xuất vé máy bay của bạn.</p>";
+
+                        await _emailService.SendEmailAsync(userEmail, emailSubject, emailBody, isHtml: true);
+                    }
+                    catch (Exception)
+                    {
+                        // Bỏ qua lỗi gửi mail để tránh làm gián đoạn luồng chính
+                    }
+                });
+            }
         }
         catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
         {

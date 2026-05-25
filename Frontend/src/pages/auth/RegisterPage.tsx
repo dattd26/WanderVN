@@ -76,12 +76,12 @@ export const RegisterPage: React.FC = () => {
       
       if (step === 5) {
         clearInterval(interval);
-        setToastMessage(isMock ? 'Đăng ký thành công (Chế độ giả lập)! Chào mừng đến WanderVN.' : 'Đăng ký thành công! Chào mừng đến WanderVN.');
+        setToastMessage(isMock ? 'Đăng ký thành công (Chế độ giả lập)! Vui lòng kiểm tra email để xác nhận.' : 'Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.');
         
         setTimeout(() => {
           setRegistrationStep(0);
           navigate('/login');
-        }, 3000);
+        }, 5000);
       }
     }, 1000);
   };
