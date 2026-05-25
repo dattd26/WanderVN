@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FlightSearchForm } from '../../components/client/FlightSearchForm';
+import { FlightDetailModal } from '../../components/client/flight/FlightDetailModal';
 import { flightService } from '../../services';
 import type { FlightOfferDto } from '../../types';
 import {
@@ -32,8 +33,35 @@ export const SearchFlights: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Trạng thái vé máy bay đang được chọn
+  // Trạng thái vé máy bay đang được chọn (booking bar cũ)
   const [selectedOffer, setSelectedOffer] = useState<FlightOfferDto | null>(null);
+
+  const { offerId } = useParams<{ offerId?: string }>();
+  const location = useLocation();
+
+  // Trạng thái modal chi tiết chuyến bay
+  const [modalOffer, setModalOffer] = useState<FlightOfferDto | null>(null);
+
+  // Mở modal chi tiết
+  const openModal = (offer: FlightOfferDto) => {
+    console.log('[SearchFlights] Opening detail modal for offerId:', offer.id);
+    navigate(`/flights/${offer.id}${location.search}`);
+  };
+
+  // Đóng modal
+  const closeModal = () => {
+    setModalOffer(null);
+    if (offerId) {
+      navigate(`/flights${location.search}`, { replace: true });
+    }
+  };
+
+  // Điều hướng sang checkout — reuse flow hiện có, truyền offer qua location.state
+  const handleProceedToCheckout = (offer: FlightOfferDto) => {
+    console.log('[SearchFlights] navigating to checkout with offer:', offer);
+    setModalOffer(null);
+    navigate('/flights/checkout', { state: { offer } });
+  };
 
   // Thực hiện tìm kiếm chuyến bay từ C# API (khai báo trước useEffect để tránh lỗi truy cập trước khi khai báo)
   const executeSearch = async (o: string, d: string, date: string) => {
@@ -77,6 +105,12 @@ export const SearchFlights: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!offerId) return;
+    const matchOffer = offers.find((offer) => offer.id === offerId) ?? null;
+    setModalOffer(matchOffer);
+  }, [offerId, offers]);
 
   // Đồng bộ hóa URL khi thực hiện lượt tìm kiếm mới
   const handleSearchSubmit = (newOrigin: string, newDest: string, newDate: string) => {
@@ -322,15 +356,27 @@ export const SearchFlights: React.FC = () => {
                               ${offer.totalAmount.toFixed(2)} <span className="text-caption font-normal text-on-surface-variant">USD /khách</span>
                             </div>
                           </div>
-                          <button
-                            onClick={() => setSelectedOffer(isSelected ? null : offer)}
-                            className={`px-8 py-3 border font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none ${isSelected
-                              ? 'bg-primary text-on-primary border-primary'
-                              : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
-                              }`}
-                          >
-                            {isSelected ? 'ĐÃ CHỌN' : 'CHỌN CHUYẾN BAY'}
-                          </button>
+                          <div className="flex flex-col gap-2">
+                            {/* Nút mở modal chi tiết */}
+                            <button
+                              id={`btn-detail-${offer.id}`}
+                              onClick={() => openModal(offer)}
+                              className="px-8 py-3 border border-secondary text-secondary hover:bg-secondary hover:text-on-primary font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none"
+                            >
+                              XEM CHI TIẾT
+                            </button>
+                            {/* Nút chọn nhanh (giữ booking bar cũ) */}
+                            <button
+                              id={`btn-select-${offer.id}`}
+                              onClick={() => setSelectedOffer(isSelected ? null : offer)}
+                              className={`px-8 py-3 border font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none ${isSelected
+                                ? 'bg-primary text-on-primary border-primary'
+                                : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
+                                }`}
+                            >
+                              {isSelected ? 'ĐÃ CHỌN' : 'CHỌN CHUYẾN BAY'}
+                            </button>
+                          </div>
                         </div>
                       </div>
 
@@ -380,6 +426,12 @@ export const SearchFlights: React.FC = () => {
           </button>
         </div>
       )}
+      {/* Modal chi tiết chuyến bay */}
+      <FlightDetailModal
+        offer={modalOffer}
+        onClose={closeModal}
+        onProceedToCheckout={handleProceedToCheckout}
+      />
     </div>
   );
 };
