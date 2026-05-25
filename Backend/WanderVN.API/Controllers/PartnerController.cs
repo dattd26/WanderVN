@@ -6,6 +6,10 @@ using WanderVN.Application.Features.Partner.Commands.SubmitHotel;
 using WanderVN.Application.Features.Partner.Commands.UploadHotelImage;
 using WanderVN.Application.Features.Partner.Queries.GetMyHotels;
 
+using WanderVN.Application.Features.Partner.Commands.AddRoomType;
+using WanderVN.Application.Features.Partner.Commands.DeleteRoomType;
+using WanderVN.Application.Features.Partner.Commands.UpdateRoomType;
+
 namespace WanderVN.API.Controllers;
 
 /// <summary>
@@ -73,5 +77,49 @@ public class PartnerController : ControllerBase
 
         var result = await _mediator.Send(command);
         return Ok(new ApiResponse<UploadHotelImageResponse>(true, "Tải ảnh khách sạn thành công.", 200, result));
+    }
+
+    /// <summary>
+    /// POST: api/v1/partner/hotels/{hotelId}/room-types — Thêm hạng phòng mới cho khách sạn của đối tác.
+    /// </summary>
+    [HttpPost("hotels/{hotelId:int}/room-types")]
+    public async Task<IActionResult> AddRoomType(
+        [FromRoute] int hotelId,
+        [FromBody] AddRoomTypeCommand command)
+    {
+        command.HotelId = hotelId;
+        var result = await _mediator.Send(command);
+        return Ok(new ApiResponse<AddRoomTypeResponse>(true, "Thêm hạng phòng thành công.", 200, result));
+    }
+
+    /// <summary>
+    /// DELETE: api/v1/partner/hotels/{hotelId}/room-types/{roomTypeId} — Xóa hạng phòng của khách sạn đối tác.
+    /// </summary>
+    [HttpDelete("hotels/{hotelId:int}/room-types/{roomTypeId:int}")]
+    public async Task<IActionResult> DeleteRoomType(
+        [FromRoute] int hotelId,
+        [FromRoute] int roomTypeId)
+    {
+        var command = new DeleteRoomTypeCommand { RoomTypeId = roomTypeId };
+        var result = await _mediator.Send(command);
+        if (!result.Success)
+            return BadRequest(new ErrorResponse(result.Message, 400));
+        return Ok(new ApiResponse<DeleteRoomTypeResponse>(true, "Xóa hạng phòng thành công.", 200, result));
+    }
+
+    /// <summary>
+    /// PUT: api/v1/partner/hotels/{hotelId}/room-types/{roomTypeId} — Cập nhật hạng phòng của khách sạn đối tác.
+    /// </summary>
+    [HttpPut("hotels/{hotelId:int}/room-types/{roomTypeId:int}")]
+    public async Task<IActionResult> UpdateRoomType(
+        [FromRoute] int hotelId,
+        [FromRoute] int roomTypeId,
+        [FromBody] UpdateRoomTypeCommand command)
+    {
+        command.RoomTypeId = roomTypeId;
+        var result = await _mediator.Send(command);
+        if (!result.Success)
+            return BadRequest(new ErrorResponse(result.Message, 400));
+        return Ok(new ApiResponse<UpdateRoomTypeResponse>(true, "Cập nhật hạng phòng thành công.", 200, result));
     }
 }

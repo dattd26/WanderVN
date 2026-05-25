@@ -82,4 +82,43 @@ public interface IPartnerRepository
         string? publicId,
         bool isPrimary,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Thêm hạng phòng mới cho khách sạn của đối tác qua <c>sp_Partner_AddRoomType</c>.
+    /// SP kiểm tra quyền sở hữu khách sạn (OwnerId == partnerId), nếu không raise 403.
+    /// </summary>
+    /// <returns>Id của RoomTypes record mới tạo.</returns>
+    Task<int> AddRoomTypeAsync(
+        int partnerId,
+        int hotelId,
+        string name,
+        decimal basePrice,
+        int capacity,
+        int totalRooms,
+        string? description,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Xóa hạng phòng của khách sạn đối tác qua <c>sp_Partner_DeleteRoomType</c>.
+    /// SP kiểm tra quyền sở hữu khách sạn (OwnerId == partnerId), nếu không raise 403.
+    /// </summary>
+    /// <returns>Số dòng bị ảnh hưởng.</returns>
+    Task<int> DeleteRoomTypeAsync(
+        int partnerId,
+        int roomTypeId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Cập nhật hạng phòng của khách sạn đối tác qua <c>sp_Partner_UpdateRoomType</c>.
+    /// SP kiểm tra quyền sở hữu khách sạn (OwnerId == partnerId), nếu không raise 403.
+    /// </summary>
+    /// <returns>Số dòng bị ảnh hưởng.</returns>
+    Task<int> UpdateRoomTypeAsync(
+        int partnerId,
+        int roomTypeId,
+        string name,
+        decimal basePrice,
+        int capacity,
+        int totalRooms,
+        CancellationToken cancellationToken);
 }

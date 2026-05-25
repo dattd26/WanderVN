@@ -109,4 +109,97 @@ public class PartnerRepository : IPartnerRepository
 
         return (int)newId;
     }
+
+    public async Task<int> AddRoomTypeAsync(
+        int partnerId,
+        int hotelId,
+        string name,
+        decimal basePrice,
+        int capacity,
+        int totalRooms,
+        string? description,
+        CancellationToken cancellationToken)
+    {
+        // Mở kết nối cơ sở dữ liệu nếu kết nối đang đóng
+        var connection = _dbContext.Database.GetDbConnection();
+        if (connection.State == ConnectionState.Closed)
+            await connection.OpenAsync(cancellationToken);
+
+        // Cấu hình các tham số đầu vào cho Stored Procedure
+        var parameters = new DynamicParameters();
+        parameters.Add("PartnerId", partnerId);
+        parameters.Add("HotelId", hotelId);
+        parameters.Add("Name", name);
+        parameters.Add("BasePrice", basePrice);
+        parameters.Add("Capacity", capacity);
+        parameters.Add("TotalRooms", totalRooms);
+        parameters.Add("Description", description);
+
+        // Thực thi Stored Procedure sp_Partner_AddRoomType và lấy về Id của hạng phòng vừa được tạo
+        var newId = await connection.QuerySingleAsync<int>(
+            "sp_Partner_AddRoomType",
+            parameters,
+            commandType: CommandType.StoredProcedure
+        );
+
+        return newId;
+    }
+
+    public async Task<int> DeleteRoomTypeAsync(
+        int partnerId,
+        int roomTypeId,
+        CancellationToken cancellationToken)
+    {
+        // Mở kết nối cơ sở dữ liệu nếu kết nối đang đóng
+        var connection = _dbContext.Database.GetDbConnection();
+        if (connection.State == ConnectionState.Closed)
+            await connection.OpenAsync(cancellationToken);
+
+        // Cấu hình các tham số đầu vào cho Stored Procedure
+        var parameters = new DynamicParameters();
+        parameters.Add("PartnerId", partnerId);
+        parameters.Add("RoomTypeId", roomTypeId);
+
+        // Thực thi Stored Procedure sp_Partner_DeleteRoomType
+        var affectedRows = await connection.QuerySingleAsync<int>(
+            "sp_Partner_DeleteRoomType",
+            parameters,
+            commandType: CommandType.StoredProcedure
+        );
+
+        return affectedRows;
+    }
+
+    public async Task<int> UpdateRoomTypeAsync(
+        int partnerId,
+        int roomTypeId,
+        string name,
+        decimal basePrice,
+        int capacity,
+        int totalRooms,
+        CancellationToken cancellationToken)
+    {
+        // Mở kết nối cơ sở dữ liệu nếu kết nối đang đóng
+        var connection = _dbContext.Database.GetDbConnection();
+        if (connection.State == ConnectionState.Closed)
+            await connection.OpenAsync(cancellationToken);
+
+        // Cấu hình các tham số đầu vào cho Stored Procedure
+        var parameters = new DynamicParameters();
+        parameters.Add("PartnerId", partnerId);
+        parameters.Add("RoomTypeId", roomTypeId);
+        parameters.Add("Name", name);
+        parameters.Add("BasePrice", basePrice);
+        parameters.Add("Capacity", capacity);
+        parameters.Add("TotalRooms", totalRooms);
+
+        // Thực thi Stored Procedure sp_Partner_UpdateRoomType
+        var affectedRows = await connection.QuerySingleAsync<int>(
+            "sp_Partner_UpdateRoomType",
+            parameters,
+            commandType: CommandType.StoredProcedure
+        );
+
+        return affectedRows;
+    }
 }
