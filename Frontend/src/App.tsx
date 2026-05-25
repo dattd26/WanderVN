@@ -11,6 +11,16 @@ import { VNPayReturn } from './pages/client/VNPayReturn';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { PartnerOnboarding } from './pages/partner/PartnerOnboarding';
+import { PartnerDashboard } from './pages/partner/PartnerDashboard';
+
+/** Component điều hướng thông minh cho luồng đối tác (Partner Redirect).
+ * Nếu người dùng đã đăng nhập (có token JWT trong localStorage), chuyển hướng thẳng tới Dashboard.
+ * Ngược lại, chuyển hướng tới màn hình Onboarding giới thiệu và đăng ký.
+ */
+function PartnerRedirect() {
+  const token = localStorage.getItem('token');
+  return token ? <Navigate to="/partner/dashboard" replace /> : <Navigate to="/partner/onboarding" replace />;
+}
 
 /** Layout wrapper: ẩn Navbar/Footer toàn cục trên các route /partner/* vì partner portal dùng PartnerHeader riêng. */
 function AppLayout() {
@@ -39,10 +49,12 @@ function AppLayout() {
           <Route path="/register" element={<RegisterPage />} />
 
           {/* Partner portal */}
-          <Route path="/partner" element={<Navigate to="/partner/onboarding" replace />} />
+          <Route path="/partner" element={<PartnerRedirect />} />
           <Route path="/partner/onboarding" element={<PartnerOnboarding />} />
+          <Route path="/partner/dashboard" element={<PartnerDashboard />} />
         </Routes>
       </div>
+
 
       {/* Chân trang toàn cục — ẩn cho luồng partner */}
       {!isPartnerRoute && <Footer />}

@@ -7,12 +7,33 @@ const BASE_URL = 'http://localhost:5096/api/v1';
 export async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${BASE_URL}${endpoint}`;
   
+  // Lấy JWT token từ localStorage của trình duyệt
+  const token = localStorage.getItem('token');
+  
+  // Xác định xem body gửi đi có phải là định dạng FormData (để upload ảnh/file) hay không
+  const isFormData = options?.body instanceof FormData;
+  
+  // Khởi tạo đối tượng headers trống
+  const headers: Record<string, string> = {};
+  
+  // Chỉ cấu hình Content-Type là JSON nếu dữ liệu gửi đi không phải là FormData
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
+  // Ghép các cấu hình headers tùy chọn được truyền vào từ tham số hàm
+  if (options?.headers) {
+    Object.assign(headers, options.headers);
+  }
+  
+  // Tự động đính kèm mã JWT dưới dạng Bearer Token vào header Authorization nếu tìm thấy
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
     ...options,
+    headers,
   });
 
   if (!response.ok) {
@@ -28,3 +49,4 @@ export async function request<T>(endpoint: string, options?: RequestInit): Promi
 
   return result.data;
 }
+

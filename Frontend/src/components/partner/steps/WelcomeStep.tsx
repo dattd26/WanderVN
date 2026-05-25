@@ -17,7 +17,7 @@ const BENEFITS = [
   },
   {
     icon: Users,
-    title: 'Tiếp cận khách lữ hành cao cấp',
+    title: 'Tiếp cận du khách cao cấp',
     description:
       'Hồ sơ khách sạn xuất hiện trên trang chủ WanderVN — nơi quy tụ du khách tìm kiếm trải nghiệm di sản đích thực.',
   },
