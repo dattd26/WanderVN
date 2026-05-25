@@ -70,6 +70,7 @@ public class UserRepository : GenericRepository<Users>, IUserRepository
 
         var users = await query
             .Include(u => u.Role)
+            .Include(u => u.PartnerPayouts)
             .OrderBy(u => u.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)

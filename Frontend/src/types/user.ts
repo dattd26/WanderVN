@@ -71,3 +71,8 @@ export interface UpdateCustomerPayload {
   password?: string;
   roleId?: number | null;
 }
+
+// Payload cho PUT api/v1/users/partners/{id}/password (ChangePartnerPasswordCommand)
+export interface ChangePartnerPasswordPayload {
+  newPassword: string;
+}

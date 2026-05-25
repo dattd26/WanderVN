@@ -6,6 +6,7 @@ using WanderVN.Application.Features.Users.Queries;
 using WanderVN.Application.Features.Users.Queries.GetUserById;
 using WanderVN.Application.Features.Users.Queries.GetUsers;
 using WanderVN.Application.Features.Users.Commands.DeleteCustomer;
+using WanderVN.Application.Features.Users.Commands.ChangePartnerPassword;
 using System.Threading;
 
 namespace WanderVN.API.Controllers;
@@ -70,8 +71,18 @@ public class UsersController : ControllerBase
     {
         var query = new GetUserByIdQuery(id, "Partner");
         var data = await _mediator.Send(query, cancellationToken);
-        
+
         var response = new ApiResponse<UserDetailsDto>(true, "Lấy thông tin đối tác thành công.", 200, data);
+        return Ok(response);
+    }
+
+    /// PUT api/v1/users/partners/{id}/password
+    [HttpPut("partners/{id:int}/password")]
+    public async Task<IActionResult> ChangePartnerPassword(int id, [FromBody] ChangePartnerPasswordCommand command, CancellationToken cancellationToken)
+    {
+        command.Id = id;
+        var result = await _mediator.Send(command, cancellationToken);
+        var response = new ApiResponse<bool>(true, "Đổi mật khẩu đối tác thành công.", 200, result);
         return Ok(response);
     }
 

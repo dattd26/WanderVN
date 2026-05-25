@@ -1,7 +1,7 @@
 // Dịch vụ API quản lý người dùng - kết nối với UsersController ASP.NET Core
 
 import { request } from './apiClient';
-import type { UserDto, UserDetailsDto, PagedResult, GetUsersQuery, CreateCustomerPayload, UpdateCustomerPayload } from '../types';
+import type { UserDto, UserDetailsDto, PagedResult, GetUsersQuery, CreateCustomerPayload, UpdateCustomerPayload, ChangePartnerPasswordPayload } from '../types';
 
 export const userService = {
   async getCustomers(query?: GetUsersQuery): Promise<PagedResult<UserDto>> {
@@ -59,6 +59,18 @@ export const userService = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isActive }),
+    });
+  },
+
+  async getPartnerById(id: number): Promise<UserDetailsDto> {
+    return request<UserDetailsDto>(`/users/partners/${id}`);
+  },
+
+  async changePartnerPassword(id: number, payload: ChangePartnerPasswordPayload): Promise<boolean> {
+    return request<boolean>(`/users/partners/${id}/password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
   }
 };
