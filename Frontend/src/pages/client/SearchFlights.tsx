@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FlightSearchForm } from '../../components/client/FlightSearchForm';
 import { FlightDetailModal } from '../../components/client/flight/FlightDetailModal';
@@ -35,14 +35,21 @@ export const SearchFlights: React.FC = () => {
 
   // Trạng thái vé máy bay đang được chọn (booking bar cũ)
   const [selectedOffer, setSelectedOffer] = useState<FlightOfferDto | null>(null);
-
   const { offerId } = useParams<{ offerId?: string }>();
   const location = useLocation();
 
   // Trạng thái modal chi tiết chuyến bay
-  const [modalOffer, setModalOffer] = useState<FlightOfferDto | null>(null);
+  // const [modalOffer, setModalOffer] = useState<FlightOfferDto | null>(null);
 
+  // const modalOffer = useMemo(() => {
+  //   if (!offerId || offers.length === 0) return null;
+  //   return offers.find((offer) => offer.id === offerId) ?? null;
+  // }, [offerId, offers]);
   // Mở modal chi tiết
+  const modalOffer = useMemo(() => {
+    if (!offerId || offers.length === 0) return null;
+    return offers.find((offer) => offer.id === offerId) ?? null;
+  }, [offerId, offers]);
   const openModal = (offer: FlightOfferDto) => {
     console.log('[SearchFlights] Opening detail modal for offerId:', offer.id);
     navigate(`/flights/${offer.id}${location.search}`);
@@ -50,7 +57,6 @@ export const SearchFlights: React.FC = () => {
 
   // Đóng modal
   const closeModal = () => {
-    setModalOffer(null);
     if (offerId) {
       navigate(`/flights${location.search}`, { replace: true });
     }
@@ -59,7 +65,6 @@ export const SearchFlights: React.FC = () => {
   // Điều hướng sang checkout — reuse flow hiện có, truyền offer qua location.state
   const handleProceedToCheckout = (offer: FlightOfferDto) => {
     console.log('[SearchFlights] navigating to checkout with offer:', offer);
-    setModalOffer(null);
     navigate('/flights/checkout', { state: { offer } });
   };
 
@@ -106,11 +111,6 @@ export const SearchFlights: React.FC = () => {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!offerId) return;
-    const matchOffer = offers.find((offer) => offer.id === offerId) ?? null;
-    setModalOffer(matchOffer);
-  }, [offerId, offers]);
 
   // Đồng bộ hóa URL khi thực hiện lượt tìm kiếm mới
   const handleSearchSubmit = (newOrigin: string, newDest: string, newDate: string) => {
@@ -194,7 +194,7 @@ export const SearchFlights: React.FC = () => {
               Khám Phá Các Chặng Bay Thượng Lưu
             </h3>
             <p className="text-body-md text-on-surface-variant max-w-xl leading-relaxed">
-              WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam. 
+              WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam.
               Hãy điền thông tin chặng bay và ngày khởi hành ở thanh tìm kiếm phía trên để chúng tôi tìm kiếm các ưu đãi chuyến bay tốt nhất dành cho hành trình tinh hoa của bạn.
             </p>
             <div className="w-full border-t border-outline/10 my-4" />
