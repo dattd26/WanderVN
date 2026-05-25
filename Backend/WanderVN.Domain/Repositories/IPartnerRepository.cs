@@ -121,4 +121,14 @@ public interface IPartnerRepository
         int capacity,
         int totalRooms,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Bật hoặc tắt trạng thái chặn phòng (Blocked) theo ngày cụ thể cho hạng phòng đối tác qua <c>sp_Partner_ToggleRoomBlock</c>.
+    /// </summary>
+    Task<int> ToggleRoomBlockAsync(
+        int partnerId,
+        int roomTypeId,
+        DateOnly blockDate,
+        string action,
+        CancellationToken cancellationToken);
 }

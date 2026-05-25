@@ -202,4 +202,33 @@ public class PartnerRepository : IPartnerRepository
 
         return affectedRows;
     }
+
+    public async Task<int> ToggleRoomBlockAsync(
+        int partnerId,
+        int roomTypeId,
+        DateOnly blockDate,
+        string action,
+        CancellationToken cancellationToken)
+    {
+        // Mở kết nối cơ sở dữ liệu nếu kết nối đang đóng
+        var connection = _dbContext.Database.GetDbConnection();
+        if (connection.State == ConnectionState.Closed)
+            await connection.OpenAsync(cancellationToken);
+
+        // Cấu hình các tham số đầu vào cho Stored Procedure
+        var parameters = new DynamicParameters();
+        parameters.Add("PartnerId", partnerId);
+        parameters.Add("RoomTypeId", roomTypeId);
+        parameters.Add("BlockDate", blockDate);
+        parameters.Add("Action", action);
+
+        // Thực thi Stored Procedure sp_Partner_ToggleRoomBlock
+        var affectedRows = await connection.QuerySingleAsync<int>(
+            "sp_Partner_ToggleRoomBlock",
+            parameters,
+            commandType: CommandType.StoredProcedure
+        );
+
+        return affectedRows;
+    }
 }
