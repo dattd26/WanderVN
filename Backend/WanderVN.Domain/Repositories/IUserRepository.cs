@@ -9,6 +9,7 @@ namespace WanderVN.Domain.Repositories
             string? email,
             string? phoneNumber,
             string? roleName,
+            bool? isActive,
             int pageNumber,
             int pageSize,
             CancellationToken cancellationToken = default);

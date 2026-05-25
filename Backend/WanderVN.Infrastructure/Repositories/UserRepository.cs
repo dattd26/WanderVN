@@ -12,10 +12,11 @@ public class UserRepository : GenericRepository<Users>, IUserRepository
     }
 
     public async Task<(IEnumerable<Users> Items, int TotalCount)> GetPagedUsersAsync(
-        string? fullName,
+        string? fullName, // Biến này giờ sẽ đóng vai trò là "Từ khoá tìm kiếm chung" (Keyword)
         string? email,
         string? phoneNumber,
         string? roleName,
+        bool? isActive,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default)
@@ -24,17 +25,30 @@ public class UserRepository : GenericRepository<Users>, IUserRepository
             .AsNoTracking()
             .AsQueryable();
 
+        // 1. Lọc theo Role
         if (!string.IsNullOrWhiteSpace(roleName))
         {
             query = query.Where(u => u.Role != null && u.Role.Name == roleName);
         }
 
-        if (!string.IsNullOrWhiteSpace(fullName))
+        // 2. Lọc theo Trạng thái (IsActive)
+        if (isActive.HasValue)
         {
-            var fullNameFilter = fullName.Trim();
-            query = query.Where(u => u.FullName != null && u.FullName.Contains(fullNameFilter));
+            query = query.Where(u => u.IsActive == isActive.Value);
         }
 
+        // 3. TÌM KIẾM CHUNG (Gõ 1 ô tìm ra Tên OR Email OR SĐT)
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            var keyword = fullName.Trim();
+            query = query.Where(u => 
+                (u.FullName != null && u.FullName.Contains(keyword)) ||
+                (u.Email != null && u.Email.Contains(keyword)) ||
+                (u.PhoneNumber != null && u.PhoneNumber.Contains(keyword))
+            );
+        }
+
+        // 4. Tuỳ chọn: Giữ lại để dự phòng nếu các API khác muốn truyền riêng lẻ
         if (!string.IsNullOrWhiteSpace(email))
         {
             var emailFilter = email.Trim();

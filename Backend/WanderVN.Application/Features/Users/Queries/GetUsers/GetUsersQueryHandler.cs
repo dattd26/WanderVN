@@ -23,6 +23,7 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PagedResult<U
             request.Email,
             request.PhoneNumber,
             request.RoleName,
+            request.IsActive,
             pageNumber,
             pageSize,
             cancellationToken);
