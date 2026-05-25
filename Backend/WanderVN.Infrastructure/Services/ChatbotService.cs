@@ -19,9 +19,8 @@ public class ChatbotService : IChatbotService
     private readonly IHotelsRepository _hotelsRepository;
     private readonly ISearchRepository _searchRepository;
 
-    // Update your endpoint constant to separate the base from the model identifier cleanly
-private const string GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-private const string GEMINI_MODEL = "gemini-1.5-flash";
+    private const string GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
+    private const string GEMINI_MODEL = "gemini-2.5-flash";
     
     // Rate limiting: max 60 requests per minute
     private static readonly SemaphoreSlim _rateLimiter = new SemaphoreSlim(1, 1);
@@ -159,10 +158,11 @@ Hướng dẫn:
             throw new InvalidOperationException("Gemini API key is not configured");
         }
 
-       // Change this line:
-// var requestUrl = $"{GEMINI_API_ENDPOINT}?key={apiKey}";
+        var maskedKey = apiKey.Length > 8 
+            ? apiKey.Substring(0, 4) + "..." + apiKey.Substring(apiKey.Length - 4) 
+            : "invalid_length";
+        _logger.LogInformation("Loaded Gemini API Key: {MaskedKey}", maskedKey);
 
-// To this:
         var requestUrl = $"{GEMINI_BASE_URL}/models/{GEMINI_MODEL}:generateContent?key={apiKey}";
         var fullMessage = $"{context}\n\nUser: {message}";
 
@@ -190,7 +190,6 @@ Hướng dẫn:
 
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         var requestBody = JsonSerializer.Serialize(geminiRequest, options);
-        var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
         _logger.LogInformation("Calling Gemini API with message: {Message}", message);
 
@@ -203,6 +202,8 @@ Hướng dẫn:
                 // Apply rate limiting
                 await ApplyRateLimiting();
 
+                // Create new content for each attempt since HttpContent can only be sent once
+                var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PostAsync(requestUrl, content, cancellationToken);
 
                 // Handle 429 (Too Many Requests) with retry
@@ -223,25 +224,56 @@ Hướng dẫn:
                     }
                 }
 
-                response.EnsureSuccessStatusCode();
+                if (!response.IsSuccessStatusCode)
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogError("Gemini API returned non-success status {StatusCode}. Body: {Body}", (int)response.StatusCode, responseBody);
 
-                var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseBody, options);
+                    // Retry for 5xx server errors
+                    if (((int)response.StatusCode) >= 500 && attempt < maxRetries - 1)
+                    {
+                        int delayMs = 2000 * (int)Math.Pow(2, attempt);
+                        _logger.LogWarning("Server error {StatusCode}. Retrying in {DelayMs}ms (attempt {Attempt}/{MaxRetries})", (int)response.StatusCode, delayMs, attempt + 1, maxRetries);
+                        await Task.Delay(delayMs, cancellationToken);
+                        continue;
+                    }
+
+                    return null;
+                }
+
+                var responseBodySuccess = await response.Content.ReadAsStringAsync(cancellationToken);
+                var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseBodySuccess, options);
 
                 if (geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text is string aiReply)
                 {
+                    _logger.LogInformation("Successfully got response from Gemini API");
                     return aiReply;
                 }
 
-                _logger.LogWarning("Invalid response from Gemini API");
+                _logger.LogWarning("Invalid response from Gemini API. Body: {Body}", responseBodySuccess);
                 return null;
             }
-            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests && attempt < maxRetries - 1)
+            catch (HttpRequestException ex)
             {
-                int delayMs = 2000 * (int)Math.Pow(2, attempt);
-                _logger.LogWarning(ex, "HTTP 429 error. Retrying in {DelayMs}ms (attempt {Attempt}/{MaxRetries})", delayMs, attempt + 1, maxRetries);
-                await Task.Delay(delayMs, cancellationToken);
-                continue;
+                _logger.LogError(ex, "HTTP error on attempt {Attempt}: {StatusCode}", attempt + 1, ex.StatusCode);
+                
+                if (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests && attempt < maxRetries - 1)
+                {
+                    int delayMs = 2000 * (int)Math.Pow(2, attempt);
+                    _logger.LogWarning("HTTP 429 error. Retrying in {DelayMs}ms (attempt {Attempt}/{MaxRetries})", delayMs, attempt + 1, maxRetries);
+                    await Task.Delay(delayMs, cancellationToken);
+                    continue;
+                }
+                else if (attempt == maxRetries - 1)
+                {
+                    _logger.LogError("Max retries exceeded after {MaxRetries} attempts", maxRetries);
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error calling Gemini API on attempt {Attempt}", attempt + 1);
+                return null;
             }
         }
 
