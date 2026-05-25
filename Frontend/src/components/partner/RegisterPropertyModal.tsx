@@ -99,12 +99,19 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
 
-  // Gán ID loại hình đầu tiên làm mặc định khi danh sách được truyền vào
   useEffect(() => {
     if (availablePropertyTypes.length > 0 && !newHotelForm.propertyTypeId) {
-      setNewHotelForm(prev => ({ ...prev, propertyTypeId: availablePropertyTypes[0].id }));
+      const timer = setTimeout(() => {
+        setNewHotelForm(prev => {
+          if (!prev.propertyTypeId) {
+            return { ...prev, propertyTypeId: availablePropertyTypes[0].id };
+          }
+          return prev;
+        });
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [availablePropertyTypes]);
+  }, [availablePropertyTypes, newHotelForm.propertyTypeId]);
 
   // debounce logic tìm kiếm địa chỉ tỉnh/thành phố
   useEffect(() => {
@@ -154,7 +161,7 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerms)}&countrycodes=vn&limit=1`;
       const res = await fetch(url, { headers: { 'Accept-Language': 'vi' } });
       const data = await res.json();
-      
+
       if (data && data.length > 0) {
         const lat = parseFloat(data[0].lat);
         const lng = parseFloat(data[0].lon);
@@ -188,7 +195,7 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
   const handleAddHotelFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const filesArray = Array.from(e.target.files);
-    
+
     setNewHotelForm(prev => {
       const newFiles = [...prev.images, ...filesArray];
       const newPreviews = [...prev.imagePreviews, ...filesArray.map(file => URL.createObjectURL(file))];
@@ -303,7 +310,7 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1C1C19]/60 backdrop-blur-md overflow-y-auto">
       {/* Tăng kích thước modal lên tối đa max-w-5xl và nâng cao tính thoáng đãng của chữ tiếng Việt */}
       <div className="bg-[#FAF6F0] w-full max-w-[980px] rounded-2xl shadow-2xl border border-[#E6E2DD] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[680px] relative max-h-[95vh] animate-in fade-in zoom-in duration-300">
-        
+
         {/* Sidebar Chỉ báo Tiến trình bên trái */}
         <div className="w-full md:w-[270px] bg-[#1C1C19] p-7 text-[#FAF6F0] flex flex-col justify-between shrink-0">
           <div className="space-y-6">
@@ -326,18 +333,16 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
                 const isActive = newHotelStep === s.step;
                 return (
                   <div key={s.step} className="flex items-center gap-3.5 group">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 border ${
-                      isCompleted
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 border ${isCompleted
                         ? 'bg-[#735C00] border-[#735C00] text-[#FAF6F0]'
                         : isActive
-                        ? 'bg-[#FAF6F0] border-[#FAF6F0] text-[#1C1C19] ring-2 ring-[#735C00]/40'
-                        : 'border-[#444748] text-[#8C8A85]'
-                    }`}>
+                          ? 'bg-[#FAF6F0] border-[#FAF6F0] text-[#1C1C19] ring-2 ring-[#735C00]/40'
+                          : 'border-[#444748] text-[#8C8A85]'
+                      }`}>
                       {isCompleted ? <Check className="w-4 h-4" /> : s.step}
                     </div>
-                    <span className={`font-label-md text-xs md:text-sm tracking-wide transition-colors ${
-                      isActive ? 'text-[#FAF6F0] font-bold' : isCompleted ? 'text-[#FAF6F0]/80' : 'text-[#8C8A85]'
-                    }`}>
+                    <span className={`font-label-md text-xs md:text-sm tracking-wide transition-colors ${isActive ? 'text-[#FAF6F0] font-bold' : isCompleted ? 'text-[#FAF6F0]/80' : 'text-[#8C8A85]'
+                      }`}>
                       {s.label}
                     </span>
                   </div>
@@ -355,7 +360,7 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
 
         {/* Nội dung bên phải modal */}
         <div className="flex-1 flex flex-col justify-between p-7 md:p-9 overflow-y-auto">
-          
+
           {/* Nút đóng */}
           <button
             type="button"
@@ -367,7 +372,7 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
 
           {/* Biểu mẫu từng bước */}
           <div className="flex-1 min-h-0">
-            
+
             {/* BƯỚC 1: CHÀO MỪNG */}
             {newHotelStep === 1 && (
               <div className="space-y-6 py-4 animate-in fade-in duration-300">
@@ -458,9 +463,8 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
                             onClick={() => setNewHotelForm(prev => ({ ...prev, starRating: star }))}
                             className="focus:outline-none hover:scale-110 transition-transform"
                           >
-                            <Star className={`h-6 w-6 ${
-                              star <= newHotelForm.starRating ? 'text-[#735C00] fill-[#735C00]' : 'text-[#8C8A85]'
-                            }`} />
+                            <Star className={`h-6 w-6 ${star <= newHotelForm.starRating ? 'text-[#735C00] fill-[#735C00]' : 'text-[#8C8A85]'
+                              }`} />
                           </button>
                         ))}
                       </div>
@@ -493,10 +497,10 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-12 gap-5 flex-grow min-h-0 overflow-y-auto">
-                  
+
                   {/* Cột trái: Form nhập liệu */}
                   <div className="col-span-12 md:col-span-5 space-y-4">
-                    
+
                     {/* Autocomplete địa danh */}
                     <div className="space-y-1.5 relative">
                       <label className="font-label-md text-xs uppercase tracking-wider text-[#444748] font-bold">Tỉnh / Thành phố di sản *</label>
@@ -622,16 +626,14 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
                                 return { ...prev, amenityIds: active };
                               });
                             }}
-                            className={`p-3.5 rounded-xl border text-left text-xs transition-all flex items-center justify-between ${
-                              isChecked
+                            className={`p-3.5 rounded-xl border text-left text-xs transition-all flex items-center justify-between ${isChecked
                                 ? 'border-[#735C00] bg-[#FEF9EC] text-[#735C00] font-bold shadow-sm'
                                 : 'border-[#E6E2DD] bg-[#FAF6F0] hover:border-[#735C00]/40 text-[#444748]'
-                            }`}
+                              }`}
                           >
                             <span>{amenity.label}</span>
-                            <div className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center ${
-                              isChecked ? 'bg-[#735C00] border-[#735C00] text-[#FAF6F0]' : 'border-[#8C8A85]'
-                            }`}>
+                            <div className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center ${isChecked ? 'bg-[#735C00] border-[#735C00] text-[#FAF6F0]' : 'border-[#8C8A85]'
+                              }`}>
                               {isChecked && <Check className="w-3 h-3" />}
                             </div>
                           </button>
@@ -689,7 +691,7 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
                         {newHotelForm.imagePreviews.map((url, idx) => (
                           <div key={idx} className="relative aspect-video rounded-lg overflow-hidden border border-[#E6E2DD] group">
                             <img src={url} alt="Hotel preview selection" className="w-full h-full object-cover" />
-                            
+
                             {idx === 0 && (
                               <div className="absolute top-1 left-1 bg-[#735C00] text-[#FAF6F0] px-2 py-0.5 rounded text-[8px] font-label-md uppercase tracking-wider font-bold">
                                 Ảnh bìa
@@ -723,7 +725,7 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
                 </div>
 
                 <div className="bg-[#F1EDE8] border border-[#E6E2DD] rounded-xl p-5 space-y-4 text-xs md:text-sm">
-                  
+
                   <div className="flex justify-between items-start border-b border-[#E6E2DD]/80 pb-3">
                     <div className="space-y-1">
                       <span className="font-label-md text-[9px] uppercase tracking-widest text-[#735C00] font-bold">Tên di sản đăng ký</span>

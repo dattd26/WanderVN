@@ -121,6 +121,22 @@ export const partnerService = {
       body: JSON.stringify(roomData),
     });
   },
+
+  /**
+   * Chặn hoặc gỡ chặn phòng khả dụng theo ngày cụ thể cho hạng phòng đối tác.
+   * Gửi yêu cầu POST tới endpoint Backend /api/v1/partner/hotels/${hotelId}/room-types/${roomTypeId}/toggle-block.
+   */
+  async toggleRoomBlock(
+    hotelId: number,
+    roomTypeId: number,
+    blockDate: string,
+    action: 'BLOCK' | 'UNBLOCK'
+  ): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>(`/partner/hotels/${hotelId}/room-types/${roomTypeId}/toggle-block`, {
+      method: 'POST',
+      body: JSON.stringify({ blockDate, action }),
+    });
+  },
 };
 
 export default partnerService;

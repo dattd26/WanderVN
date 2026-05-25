@@ -10,11 +10,10 @@ import { PartnerSidebar } from '../../components/partner/PartnerSidebar';
 import { partnerService, propertyTypeService, hotelService } from '../../services';
 import type { PartnerHotelDto, PropertyType } from '../../types';
 
-// Import các Tab và Modal đã refactor
 import { InfoTab, type HotelFormState } from '../../components/partner/tabs/InfoTab';
 import { RoomsTab, type RoomConfig } from '../../components/partner/tabs/RoomsTab';
 import { AvailabilityTab } from '../../components/partner/tabs/AvailabilityTab';
-import { BookingsTab } from '../../components/partner/tabs/BookingsTab';
+import { BookingsTab, type HotelBooking } from '../../components/partner/tabs/BookingsTab';
 import { AddRoomModal } from '../../components/partner/AddRoomModal';
 import { RegisterPropertyModal } from '../../components/partner/RegisterPropertyModal';
 
@@ -61,7 +60,8 @@ export const PartnerProperties: React.FC = () => {
 
   const [rooms, setRooms] = useState<RoomConfig[]>([]);
 
-  const [bookingsData] = useState<Record<number, any[]>>({
+  // ── State quản lý Đơn đặt phòng (Bookings) ──
+  const [bookingsData, setBookingsData] = useState<Record<number, HotelBooking[]>>({
     1: [
       { id: 'BK-9482', guestName: 'Nguyễn Văn Anh', email: 'vananh.nguyen@gmail.com', roomTypeName: 'Deluxe Double Room', checkIn: '2026-06-01', checkOut: '2026-06-04', totalPrice: 3600000, status: 'Confirmed', specialRequests: 'Phòng tầng cao, yên tĩnh' },
       { id: 'BK-1029', guestName: 'Trần Thị Mai', email: 'maitt@yahoo.com', roomTypeName: 'Executive Suite', checkIn: '2026-06-05', checkOut: '2026-06-07', totalPrice: 5600000, status: 'CheckedIn', specialRequests: 'Yêu cầu set up trăng mật' },
@@ -71,11 +71,15 @@ export const PartnerProperties: React.FC = () => {
     ]
   });
 
-  // ── State quản lý Tình trạng trống phòng (Availability) ──
-  const [availabilityDays, setAvailabilityDays] = useState<Record<string, Record<string, number>>>({});
-
   // Tab phụ bên trong form chỉnh sửa (info, rooms, availability, bookings)
   const [formSubTab, setFormSubTab] = useState<'info' | 'rooms' | 'availability' | 'bookings'>('info');
+
+  // Ngày bắt đầu tuần hiển thị trên bảng Availability (mặc định là ngày hôm nay)
+  const [viewStartDate, setViewStartDate] = useState<Date>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
 
   // Nạp dữ liệu khách sạn được chọn vào form chỉnh sửa bên phải
   const loadHotelIntoForm = (hotel: PartnerHotelDto) => {
@@ -108,21 +112,6 @@ export const PartnerProperties: React.FC = () => {
         price: rt.basePrice
       }));
       setRooms(mappedRooms);
-
-      // Sinh mock availability days dựa trên số lượng phòng thật
-      const mockDays: Record<string, Record<string, number>> = {};
-      mappedRooms.forEach(room => {
-        mockDays[room.id] = {
-          '06-01': Math.max(0, room.quantity - 2),
-          '06-02': Math.max(0, room.quantity - 3),
-          '06-03': room.quantity,
-          '06-04': Math.max(0, room.quantity - 1),
-          '06-05': room.quantity,
-          '06-06': Math.max(0, room.quantity - 5),
-          '06-07': Math.max(0, room.quantity - 6),
-        };
-      });
-      setAvailabilityDays(mockDays);
     } catch (error) {
       console.error('Lỗi khi tải chi tiết khách sạn:', error);
     }
@@ -273,12 +262,6 @@ export const PartnerProperties: React.FC = () => {
   // ── Xử lý khi thêm hạng phòng mới thành công từ API ──
   const handleAddRoomSuccess = (newRoom: RoomConfig) => {
     setRooms(prev => [...prev, newRoom]);
-
-    // Thêm ngày trống phòng mặc định cho phòng này
-    setAvailabilityDays(prev => ({
-      ...prev,
-      [newRoom.id]: { '06-01': newRoom.quantity, '06-02': newRoom.quantity, '06-03': newRoom.quantity, '06-04': newRoom.quantity, '06-05': newRoom.quantity, '06-06': newRoom.quantity, '06-07': newRoom.quantity }
-    }));
   };
 
   // Xóa hạng phòng liên kết với CSDL thực tế
@@ -298,50 +281,194 @@ export const PartnerProperties: React.FC = () => {
     }
   };
 
-  // Tăng giảm phòng trống (availability) trực tiếp trên bảng và đồng bộ lên CSDL Backend
+  // Điều hướng tuần hiển thị trên bảng Availability
+  const handleNavigateWeek = (direction: 1 | -1) => {
+    setViewStartDate(prev => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + direction * 7);
+      return d;
+    });
+  };
+
+  /**
+   * Sinh danh sách các ngày ISO (YYYY-MM-DD) trong khoảng [start, end] (bao gồm cả 2 đầu).
+   */
+  const generateDateRange = (start: string, end: string): string[] => {
+    const dates: string[] = [];
+    const current = new Date(start);
+    const endDate = new Date(end);
+    while (current <= endDate) {
+      dates.push(current.toISOString().split('T')[0]);
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  };
+
+  /**
+   * Chặn / gỡ chặn phòng hàng loạt theo khoảng ngày cho một hoặc nhiều hạng phòng.
+   * Gọi API toggleRoomBlock tuần tự cho từng cặp (roomId × ngày), rồi cập nhật state local.
+   */
+  const handleRangeBlock = async (
+    roomIds: string[],
+    startDate: string,
+    endDate: string,
+    action: 'BLOCK' | 'UNBLOCK'
+  ) => {
+    if (!selectedHotelId || roomIds.length === 0) return;
+
+    const dates = generateDateRange(startDate, endDate);
+    if (dates.length === 0) return;
+
+    const targetRooms = rooms.filter(r => roomIds.includes(r.id));
+    if (targetRooms.length === 0) return;
+
+    setLoading(true);
+    try {
+      // Gọi API cho từng (hạng phòng × ngày) một cách tuần tự
+      for (const room of targetRooms) {
+        const roomTypeId = parseInt(room.id);
+        for (const date of dates) {
+          await partnerService.toggleRoomBlock(selectedHotelId, roomTypeId, date, action);
+        }
+      }
+
+      // Cập nhật state local sau khi tất cả API calls hoàn thành
+      setBookingsData(prev => {
+        let hotelBookings = [...(prev[selectedHotelId] || [])];
+
+        for (const room of targetRooms) {
+          if (action === 'BLOCK') {
+            // Tạo một đơn chặn phòng ảo (block booking) cho từng ngày
+            const newBlocks: HotelBooking[] = dates.map(date => {
+              const nextDate = new Date(date);
+              nextDate.setDate(nextDate.getDate() + 1);
+              return {
+                id: `BLK-${Math.floor(1000 + Math.random() * 9000)}-${date}`,
+                guestName: 'Phòng khóa / Bảo trì',
+                email: 'blocked@wandervn.com',
+                roomTypeName: room.name,
+                checkIn: date,
+                checkOut: nextDate.toISOString().split('T')[0],
+                totalPrice: 0,
+                status: 'Confirmed' as const,
+                specialRequests: `Chặn phòng theo dải ngày: ${startDate} → ${endDate}.`
+              };
+            });
+            hotelBookings = [...newBlocks, ...hotelBookings];
+          } else {
+            // Gỡ chặn: Xóa tất cả block trong khoảng ngày đó của hạng phòng này
+            hotelBookings = hotelBookings.filter(bk => {
+              const isBlock = bk.guestName === 'Phòng khóa / Bảo trì';
+              const isSameRoomType = bk.roomTypeName === room.name;
+              const isInRange = dates.includes(bk.checkIn);
+              return !(isBlock && isSameRoomType && isInRange);
+            });
+          }
+        }
+
+        return { ...prev, [selectedHotelId]: hotelBookings };
+      });
+
+      const roomNames = targetRooms.map(r => r.name).join(', ');
+      const dateLabel = `${startDate.split('-').reverse().join('/')} → ${endDate.split('-').reverse().join('/')}`;
+      triggerMessage(
+        'success',
+        action === 'BLOCK'
+          ? `Đã chặn ${dates.length} ngày (${dateLabel}) cho ${targetRooms.length} hạng phòng: ${roomNames}.`
+          : `Đã gỡ chặn ${dates.length} ngày (${dateLabel}) cho ${targetRooms.length} hạng phòng: ${roomNames}.`
+      );
+    } catch (err: unknown) {
+      console.error('⚠️ Lỗi Range Block:', err);
+      const errMsg = err instanceof Error ? err.message : 'Lỗi kết nối máy chủ khi xử lý hàng loạt.';
+      triggerMessage('error', errMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Tăng giảm phòng trống (availability) trực tiếp trên bảng ô ngày đơn lẻ
   const handleAdjustAvailability = async (roomId: string, day: string, increment: boolean) => {
     if (!selectedHotelId) return;
 
     const targetRoom = rooms.find(r => r.id === roomId);
     if (!targetRoom) return;
 
-    const newTotalRooms = increment ? targetRoom.quantity + 1 : Math.max(1, targetRoom.quantity - 1);
+    const action = increment ? 'UNBLOCK' : 'BLOCK';
+    const roomTypeId = parseInt(roomId);
 
     try {
-      const roomTypeId = parseInt(roomId);
-      await partnerService.updateRoomType(selectedHotelId, roomTypeId, {
-        name: targetRoom.name,
-        basePrice: targetRoom.price,
-        capacity: targetRoom.maxGuests,
-        totalRooms: newTotalRooms
-      });
+      // Gọi API Backend thực tế để lưu vết chặn/gỡ chặn phòng trong CSDL
+      await partnerService.toggleRoomBlock(selectedHotelId, roomTypeId, day, action);
 
-      setRooms(prev => prev.map(r => {
-        if (r.id === roomId) {
-          return { ...r, quantity: newTotalRooms };
+      // Cập nhật State bookingsData để tự động cập nhật hiển thị phòng trống một cách reactive
+      setBookingsData(prev => {
+        const hotelBookings = prev[selectedHotelId] || [];
+        if (action === 'BLOCK') {
+          // Tính toán ngày Check-out (Check-in + 1 ngày)
+          const date = new Date(day);
+          date.setDate(date.getDate() + 1);
+          const nextDayStr = date.toISOString().split('T')[0];
+
+          const newBlock: HotelBooking = {
+            id: `BLK-${Math.floor(1000 + Math.random() * 9000)}`,
+            guestName: 'Phòng khóa / Bảo trì',
+            email: 'blocked@wandervn.com',
+            roomTypeName: targetRoom.name,
+            checkIn: day,
+            checkOut: nextDayStr,
+            totalPrice: 0,
+            status: 'Confirmed',
+            specialRequests: 'Chặn phòng thủ công bảo trì.'
+          };
+          return {
+            ...prev,
+            [selectedHotelId]: [newBlock, ...hotelBookings]
+          };
+        } else {
+          // Gỡ chặn: Xóa đơn chặn phòng ảo của ngày này khỏi State
+          const filtered = hotelBookings.filter(bk => {
+            const isBlock = bk.guestName === 'Phòng khóa / Bảo trì';
+            const isSameDate = bk.checkIn === day;
+            const isSameRoomType = bk.roomTypeName === targetRoom.name;
+            return !(isBlock && isSameDate && isSameRoomType);
+          });
+          return {
+            ...prev,
+            [selectedHotelId]: filtered
+          };
         }
-        return r;
-      }));
-
-      setAvailabilityDays(prev => {
-        const roomDays = prev[roomId] || {};
-        const currentVal = roomDays[day] ?? 5;
-        const newVal = increment ? currentVal + 1 : Math.max(0, currentVal - 1);
-        return {
-          ...prev,
-          [roomId]: {
-            ...roomDays,
-            [day]: newVal
-          }
-        };
       });
 
-      triggerMessage('success', `Đã đồng bộ số lượng phòng "${targetRoom.name}" lên CSDL (Tổng: ${newTotalRooms} phòng).`);
+      triggerMessage('success', action === 'BLOCK'
+        ? `Đã khóa 1 phòng thuộc hạng "${targetRoom.name}" vào ngày ${day.split('-').reverse().join('/')} thành công.`
+        : `Đã mở khóa 1 phòng thuộc hạng "${targetRoom.name}" vào ngày ${day.split('-').reverse().join('/')} thành công.`
+      );
     } catch (err: unknown) {
-      console.error('⚠️ Lỗi điều chỉnh số lượng phòng:', err);
+      console.error('⚠️ Lỗi điều chỉnh phòng trống:', err);
       const errMsg = err instanceof Error ? err.message : 'Lỗi kết nối máy chủ.';
       triggerMessage('error', errMsg);
     }
+  };
+
+  // Xử lý khi đăng ký đơn đặt phòng vãng lai từ BookingsTab
+  const handleRegisterWalkInBooking = (newBookingData: Omit<HotelBooking, 'id' | 'status'>) => {
+    if (!selectedHotelId) return;
+
+    const newBooking: HotelBooking = {
+      ...newBookingData,
+      id: `BK-${Math.floor(1000 + Math.random() * 9000)}`,
+      status: 'Confirmed'
+    };
+
+    setBookingsData(prev => {
+      const hotelBookings = prev[selectedHotelId] || [];
+      return {
+        ...prev,
+        [selectedHotelId]: [newBooking, ...hotelBookings]
+      };
+    });
+
+    triggerMessage('success', `Ghi nhận khách vãng lai "${newBooking.guestName}" thành công! Lịch trống đã tự động cập nhật.`);
   };
 
   // Xử lý sau khi đăng ký cơ sở di sản thành công từ Modal
@@ -561,14 +688,19 @@ export const PartnerProperties: React.FC = () => {
                   {formSubTab === 'availability' && (
                     <AvailabilityTab
                       rooms={currentRooms}
-                      availabilityDays={availabilityDays}
+                      bookings={currentBookings}
+                      viewStartDate={viewStartDate}
+                      onNavigateWeek={handleNavigateWeek}
                       onAdjustAvailability={handleAdjustAvailability}
+                      onRangeBlock={handleRangeBlock}
                     />
                   )}
 
                   {formSubTab === 'bookings' && (
                     <BookingsTab
                       bookings={currentBookings}
+                      rooms={currentRooms}
+                      onAddWalkInBooking={handleRegisterWalkInBooking}
                     />
                   )}
                 </div>

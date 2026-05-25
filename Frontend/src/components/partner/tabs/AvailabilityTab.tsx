@@ -1,17 +1,18 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
 import type { RoomConfig } from './RoomsTab';
+import type { HotelBooking } from './BookingsTab';
 
 // Cấu hình Props cho component AvailabilityTab
 interface AvailabilityTabProps {
   rooms: RoomConfig[];
-  availabilityDays: Record<string, Record<string, number>>;
+  bookings: HotelBooking[];
   onAdjustAvailability: (roomId: string, day: string, increment: boolean) => void;
 }
 
 export const AvailabilityTab: React.FC<AvailabilityTabProps> = ({
   rooms,
-  availabilityDays,
+  bookings,
   onAdjustAvailability
 }) => {
   return (
@@ -43,13 +44,23 @@ export const AvailabilityTab: React.FC<AvailabilityTabProps> = ({
           </thead>
           <tbody>
             {rooms.map(room => {
-              const days = ['06-01', '06-02', '06-03', '06-04', '06-05', '06-06', '06-07'];
+              const days = ['2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06', '2026-06-07'];
               return (
                 <tr key={room.id} className="border-b border-[#E6E2DD]/40 hover:bg-[#F1EDE8]/30">
                   <td className="p-4 font-display-lg text-xs font-bold text-[#1C1C19]">{room.name}</td>
                   {days.map(d => {
-                    const qty = availabilityDays[room.id]?.[d] ?? room.quantity;
+                    // Tính toán động số đơn đặt phòng bận trong ngày d của hạng phòng hiện tại
+                    const occupiedRooms = bookings.filter(bk => {
+                      const isSameRoomType = bk.roomTypeName === room.name;
+                      const isStayingOnDay = d >= bk.checkIn && d < bk.checkOut;
+                      const isActive = bk.status !== 'Cancelled';
+                      return isSameRoomType && isStayingOnDay && isActive;
+                    }).length;
+
+                    // Số lượng phòng khả dụng = Tổng số lượng phòng vật lý - Số lượng đơn bận
+                    const qty = Math.max(0, room.quantity - occupiedRooms);
                     const isSoldOut = qty === 0;
+
                     return (
                       <td key={d} className="p-4 text-center">
                         <div className="flex flex-col items-center gap-1.5">
@@ -58,7 +69,7 @@ export const AvailabilityTab: React.FC<AvailabilityTabProps> = ({
                             {isSoldOut ? 'Hết phòng' : `${qty} trống`}
                           </span>
 
-                          {/* Các nút điều khiển tăng giảm nhanh phòng trống */}
+                          {/* Các nút điều khiển tăng giảm nhanh phòng trống vật lý */}
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => onAdjustAvailability(room.id, d, false)}
