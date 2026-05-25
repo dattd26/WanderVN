@@ -29,11 +29,14 @@ export const HotelCheckout: React.FC = () => {
   const checkOutDate = searchParams.get('checkOutDate') || '';
 
   // Khởi tạo các trạng thái lấy thông tin
+  const isValidRequest = hotelId > 0 && roomTypeId > 0;
   const [hotel, setHotel] = useState<HotelDetailDto | null>(null);
   const [room, setRoom] = useState<RoomTypeInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isValidRequest);
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    isValidRequest ? null : 'Thông tin yêu cầu đặt phòng không hợp lệ.'
+  );
 
   // Quản lý phương thức thanh toán đã chọn
   const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'zalopay' | 'momo' | 'credit'>('vnpay');
@@ -55,8 +58,6 @@ export const HotelCheckout: React.FC = () => {
   // Tải thông tin phòng và khách sạn liên kết
   useEffect(() => {
     if (!hotelId || !roomTypeId) {
-      setErrorMessage('Thông tin yêu cầu đặt phòng không hợp lệ.');
-      setLoading(false);
       return;
     }
 
@@ -120,9 +121,15 @@ export const HotelCheckout: React.FC = () => {
         setBookingLoading(false);
         setShowSuccessModal(true);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Lỗi quy trình đặt phòng khách sạn:', error);
-      setErrorMessage(error?.message || 'Có lỗi bất ngờ xảy ra khi đang tạo đơn đặt phòng của bạn.');
+      let message = 'Có lỗi bất ngờ xảy ra khi đang tạo đơn đặt phòng của bạn.';
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        message = String((error as Record<string, unknown>).message);
+      }
+      setErrorMessage(message);
       setBookingLoading(false);
     }
   };

@@ -50,7 +50,7 @@ export const HotelDetail: React.FC = () => {
 
   // Khởi tạo ngày nhận và trả phòng từ URL hoặc mặc định hôm nay và ngày mai
   const initialCheckIn = searchParams.get('checkInDate') || new Date().toISOString().split('T')[0];
-  const initialCheckOut = searchParams.get('checkOutDate') || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const initialCheckOut = searchParams.get('checkOutDate') || new Date(new Date().getTime() + 86400000).toISOString().split('T')[0];
 
   const [checkInDate, setCheckInDate] = useState<string>(initialCheckIn);
   const [checkOutDate, setCheckOutDate] = useState<string>(initialCheckOut);
