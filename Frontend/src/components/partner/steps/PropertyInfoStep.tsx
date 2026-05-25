@@ -70,10 +70,12 @@ export const PropertyInfoStep: React.FC<PropertyInfoStepProps> = ({
   // Debounced Nominatim search — chỉ chạy khi user gõ ≥3 ký tự
   useEffect(() => {
     if (searchQuery.trim().length < 3) {
-      setResults([]);
-      return;
+      // Trì hoãn cập nhật state bất đồng bộ, tránh lỗi cascading render trong useEffect
+      const timer = setTimeout(() => {
+        setResults([]);
+      }, 0);
+      return () => clearTimeout(timer);
     }
-    // Không trigger search nếu input giữ nguyên giá trị địa chỉ đã chọn
     if (searchQuery === data.streetAddress && data.latitude != null) {
       return;
     }
@@ -216,11 +218,10 @@ export const PropertyInfoStep: React.FC<PropertyInfoStepProps> = ({
                       key={star}
                       type="button"
                       onClick={() => onChange({ starRating: star as 3 | 4 | 5 })}
-                      className={`flex-1 h-full flex items-center justify-center border rounded-lg font-label-md text-label-md uppercase transition-all ${
-                        isActive
+                      className={`flex-1 h-full flex items-center justify-center border rounded-lg font-label-md text-label-md uppercase transition-all ${isActive
                           ? 'border-secondary bg-secondary-container/30 text-on-secondary-container shadow-sm'
                           : 'border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-secondary/50'
-                      }`}
+                        }`}
                     >
                       {star} ★
                     </button>

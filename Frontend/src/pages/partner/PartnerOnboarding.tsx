@@ -56,10 +56,12 @@ export const PartnerOnboarding: React.FC = () => {
   // Auto-save vào localStorage (bỏ qua photos vì File không serialize)
   useEffect(() => {
     const timer = setTimeout(() => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { photos: _photos, ...serializable } = data;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
       setLastSavedAt(new Date());
     }, 600);
+
     return () => clearTimeout(timer);
   }, [data]);
 
