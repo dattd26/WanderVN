@@ -282,7 +282,8 @@ CREATE TABLE [dbo].[HotelImages](
     [ImageUrl] [nvarchar](500) NOT NULL,
     [IsPrimary] [bit] NULL,
     [CreatedAt] [datetimeoffset](7) NULL,
-PRIMARY KEY CLUSTERED 
+    [PublicId] [nvarchar](255) NULL,
+PRIMARY KEY CLUSTERED
 (
     [Id] ASC
 )) ON [PRIMARY]
@@ -317,7 +318,14 @@ CREATE TABLE [dbo].[Hotels](
     [CreatedAt] [datetimeoffset](7) NULL,
     [OwnerId] [int] NULL,
     [PropertyTypeId] [int] NULL,
-PRIMARY KEY CLUSTERED 
+    [Latitude] [decimal](9, 6) NULL,
+    [Longitude] [decimal](9, 6) NULL,
+    [Status] [int] NOT NULL,                       -- 0=Pending, 1=Approved, 2=Rejected
+    [CancellationPolicy] [nvarchar](20) NULL,      -- 'flexible' | 'moderate' | 'strict'
+    [RejectReason] [nvarchar](500) NULL,
+    [SubmittedAt] [datetimeoffset](7) NULL,
+    [ApprovedAt] [datetimeoffset](7) NULL,
+PRIMARY KEY CLUSTERED
 (
     [Id] ASC
 )) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
@@ -419,7 +427,8 @@ CREATE TABLE [dbo].[RoomTypes](
     [BasePrice] [decimal](18, 2) NOT NULL,
     [Capacity] [int] NOT NULL,
     [TotalRooms] [int] NOT NULL,
-PRIMARY KEY CLUSTERED 
+    [Description] [nvarchar](500) NULL,
+PRIMARY KEY CLUSTERED
 (
     [Id] ASC
 )) ON [PRIMARY]
@@ -498,6 +507,12 @@ CREATE NONCLUSTERED INDEX [IX_Hotels_Owner] ON [dbo].[Hotels]
     [OwnerId] ASC
 )
 GO
+/****** Object:  Index [IX_Hotels_Status]    Phục vụ admin queue + filter Status ******/
+CREATE NONCLUSTERED INDEX [IX_Hotels_Status] ON [dbo].[Hotels]
+(
+    [Status] ASC
+) INCLUDE ([OwnerId])
+GO
 /****** Object:  Index [IX_RoomTypes_Hotel]    Script Date: 18-May-26 6:31:13 PM ******/
 CREATE NONCLUSTERED INDEX [IX_RoomTypes_Hotel] ON [dbo].[RoomTypes]
 (
@@ -523,6 +538,8 @@ GO
 ALTER TABLE [dbo].[Hotels] ADD  DEFAULT ((1)) FOR [IsActive]
 GO
 ALTER TABLE [dbo].[Hotels] ADD  DEFAULT (sysdatetimeoffset()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[Hotels] ADD  CONSTRAINT [DF_Hotels_Status] DEFAULT ((0)) FOR [Status]
 GO
 ALTER TABLE [dbo].[Payments] ADD  DEFAULT (sysdatetimeoffset()) FOR [PaymentDate]
 GO
@@ -604,6 +621,10 @@ REFERENCES [dbo].[Users] ([Id])
 GO
 ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD CHECK  (([StarRating]>=(1) AND [StarRating]<=(5)))
 GO
+ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD  CONSTRAINT [CK_Hotels_Status] CHECK  (([Status] IN (0,1,2)))
+GO
+ALTER TABLE [dbo].[Hotels]  WITH CHECK ADD  CONSTRAINT [CK_Hotels_CancellationPolicy] CHECK  (([CancellationPolicy] IS NULL OR [CancellationPolicy] IN ('flexible','moderate','strict')))
+GO
 
 /****** Object:  StoredProcedure [dbo].[sp_Partner_UpdateRoomType] ******/
 SET ANSI_NULLS ON
@@ -646,10 +667,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE OR ALTER PROCEDURE sp_Partner_AddHotelImage
-    @PartnerId INT,
-    @HotelId INT,
-    @ImageUrl NVARCHAR(500),
-    @IsPrimary BIT
+    @PartnerId  INT,
+    @HotelId    INT,
+    @ImageUrl   NVARCHAR(500),
+    @PublicId   NVARCHAR(255) = NULL,
+    @IsPrimary  BIT           = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -665,10 +687,128 @@ BEGIN
         UPDATE HotelImages SET IsPrimary = 0 WHERE HotelId = @HotelId;
     END
 
-    INSERT INTO HotelImages (HotelId, ImageUrl, IsPrimary)
-    VALUES (@HotelId, @ImageUrl, @IsPrimary);
-    
+    INSERT INTO HotelImages (HotelId, ImageUrl, PublicId, IsPrimary, CreatedAt)
+    VALUES (@HotelId, @ImageUrl, @PublicId, @IsPrimary, SYSDATETIMEOFFSET());
+
     SELECT SCOPE_IDENTITY() AS NewImageId;
+END;
+GO
+
+/****** Object:  StoredProcedure [dbo].[sp_Partner_SubmitHotel] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[sp_Partner_SubmitHotel]
+    @PartnerId           INT,
+    @Name                NVARCHAR(200),
+    @Address             NVARCHAR(500),
+    @LocationId          INT          = NULL,
+    @PropertyTypeId      INT          = NULL,
+    @Description         NVARCHAR(MAX)= NULL,
+    @StarRating          INT          = NULL,
+    @Latitude            DECIMAL(9,6) = NULL,
+    @Longitude           DECIMAL(9,6) = NULL,
+    @CancellationPolicy  NVARCHAR(20) = NULL,
+    @AmenityIdsCsv       NVARCHAR(MAX)= NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM Users u
+        JOIN Roles r ON u.RoleId = r.Id
+        WHERE u.Id = @PartnerId AND r.Name = 'Partner' AND u.IsActive = 1
+    )
+    BEGIN
+        RAISERROR('403: Chỉ tài khoản Partner đang hoạt động mới được phép submit khách sạn!', 16, 1);
+        RETURN;
+    END
+
+    IF @CancellationPolicy IS NOT NULL AND @CancellationPolicy NOT IN ('flexible','moderate','strict')
+    BEGIN
+        RAISERROR('400: CancellationPolicy phải là flexible | moderate | strict.', 16, 1);
+        RETURN;
+    END
+
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        DECLARE @Now DATETIMEOFFSET = SYSDATETIMEOFFSET();
+
+        INSERT INTO Hotels
+            (LocationId, OwnerId, PropertyTypeId, Name, Address, StarRating,
+             Description, IsActive, CreatedAt, Latitude, Longitude,
+             Status, CancellationPolicy, SubmittedAt)
+        VALUES
+            (@LocationId, @PartnerId, @PropertyTypeId, @Name, @Address, @StarRating,
+             @Description, 1, @Now, @Latitude, @Longitude,
+             0 /* Pending */, @CancellationPolicy, @Now);
+
+        DECLARE @NewHotelId INT = SCOPE_IDENTITY();
+
+        IF @AmenityIdsCsv IS NOT NULL AND LEN(@AmenityIdsCsv) > 0
+        BEGIN
+            INSERT INTO HotelAmenities (HotelId, AmenityId)
+            SELECT @NewHotelId, TRY_CAST(LTRIM(RTRIM(value)) AS INT)
+            FROM STRING_SPLIT(@AmenityIdsCsv, ',')
+            WHERE TRY_CAST(LTRIM(RTRIM(value)) AS INT) IS NOT NULL
+              AND EXISTS (SELECT 1 FROM Amenities a WHERE a.Id = TRY_CAST(LTRIM(RTRIM(value)) AS INT));
+        END
+
+        COMMIT TRANSACTION;
+
+        SELECT @NewHotelId AS NewHotelId, @Now AS SubmittedAt;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
+
+/****** Object:  StoredProcedure [dbo].[sp_Partner_ListMyHotels] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[sp_Partner_ListMyHotels]
+    @PartnerId INT,
+    @Status    INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        h.Id,
+        h.Name,
+        h.Address,
+        h.StarRating,
+        h.Description,
+        h.Status,
+        h.CancellationPolicy,
+        h.RejectReason,
+        h.SubmittedAt,
+        h.ApprovedAt,
+        h.CreatedAt,
+        l.Name AS LocationName,
+        pt.Name AS PropertyTypeName,
+        pt.Code AS PropertyTypeCode,
+        (SELECT TOP 1 hi.ImageUrl
+           FROM HotelImages hi
+          WHERE hi.HotelId = h.Id
+          ORDER BY ISNULL(hi.IsPrimary, 0) DESC, hi.Id ASC) AS PrimaryImageUrl,
+        (SELECT COUNT(1) FROM RoomTypes rt WHERE rt.HotelId = h.Id) AS RoomTypeCount,
+        (SELECT COUNT(1)
+           FROM Bookings b
+           JOIN BookingHotels bh ON b.Id = bh.BookingId
+           JOIN Rooms r          ON bh.RoomId = r.Id
+          WHERE r.HotelId = h.Id) AS TotalBookings
+    FROM Hotels h
+    LEFT JOIN Locations     l  ON h.LocationId     = l.Id
+    LEFT JOIN PropertyTypes pt ON h.PropertyTypeId = pt.Id
+    WHERE h.OwnerId = @PartnerId
+      AND (@Status IS NULL OR h.Status = @Status)
+    ORDER BY h.CreatedAt DESC;
 END;
 GO
 
@@ -790,6 +930,7 @@ BEGIN
     ) rt_min
     WHERE h.LocationId IN (SELECT Id FROM LocationHierarchy)
       AND h.IsActive = 1
+      AND h.[Status] = 1  -- chỉ trả hotel đã được Admin duyệt
       AND rt.Capacity >= @Capacity
       AND dbo.fn_GetAvailableRoomCount(rt.Id, @CheckIn, @CheckOut) > 0
       AND (@MinPrice IS NULL OR rt_min.MinPrice >= @MinPrice)

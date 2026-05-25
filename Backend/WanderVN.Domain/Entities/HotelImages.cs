@@ -15,5 +15,8 @@ public partial class HotelImages
 
     public DateTimeOffset? CreatedAt { get; set; }
 
+    // Cloudinary public_id — dùng để xóa/transform ảnh sau này
+    public string? PublicId { get; set; }
+
     public virtual Hotels? Hotel { get; set; }
 }

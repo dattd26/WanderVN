@@ -14,6 +14,7 @@ export interface SearchHotelsDto {
   // Tọa độ địa lý — có thể null nếu khách sạn chưa được geocode
   latitude?: number | null;
   longitude?: number | null;
+  amenities?: string[]; // Danh sách các tiện ích đi kèm
 }
 
 export interface SearchHotelsQuery {
@@ -37,7 +38,6 @@ export interface RoomTypeInfo {
   images?: string[];
 }
 
-// Chi tiết khách sạn bao gồm danh sách hạng phòng
 export interface HotelDetailDto {
   id: number;
   name: string;
@@ -48,4 +48,22 @@ export interface HotelDetailDto {
   images: string[];
   roomTypes: RoomTypeInfo[];
 }
+
+// Yêu cầu đặt phòng khách sạn gửi lên API backend
+export interface CreateHotelBookingRequest {
+  userId: number;
+  roomTypeId: number;
+  checkInDate: string; // Định dạng yyyy-MM-dd
+  checkOutDate: string; // Định dạng yyyy-MM-dd
+  totalPrice?: number;
+}
+
+// Kết quả phản hồi từ API đặt phòng khách sạn
+export interface HotelBookingResponse {
+  bookingId: number;
+  bookingCode: string;
+  totalPrice: number;
+  status: string;
+}
+
 

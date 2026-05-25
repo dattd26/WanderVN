@@ -101,6 +101,7 @@ public class PaymentsController : ControllerBase
     [HttpPost("zalopay-callback")]
     public async Task<IActionResult> ZaloPayCallback([FromBody] ZaloPayCallbackRequestDto request)
     {
+        Console.WriteLine($"ZaloPay Callback: {request.Data} - {request.Mac}");
         var command = new WanderVN.Application.Features.Payments.Commands.ProcessZaloPayCallback.ProcessZaloPayCallbackCommand
         {
             Data = request.Data,

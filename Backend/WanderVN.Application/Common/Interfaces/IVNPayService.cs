@@ -11,10 +11,11 @@ public interface IVNPayService
     /// Tạo URL thanh toán VNPay dựa trên thông tin hóa đơn và IP/Địa chỉ của khách hàng.
     /// </summary>
     /// <param name="bookingId">ID của đặt phòng/đặt vé cần thanh toán.</param>
-    /// <param name="amount">Số tiền cần thanh toán (VNĐ).</param>
+    /// <param name="amount">Số tiền cần thanh toán.</param>
     /// <param name="ipAddress">Địa chỉ IP của khách hàng gửi yêu cầu.</param>
+    /// <param name="serviceType">Loại dịch vụ đặt chỗ (Hotel hoặc Flight).</param>
     /// <returns>Chuỗi URL thanh toán VNPay.</returns>
-    string CreatePaymentUrl(int bookingId, decimal amount, string ipAddress);
+    string CreatePaymentUrl(int bookingId, decimal amount, string ipAddress, string serviceType);
 
     /// <summary>
     /// Xác thực chữ ký phản hồi (checksum) từ VNPay gửi về (Return URL hoặc IPN URL).

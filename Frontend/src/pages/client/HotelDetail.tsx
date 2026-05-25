@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { MapPin, Star, Users, AlertCircle, Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { MapPin, Star, Users, AlertCircle, Check, ChevronLeft, ChevronRight, X, Calendar } from 'lucide-react';
 
 // Nhập service và kiểu dữ liệu dùng chung của hệ thống
 import { hotelService } from '../../services';
@@ -42,11 +42,23 @@ const RoomImageSlider = ({ images }: { images?: string[] }) => {
 
 export const HotelDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const [hotel, setHotel] = useState<HotelDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
-  // Thêm state quản lý số lượng phòng đang chọn cho từng hạng phòng
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Khởi tạo ngày nhận và trả phòng từ URL hoặc mặc định hôm nay và ngày mai
+  const initialCheckIn = searchParams.get('checkInDate') || new Date().toISOString().split('T')[0];
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const initialCheckOut = searchParams.get('checkOutDate') || tomorrow.toISOString().split('T')[0];
+
+  const [checkInDate, setCheckInDate] = useState<string>(initialCheckIn);
+  const [checkOutDate, setCheckOutDate] = useState<string>(initialCheckOut);
+
+  // Tính số đêm nghỉ dưỡng
+  const nights = Math.max(1, Math.round((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24)));
 
   const openGallery = (index: number) => {
     setCurrentImageIndex(index);
@@ -143,10 +155,53 @@ export const HotelDetail: React.FC = () => {
         </p>
       </div>
 
-      {/* 4. Danh sách Hạng Phòng (Layout chuẩn OTA - Tách riêng từng phòng) */}
-      <div>
+      {/* 4. Chọn thời gian lưu trú & Danh sách Hạng Phòng (Layout chuẩn OTA) */}
+      <div className="mb-10 p-6 bg-[#faf9f6] border border-[#e5e0d8] rounded-lg shadow-sm">
+        <h3 className="text-lg font-serif text-[#1c1c19] mb-4 flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-[#B59A5A]" />
+          Chọn Thời Gian Lưu Trú
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs uppercase tracking-wider text-[#747878] font-medium">Ngày Nhận Phòng</label>
+            <input
+              type="date"
+              value={checkInDate}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => {
+                setCheckInDate(e.target.value);
+                if (new Date(e.target.value) >= new Date(checkOutDate)) {
+                  const nextDay = new Date(new Date(e.target.value).getTime() + 86400000).toISOString().split('T')[0];
+                  setCheckOutDate(nextDay);
+                }
+              }}
+              className="px-4 py-2.5 border border-[#e5e0d8] bg-white rounded font-body-md text-sm text-[#1c1c19] focus:outline-none focus:border-[#B59A5A]"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs uppercase tracking-wider text-[#747878] font-medium">Ngày Trả Phòng</label>
+            <input
+              type="date"
+              value={checkOutDate}
+              min={new Date(new Date(checkInDate).getTime() + 86400000).toISOString().split('T')[0]}
+              onChange={(e) => setCheckOutDate(e.target.value)}
+              className="px-4 py-2.5 border border-[#e5e0d8] bg-white rounded font-body-md text-sm text-[#1c1c19] focus:outline-none focus:border-[#B59A5A]"
+            />
+          </div>
+          <div className="text-center md:text-left md:pl-6">
+            <p className="text-sm text-[#747878] font-light">
+              Thời gian lưu trú: <span className="font-bold text-[#B59A5A] text-lg">{nights} đêm</span>
+            </p>
+            <p className="text-[11px] text-[#9b9995] mt-1">
+              Giá phòng sẽ được tự động nhân theo số đêm tại trang thanh toán.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-16">
         <h3 className="text-2xl font-serif text-[#1c1c19] mb-6">
-          Các Phòng có sẵn tại {hotel.name.split(' ')[0]} { }
+          Các Phòng có sẵn tại {hotel.name}
         </h3>
 
         <div className="space-y-6">
@@ -220,12 +275,12 @@ export const HotelDetail: React.FC = () => {
                               <div className="text-[10px] text-gray-500 mt-0.5">Chưa bao gồm thuế và phí</div>
                             </div>
 
-                            {/* Action (Button màu xanh chuẩn Agoda/Traveloka) */}
+                            {/* Action (Nút chọn màu sắc và thiết kế sang trọng) */}
                             <div className="col-span-2 flex flex-col items-center justify-center gap-2 md:pl-2">
                               <span className="text-xs text-gray-600 font-medium hidden md:block">x1</span>
                               <Link
-                                to={`/booking?roomId=${room.id}&roomIndex=${index + 1}`}
-                                className="px-6 py-2 w-full md:w-auto text-center bg-[#0071c2] hover:bg-[#005999] text-white text-sm font-semibold rounded shadow-sm transition-all"
+                                to={`/booking?hotelId=${hotel.id}&roomTypeId=${room.id}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`}
+                                className="px-6 py-2 w-full md:w-auto text-center bg-[#B59A5A] hover:bg-[#9E8448] text-white text-xs font-semibold rounded shadow-sm transition-all uppercase tracking-wider"
                               >
                                 Chọn
                               </Link>

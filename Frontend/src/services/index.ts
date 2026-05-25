@@ -8,4 +8,5 @@ export * from './client/paymentService';
 export * from './client/hotelService';
 
 export * from './client/geocodingService';
+export * from './partner/partnerService';
 

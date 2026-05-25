@@ -23,10 +23,21 @@ public class BookingsController : ControllerBase
     [HttpPost("hotel")]
     public async Task<IActionResult> CreateHotelBooking([FromBody] CreateHotelBookingRequest request)
     {
-        var command = new CreateHotelBookingCommand { Request = request };
-        var result = await _mediator.Send(command);
-        var response = new ApiResponse<HotelBookingResponse>(true, "Dat phong thanh cong", 200, result);
-        return Ok(response);
+        try
+        {
+            var command = new CreateHotelBookingCommand { Request = request };
+            var result = await _mediator.Send(command);
+            var response = new ApiResponse<HotelBookingResponse>(true, "Dat phong thanh cong", 200, result);
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return UnprocessableEntity(new ApiResponse<HotelBookingResponse>(false, ex.Message, 422, null));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<HotelBookingResponse>(false, ex.Message, 500, null));
+        }
     }
 
     [HttpPost("flight")]
