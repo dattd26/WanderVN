@@ -58,13 +58,38 @@ public class HotelRepository : IHotelRepository
         }
 
         // Gọi trực tiếp Stored Procedure giúp tối ưu hóa hiệu năng biên dịch thực thi của SQL Server
-        var hotels = await connection.QueryAsync<SearchHotelsDto>(
+        var hotelsResult = (await connection.QueryAsync<SearchHotelsDto>(
             "sp_SearchHotels",
             parameters,
             commandType: CommandType.StoredProcedure
-        );
+        )).ToList();
 
-        return hotels.ToList();
+        // Tải thêm các tiện ích liên kết với từng khách sạn đã tìm thấy bằng Dapper
+        var hotelIds = hotelsResult.Select(h => h.Id).ToList();
+        if (hotelIds.Any())
+        {
+            var amenitiesMap = await connection.QueryAsync<(int HotelId, string Name)>(
+                @"SELECT ha.HotelId, a.Name 
+                  FROM HotelAmenities ha 
+                  JOIN Amenities a ON ha.AmenityId = a.Id 
+                  WHERE ha.HotelId IN @HotelIds",
+                new { HotelIds = hotelIds }
+            );
+
+            var groupedAmenities = amenitiesMap
+                .GroupBy(x => x.HotelId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.Name).ToList());
+
+            foreach (var hotel in hotelsResult)
+            {
+                if (groupedAmenities.TryGetValue(hotel.Id, out var list))
+                {
+                    hotel.Amenities = list;
+                }
+            }
+        }
+
+        return hotelsResult;
     }
 
     public async Task<HotelDetailDto?> GetHotelDetailAsync(int hotelId, CancellationToken cancellationToken)

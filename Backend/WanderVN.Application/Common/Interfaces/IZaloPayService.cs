@@ -11,9 +11,10 @@ public interface IZaloPayService
     /// Tạo đường dẫn thanh toán (order_url) từ hệ thống ZaloPay Sandbox.
     /// </summary>
     /// <param name="bookingId">ID đơn đặt hàng trong hệ thống.</param>
-    /// <param name="amount">Số tiền thanh toán (bằng USD, sẽ được tự động quy đổi sang VND).</param>
+    /// <param name="amount">Số tiền thanh toán.</param>
+    /// <param name="serviceType">Loại dịch vụ đặt chỗ (Hotel hoặc Flight).</param>
     /// <returns>Đường dẫn thanh toán order_url của ZaloPay.</returns>
-    Task<string> CreatePaymentUrlAsync(int bookingId, decimal amount);
+    Task<string> CreatePaymentUrlAsync(int bookingId, decimal amount, string serviceType);
 
     /// <summary>
     /// Xác thực chữ ký dữ liệu (checksum/mac) phản hồi gửi về từ ZaloPay qua webhook callback.

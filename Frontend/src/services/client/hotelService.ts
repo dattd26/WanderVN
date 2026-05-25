@@ -1,6 +1,5 @@
-// Dịch vụ API xử lý các nghiệp vụ liên quan đến Khách sạn chi tiết
 import { request } from '../shared/apiClient';
-import type { HotelDetailDto } from '../../types';
+import type { HotelDetailDto, CreateHotelBookingRequest, HotelBookingResponse } from '../../types';
 
 export const hotelService = {
   /**
@@ -8,5 +7,16 @@ export const hotelService = {
    */
   async getHotelDetail(id: number | string): Promise<HotelDetailDto> {
     return request<HotelDetailDto>(`/hotels/${id}`);
+  },
+
+  /**
+   * Thực hiện đặt phòng khách sạn thông qua API và lưu vào cơ sở dữ liệu
+   */
+  async createHotelBooking(bookingRequest: CreateHotelBookingRequest): Promise<HotelBookingResponse> {
+    return request<HotelBookingResponse>('/bookings/hotel', {
+      method: 'POST',
+      body: JSON.stringify(bookingRequest),
+    });
   }
 };
+

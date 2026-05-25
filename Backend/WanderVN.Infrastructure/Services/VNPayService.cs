@@ -22,9 +22,9 @@ public class VNPayService : IVNPayService
     }
 
     /// <summary>
-    /// Tạo URL thanh toán VNPay dựa trên thông tin hóa đơn và IP của khách hàng.
+    /// Tạo URL thanh toán VNPay dựa trên thông tin hóa đơn, IP và loại dịch vụ của khách hàng.
     /// </summary>
-    public string CreatePaymentUrl(int bookingId, decimal amount, string ipAddress)
+    public string CreatePaymentUrl(int bookingId, decimal amount, string ipAddress, string serviceType)
     {
         var vnp_TmnCode = _configuration["VNPay:TmnCode"];
         var vnp_HashSecret = _configuration["VNPay:HashSecret"];
@@ -36,8 +36,8 @@ public class VNPayService : IVNPayService
             throw new InvalidOperationException("Cấu hình VNPay không hợp lệ hoặc bị thiếu.");
         }
 
-        // Chuyển đổi số tiền từ USD sang VND bằng bộ công cụ chuyển đổi để tránh lỗi giao dịch không hợp lệ
-        decimal vndAmount = WanderVN.Application.Common.Utils.CurrencyConverter.ConvertUsdToVnd(amount);
+        // Số tiền truyền vào từ booking.TotalPrice hiện tại luôn luôn là VND trong cơ sở dữ liệu.
+        decimal vndAmount = amount;
 
         // VNPay yêu cầu số tiền nhân với 100 và chuyển thành chuỗi số nguyên
         long paymentAmount = (long)(vndAmount * 100);

@@ -96,14 +96,16 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         var duffelOrderId = root.GetProperty("data").GetProperty("id").GetString() 
                             ?? GenerateLocalBookingCode();
 
-        // 4. Save to Database
+        // 4. Quy đổi giá trị đặt vé từ USD sang VND và lưu vào cơ sở dữ liệu để thống nhất tiền tệ VND
+        decimal totalPriceInVnd = WanderVN.Application.Common.Utils.CurrencyConverter.ConvertUsdToVnd(request.TotalPrice);
+
         var booking = new WanderVN.Domain.Entities.Bookings
         {
             UserId = request.UserId,
-            BookingCode = duffelOrderId, // Using Duffel Order ID as our Booking Code
+            BookingCode = duffelOrderId, // Sử dụng Duffel Order ID làm Mã đặt vé
             ServiceType = "Flight",
-            TotalPrice = request.TotalPrice,
-            Status = "Pending", // Usually requires payment processing next
+            TotalPrice = totalPriceInVnd,
+            Status = "Pending", // Trạng thái chờ thanh toán
             PaymentStatus = "Unpaid",
             CreatedAt = DateTimeOffset.UtcNow
         };

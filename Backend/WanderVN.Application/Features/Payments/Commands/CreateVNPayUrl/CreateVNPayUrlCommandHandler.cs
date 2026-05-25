@@ -41,8 +41,8 @@ public class CreateVNPayUrlCommandHandler : IRequestHandler<CreateVNPayUrlComman
             throw new Exception("Đơn đặt hàng này đã được thanh toán trước đó.");
         }
 
-        // 2. Tạo URL thanh toán VNPay bằng cách gọi VNPayService
-        string paymentUrl = _vnpayService.CreatePaymentUrl(booking.Id, booking.TotalPrice, command.IpAddress);
+        // 2. Tạo URL thanh toán VNPay bằng cách gọi VNPayService với thông tin loại dịch vụ
+        string paymentUrl = _vnpayService.CreatePaymentUrl(booking.Id, booking.TotalPrice, command.IpAddress, booking.ServiceType);
 
         return paymentUrl;
     }

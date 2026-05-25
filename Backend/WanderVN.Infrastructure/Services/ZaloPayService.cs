@@ -27,9 +27,9 @@ public class ZaloPayService : IZaloPayService
     }
 
     /// <summary>
-    /// Tạo đường dẫn thanh toán ZaloPay bằng cách gọi API v2 của ZaloPay Sandbox.
+    /// Tạo đường dẫn thanh toán ZaloPay bằng cách gọi API v2 của ZaloPay Sandbox với loại dịch vụ.
     /// </summary>
-    public async Task<string> CreatePaymentUrlAsync(int bookingId, decimal amount)
+    public async Task<string> CreatePaymentUrlAsync(int bookingId, decimal amount, string serviceType)
     {
         // 1. Tải cấu hình ZaloPay từ ứng dụng
         var appIdStr = _configuration["ZaloPay:AppId"];
@@ -45,8 +45,8 @@ public class ZaloPayService : IZaloPayService
 
         int appId = int.Parse(appIdStr);
 
-        // 2. Chuyển đổi số tiền USD sang VND (ZaloPay yêu cầu thanh toán bằng VND)
-        decimal vndAmount = CurrencyConverter.ConvertUsdToVnd(amount);
+        // Số tiền truyền vào từ booking.TotalPrice hiện tại luôn luôn là VND trong cơ sở dữ liệu.
+        decimal vndAmount = amount;
         long paymentAmount = (long)vndAmount;
 
         // 3. Khởi tạo các tham số ZaloPay

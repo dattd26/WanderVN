@@ -41,8 +41,8 @@ public class CreateZaloPayUrlCommandHandler : IRequestHandler<CreateZaloPayUrlCo
             throw new Exception("Đơn đặt hàng này đã được thanh toán trước đó.");
         }
 
-        // 2. Tạo URL thanh toán ZaloPay bằng cách gọi ZaloPayService
-        string paymentUrl = await _zalopayService.CreatePaymentUrlAsync(booking.Id, booking.TotalPrice);
+        // 2. Tạo URL thanh toán ZaloPay bằng cách gọi ZaloPayService với thông tin loại dịch vụ
+        string paymentUrl = await _zalopayService.CreatePaymentUrlAsync(booking.Id, booking.TotalPrice, booking.ServiceType);
 
         return paymentUrl;
     }

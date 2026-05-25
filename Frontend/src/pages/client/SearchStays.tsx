@@ -20,6 +20,7 @@ export const SearchStays: React.FC = () => {
   // Lọc theo khoảng giá từ sidebar (VNĐ)
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 500000, max: 8000000 });
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
   // States tải dữ liệu trực tiếp từ C# Backend
   const [hotels, setHotels] = useState<SearchHotelsDto[]>([]);
@@ -82,7 +83,7 @@ export const SearchStays: React.FC = () => {
     fetchData();
   }, [locationId, checkInDate, checkOutDate, capacity]);
 
-  // Bộ lọc phụ ở Client-side (Lọc theo Giá, Loại phòng)
+  // Bộ lọc phụ ở Client-side (Lọc theo Giá, Loại hình, Tiện ích)
   const displayedHotels = hotels.filter((hotel) => {
     if (hotel.minPrice > priceRange.max) return false;
 
@@ -90,6 +91,14 @@ export const SearchStays: React.FC = () => {
       if (!hotel.propertyTypeCode || !selectedTypes.includes(hotel.propertyTypeCode)) {
         return false;
       }
+    }
+
+    if (selectedAmenities.length > 0) {
+      const hotelAmenities = hotel.amenities || [];
+      const hasAllAmenities = selectedAmenities.every(amenity => 
+        hotelAmenities.includes(amenity)
+      );
+      if (!hasAllAmenities) return false;
     }
 
     return true;
@@ -115,6 +124,7 @@ export const SearchStays: React.FC = () => {
         <FiltersSidebar
           onPriceChange={(min, max) => setPriceRange({ min, max })}
           onTypeChange={(types) => setSelectedTypes(types)}
+          onAmenityChange={(amenities) => setSelectedAmenities(amenities)}
           onMapClick={() => setShowMap(true)}
           mapCenter={mapCenter}
           hotels={displayedHotels}
