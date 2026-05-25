@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { PartnerHeader } from '../../components/partner/PartnerHeader';
 import { OnboardingStepper, type OnboardingStep } from '../../components/partner/OnboardingStepper';
 import { WelcomeStep } from '../../components/partner/steps/WelcomeStep';
@@ -8,6 +8,7 @@ import { PhotosStep } from '../../components/partner/steps/PhotosStep';
 import { PricingStep } from '../../components/partner/steps/PricingStep';
 import { ReviewStep } from '../../components/partner/steps/ReviewStep';
 import { DEFAULT_ONBOARDING_DATA, type PartnerOnboardingData } from '../../types';
+import partnerBg from '../../assets/images/partner/partner-bg.png';
 
 const STEPS: OnboardingStep[] = [
   { id: 'welcome', label: 'Chào mừng' },
@@ -80,56 +81,75 @@ export const PartnerOnboarding: React.FC = () => {
     [lastSavedAt],
   );
 
+  // 0. Nếu đã đăng nhập với tư cách Đối tác: Chuyển hướng thẳng tới Dashboard quản lý
+  if (token && role === 'Partner') {
+    return <Navigate to="/partner/dashboard" replace />;
+  }
+
   // 1. Nếu chưa đăng nhập: Hiển thị cổng Gateway giới thiệu & yêu cầu Đăng ký/Đăng nhập Đối tác
   if (!token) {
     return (
       <div className="relative min-h-screen w-full flex flex-col justify-between overflow-x-hidden select-none">
         {/* Cinematic Background */}
         <div className="fixed inset-0 z-0">
-          <img 
-            alt="Beautiful luxury resort lounge" 
-            className="w-full h-full object-cover select-none filter brightness-[0.6]" 
-            src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1920&q=80"
+          <img
+            alt="Beautiful luxury resort lounge"
+            className="w-full h-full object-cover select-none filter brightness-[0.6]"
+            src={partnerBg}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A] via-[#1A1A1A]/40 to-transparent"></div>
         </div>
 
-        {/* Header */}
+        {/* Header - Giao diện đầu trang với thanh điều hướng và nút Đăng ký / Đăng nhập đối tác */}
         <header className="relative z-10 w-full px-margin-mobile md:px-margin-desktop py-6 flex justify-between items-center border-b border-white/10 backdrop-blur-sm bg-black/10">
           <Link to="/" className="flex items-center gap-3">
             <span className="font-display-lg text-headline-lg text-white tracking-tighter">WanderVN</span>
             <span className="bg-secondary text-on-secondary text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-sm">PARTNER</span>
           </Link>
-          <Link to="/" className="text-white/70 hover:text-white font-label-md text-xs uppercase tracking-widest transition-colors">
-            Quay lại trang chủ
-          </Link>
+          <div className="flex items-center gap-4 md:gap-6">
+            <Link to="/" className="text-white/70 hover:text-white font-label-md text-xs uppercase tracking-widest transition-colors hidden md:inline-block">
+              Quay lại trang chủ
+            </Link>
+            <Link
+              to="/login?redirect=/partner/onboarding&role=Partner"
+              className="font-label-md text-xs uppercase tracking-[0.1em] border border-white/25 text-white px-4 py-2 rounded hover:bg-white/10 transition-all text-center"
+            >
+              Đăng nhập
+            </Link>
+            <Link
+              to="/register?redirect=/partner/onboarding&role=Partner"
+              className="font-label-md text-xs uppercase tracking-[0.1em] bg-primary text-on-primary px-4 py-2 rounded shadow-md hover:bg-secondary hover:text-on-secondary transition-all font-bold text-center"
+            >
+              Đăng ký
+            </Link>
+          </div>
         </header>
 
-        {/* Content */}
-        <main className="relative z-10 flex-grow w-full flex items-center justify-center px-margin-mobile py-16">
-          <div className="max-w-[580px] bg-background/80 border border-outline-variant/35 backdrop-blur-xl p-8 md:p-12 rounded shadow-[0_20px_50px_rgba(0,0,0,0.3)] text-center animate-fade-up">
-            <span className="inline-flex items-center gap-2 font-label-md text-[10px] uppercase tracking-[0.3em] text-secondary mb-5">
+        {/* Main Content - Căn lề trái và hiển thị thông điệp đối tác mới */}
+        <main className="relative z-10 flex-grow w-full flex items-center justify-start px-margin-mobile md:px-margin-desktop py-16 md:py-24">
+          <div className="max-w-[750px] text-left animate-fade-up">
+            <span className="inline-flex items-center gap-2 font-label-md text-[10px] uppercase tracking-[0.25em] text-[#F1E4C3] bg-white/10 border border-white/15 px-3 py-1.5 rounded-full mb-5 backdrop-blur-md">
               Cổng đối tác WanderVN
             </span>
-            <h1 className="font-display-lg text-display-lg-mobile md:text-headline-lg text-primary mb-6 leading-tight">
-              Đồng hành cùng di sản Việt
+            <h1 className="font-display-lg text-display-lg-mobile md:text-5xl lg:text-6xl text-white mb-6 leading-tight font-bold tracking-tight">
+              Đưa khách sạn của bạn<br className="hidden md:inline" /> đến với hàng ngàn du khách
             </h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mb-10 leading-relaxed max-w-md mx-auto">
-              Để bắt đầu hành trình đăng ký cơ sở lưu trú và kinh doanh cùng WanderVN, quý đối tác vui lòng đăng ký hoặc đăng nhập tài khoản dành riêng cho Đối tác.
+            <p className="font-body-md text-body-md text-white/80 mb-10 leading-relaxed max-w-xl">
+              Tham gia hệ sinh thái đối tác WanderVN để quản lý phòng, nhận đặt chỗ trực tuyến và phát triển doanh thu bền vững.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-start">
               <Link
                 to="/register?redirect=/partner/onboarding&role=Partner"
                 className="font-label-md text-xs uppercase tracking-[0.15em] bg-primary text-on-primary px-8 py-4 rounded shadow-md hover:bg-secondary hover:text-on-secondary transition-all hover:scale-[1.01] active:scale-[0.99] font-bold text-center"
               >
-                Đăng ký tài khoản Đối tác
+                Bắt đầu ngay
               </Link>
               <Link
-                to="/login?redirect=/partner/onboarding&role=Partner"
-                className="font-label-md text-xs uppercase tracking-[0.15em] border border-outline-variant text-primary px-8 py-4 rounded hover:bg-surface-container-high transition-all text-center"
+                to="/"
+                className="font-label-md text-xs uppercase tracking-[0.15em] border border-white/20 text-white px-8 py-4 rounded hover:bg-white/10 backdrop-blur-sm transition-all text-center md:hidden"
               >
-                Đăng nhập Cổng đối tác
+                Quay lại trang chủ
               </Link>
             </div>
           </div>
