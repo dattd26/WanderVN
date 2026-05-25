@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FlightSearchForm } from '../../components/client/FlightSearchForm';
 import { FlightDetailModal } from '../../components/client/flight/FlightDetailModal';
+import { FlightPagination } from '../../components/client/flight/FlightPagination';
 import { flightService } from '../../services';
 import type { FlightOfferDto } from '../../types';
 import {
@@ -32,6 +33,11 @@ export const SearchFlights: React.FC = () => {
   const [offers, setOffers] = useState<FlightOfferDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // Trạng thái vé máy bay đang được chọn (booking bar cũ)
   const [selectedOffer, setSelectedOffer] = useState<FlightOfferDto | null>(null);
@@ -83,6 +89,7 @@ export const SearchFlights: React.FC = () => {
       });
 
       setOffers(response);
+      setCurrentPage(1);
 
       if (response.length === 0) {
         setError('Không tìm thấy chuyến bay khả dụng cho chặng bay này trong ngày đã chọn.');
@@ -141,6 +148,18 @@ export const SearchFlights: React.FC = () => {
     return `${hours} ${minutes}`.trim() || '1h 20m';
   };
 
+  const totalPages = Math.ceil(offers.length / itemsPerPage);
+  const currentFlights = offers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    if (resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -268,7 +287,7 @@ export const SearchFlights: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-6" ref={resultsRef}>
                 <div className="flex justify-between items-center pb-4 border-b border-outline-variant/20 mb-6">
                   <div>
                     <h2 className="font-display-md text-headline-md text-primary">Các Chuyến Bay Khả Dụng</h2>
@@ -278,7 +297,7 @@ export const SearchFlights: React.FC = () => {
                   </div>
                 </div>
 
-                {offers.map((offer) => {
+                {currentFlights.map((offer) => {
                   const isSelected = selectedOffer?.id === offer.id;
 
                   return (
@@ -395,6 +414,12 @@ export const SearchFlights: React.FC = () => {
                     </div>
                   );
                 })}
+
+                <FlightPagination 
+                  currentPage={currentPage} 
+                  totalPages={totalPages} 
+                  onPageChange={handlePageChange} 
+                />
               </div>
             )}
           </>
