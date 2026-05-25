@@ -798,6 +798,38 @@ BEGIN
     OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
 END;
 GO
+
+/****** Object:  Table [dbo].[PartnerPayouts]    Script Date: 25-May-26 10:00:00 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PartnerPayouts](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [PartnerId] [int] NOT NULL,
+    [BookingId] [int] NOT NULL,
+    [GrossAmount] [decimal](18, 2) NOT NULL,
+    [CommissionAmount] [decimal](18, 2) NOT NULL,
+    [NetAmount] [decimal](18, 2) NOT NULL,
+    [Status] [nvarchar](50) NOT NULL DEFAULT ('Pending'),
+    [PayoutMethod] [nvarchar](50) NOT NULL DEFAULT ('Manual'),
+    [PaidAt] [datetimeoffset](7) NULL,
+    [TransactionReference] [nvarchar](100) NULL,
+    [CreatedAt] [datetimeoffset](7) NOT NULL DEFAULT (sysdatetimeoffset()),
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[PartnerPayouts]  WITH CHECK ADD FOREIGN KEY([PartnerId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+
+ALTER TABLE [dbo].[PartnerPayouts]  WITH CHECK ADD FOREIGN KEY([BookingId])
+REFERENCES [dbo].[Bookings] ([Id])
+GO
+
 USE [master]
 GO
 ALTER DATABASE [WanderVN] SET  READ_WRITE 

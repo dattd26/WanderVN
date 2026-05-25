@@ -10,4 +10,7 @@ public class UserDto
     public string? RoleName { get; set; }
     public bool? IsActive { get; set; }
     public DateTimeOffset? CreatedAt { get; set; }
+
+    // Thêm trường doanh thu
+    public decimal TotalRevenue { get; set; }
 }

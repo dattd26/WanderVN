@@ -43,15 +43,15 @@ public class UsersController : ControllerBase
         var response = new ApiResponse<UserDetailsDto>(true, "Lấy thông tin khách hàng thành công.", 200, data);
         return Ok(response);
     }
-[HttpDelete("customers/{id}")]
-public async Task<IActionResult> DeleteCustomer(int id, CancellationToken cancellationToken)
-{
-    var result = await _mediator.Send(new DeleteCustomerCommand(id), cancellationToken);
-    
-    var response = new ApiResponse<bool>(true, "Xóa khách hàng thành công.", 200, result);
-    
-    return Ok(response);
-}
+    [HttpDelete("customers/{id}")]
+    public async Task<IActionResult> DeleteCustomer(int id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new DeleteCustomerCommand(id), cancellationToken);
+        
+        var response = new ApiResponse<bool>(true, "Xóa khách hàng thành công.", 200, result);
+        
+        return Ok(response);
+    }
     /// GET api/v1/users/partners
     [HttpGet("partners")]
     public async Task<IActionResult> GetPartners([FromQuery] GetUsersQuery query, CancellationToken cancellationToken)

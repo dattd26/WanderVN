@@ -37,7 +37,9 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PagedResult<U
             AvatarUrl = user.AvatarUrl,
             RoleName = user.Role?.Name,
             IsActive = user.IsActive,
-            CreatedAt = user.CreatedAt
+            CreatedAt = user.CreatedAt,
+            // Tính tổng doanh thu từ các khoản Payout đã lưu (hoặc tuỳ chỉnh logic theo GrossAmount)
+            TotalRevenue = user.PartnerPayouts?.Sum(p => p.NetAmount) ?? 0m 
         }).ToList();
 
         return new PagedResult<UserDto>(userDtos, totalItems, pageNumber, pageSize);

@@ -9,6 +9,7 @@ export interface UserDto {
   roleName?: string;
   isActive?: boolean;
   createdAt?: string; // ISO 8601 string từ DateTimeOffset
+  totalRevenue?: number;
 }
 
 // Interface ánh xạ với UserDetailsDto từ Backend (dùng cho xem chi tiết 1 người dùng)
@@ -47,6 +48,8 @@ export interface GetUsersQuery {
   phoneNumber?: string;
   pageNumber?: number;
   pageSize?: number;
+  isActive?: boolean;
+  roleName?: string;
 }
 
 // Payload cho POST api/v1/users/customers (CreateCustomerCommand)
