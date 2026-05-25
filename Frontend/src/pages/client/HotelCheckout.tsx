@@ -58,10 +58,16 @@ export const HotelCheckout: React.FC = () => {
   // Tải thông tin phòng và khách sạn liên kết
   useEffect(() => {
     if (!hotelId || !roomTypeId) {
-      return;
+      // Trì hoãn cập nhật state bất đồng bộ để tránh lỗi cascading render
+      const timer = setTimeout(() => {
+        setErrorMessage('Thông tin yêu cầu đặt phòng không hợp lệ.');
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     hotelService.getHotelDetail(hotelId)
+
       .then((data) => {
         setHotel(data);
         const selectedRoom = data.roomTypes.find((r) => r.id === roomTypeId);
@@ -121,15 +127,10 @@ export const HotelCheckout: React.FC = () => {
         setBookingLoading(false);
         setShowSuccessModal(true);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Lỗi quy trình đặt phòng khách sạn:', error);
-      let message = 'Có lỗi bất ngờ xảy ra khi đang tạo đơn đặt phòng của bạn.';
-      if (error instanceof Error) {
-        message = error.message;
-      } else if (typeof error === 'object' && error !== null && 'message' in error) {
-        message = String((error as Record<string, unknown>).message);
-      }
-      setErrorMessage(message);
+      const err = error as { message?: string } | null;
+      setErrorMessage(err?.message || 'Có lỗi bất ngờ xảy ra khi đang tạo đơn đặt phòng của bạn.');
       setBookingLoading(false);
     }
   };

@@ -31,6 +31,10 @@ public static class DependencyInjection
         services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
         services.AddTransient<IEmailService, EmailService>();
 
+        // Cấu hình & đăng ký Cloudinary - lưu trữ ảnh khách sạn, phòng, avatar
+        services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
+        services.AddSingleton<IMediaStorageService, CloudinaryMediaStorageService>();
+
         // Đăng ký Duffel Service với HttpClient
         services.AddHttpClient<IDuffelService, DuffelService>(c =>
         {
@@ -59,6 +63,7 @@ public static class DependencyInjection
         services.AddScoped<IHotelRepository, HotelRepository>();
         services.AddScoped<IPropertyTypeRepository, PropertyTypeRepository>();
         services.AddScoped<ISearchAutocompleteRepository, SearchAutocompleteRepository>();
+        services.AddScoped<IPartnerRepository, PartnerRepository>();
 
         return services;
     }
