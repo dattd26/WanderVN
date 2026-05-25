@@ -35,13 +35,14 @@ export const partnerService = {
     propertyTypeId: number;
     latitude?: number;
     longitude?: number;
-    roomTypes: Array<{
+    roomTypes?: Array<{
       name: string;
       description: string;
       capacity: number;
       pricePerNight: number;
       quantity: number;
     }>;
+    amenityIds?: number[];
   }): Promise<{ hotelId: number }> {
     return request<{ hotelId: number }>('/partner/hotels', {
       method: 'POST',
@@ -65,6 +66,59 @@ export const partnerService = {
     return request<{ imageUrl: string }>(`/partner/hotels/${hotelId}/images`, {
       method: 'POST',
       body: formData,
+    });
+  },
+
+  /**
+   * Thêm hạng phòng mới cho khách sạn của đối tác.
+   * Gửi yêu cầu POST tới endpoint Backend /api/v1/partner/hotels/{hotelId}/room-types.
+   */
+  async addRoomType(
+    hotelId: number,
+    roomData: {
+      name: string;
+      basePrice: number;
+      capacity: number;
+      totalRooms: number;
+      description?: string;
+    }
+  ): Promise<{ roomTypeId: number }> {
+    return request<{ roomTypeId: number }>(`/partner/hotels/${hotelId}/room-types`, {
+      method: 'POST',
+      body: JSON.stringify(roomData),
+    });
+  },
+
+  /**
+   * Xóa hạng phòng của khách sạn đối tác.
+   * Gửi yêu cầu DELETE tới endpoint Backend /api/v1/partner/hotels/{hotelId}/room-types/{roomTypeId}.
+   */
+  async deleteRoomType(
+    hotelId: number,
+    roomTypeId: number
+  ): Promise<void> {
+    return request<void>(`/partner/hotels/${hotelId}/room-types/${roomTypeId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Cập nhật thông tin chi tiết và số lượng phòng của hạng phòng đối tác.
+   * Gửi yêu cầu PUT tới endpoint Backend /api/v1/partner/hotels/{hotelId}/room-types/{roomTypeId}.
+   */
+  async updateRoomType(
+    hotelId: number,
+    roomTypeId: number,
+    roomData: {
+      name: string;
+      basePrice: number;
+      capacity: number;
+      totalRooms: number;
+    }
+  ): Promise<void> {
+    return request<void>(`/partner/hotels/${hotelId}/room-types/${roomTypeId}`, {
+      method: 'PUT',
+      body: JSON.stringify(roomData),
     });
   },
 };

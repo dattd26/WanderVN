@@ -34,6 +34,7 @@ export interface RoomTypeInfo {
   name: string;
   basePrice: number;
   capacity: number;
+  totalRooms: number;
   availableRooms: number;
   images?: string[];
 }
