@@ -29,11 +29,14 @@ export const HotelCheckout: React.FC = () => {
   const checkOutDate = searchParams.get('checkOutDate') || '';
 
   // Khởi tạo các trạng thái lấy thông tin
+  const isValidRequest = hotelId > 0 && roomTypeId > 0;
   const [hotel, setHotel] = useState<HotelDetailDto | null>(null);
   const [room, setRoom] = useState<RoomTypeInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isValidRequest);
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    isValidRequest ? null : 'Thông tin yêu cầu đặt phòng không hợp lệ.'
+  );
 
   // Quản lý phương thức thanh toán đã chọn
   const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'zalopay' | 'momo' | 'credit'>('vnpay');
