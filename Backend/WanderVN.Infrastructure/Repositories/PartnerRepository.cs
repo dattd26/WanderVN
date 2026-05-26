@@ -219,7 +219,7 @@ public class PartnerRepository : IPartnerRepository
         var parameters = new DynamicParameters();
         parameters.Add("PartnerId", partnerId);
         parameters.Add("RoomTypeId", roomTypeId);
-        parameters.Add("BlockDate", blockDate);
+        parameters.Add("BlockDate", blockDate.ToString("yyyy-MM-dd"));
         parameters.Add("Action", action);
 
         // Thực thi Stored Procedure sp_Partner_ToggleRoomBlock
