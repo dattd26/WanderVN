@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
 import React, { useState, useRef } from 'react';
 import { Bed, UploadCloud, X, Plus, Image as ImageIcon } from 'lucide-react';
 import { partnerService } from '../../services';

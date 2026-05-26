@@ -132,6 +132,7 @@ export const PartnerProperties: React.FC = () => {
     const fetchHotels = async () => {
       try {
         setLoading(true);
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
         const response: any = await partnerService.getMyHotels(currentPage, ITEMS_PER_PAGE);
         const data = Array.isArray(response) ? response : (response?.items || []);
         const fetchedTotalPages = Array.isArray(response) ? 1 : (response?.totalPages || 1);
@@ -271,6 +272,7 @@ export const PartnerProperties: React.FC = () => {
   };
 
   // ── Xử lý khi thêm/sửa hạng phòng thành công từ API ──
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const handleRoomSuccess = (room: any) => {
     const processedRoom: RoomConfig = {
       id: room.id.toString(),

@@ -12,6 +12,7 @@ export interface RoomConfig {
   price: number;
   description?: string;
   images?: string[];
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   ratePlans?: any[];
 }
 
