@@ -84,6 +84,8 @@ function AppLayout() {
         </Routes>
       </div>
 
+      {/* Widget Chatbot AI — chỉ hiển thị trên trang khách hàng, ẩn trên trang partner */}
+      {!isPartnerRoute && <ChatWidget />}
 
       {/* Chân trang toàn cục — ẩn cho luồng partner */}
       {!isPartnerRoute && <Footer />}

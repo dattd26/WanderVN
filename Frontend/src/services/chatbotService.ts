@@ -1,4 +1,4 @@
-import type { ChatbotRequest, ChatbotResponse, ApiResponse } from '../types/chatbot.types';
+import type { ChatbotRequest, ChatbotResponse, ApiResponse, HotelSuggestion, ChatHistoryMessage, ChatHistoryResponse } from '../types/chatbot.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5096/api/v1';
 
@@ -26,7 +26,7 @@ export class ChatbotService {
     }
   }
 
-  static async searchHotels(request: ChatbotRequest): Promise<any[] | null> {
+  static async searchHotels(request: ChatbotRequest): Promise<HotelSuggestion[] | null> {
     try {
       const response = await fetch(`${API_BASE_URL}/chatbot/search`, {
         method: 'POST',
@@ -41,7 +41,7 @@ export class ChatbotService {
         return null;
       }
 
-      const data: ApiResponse<any[]> = await response.json();
+      const data: ApiResponse<HotelSuggestion[]> = await response.json();
       return data.data || [];
     } catch (error) {
       console.error('Error searching hotels:', error);
@@ -49,7 +49,7 @@ export class ChatbotService {
     }
   }
 
-  static async getConversationHistory(userId: number, limit: number = 50): Promise<any[]> {
+  static async getConversationHistory(userId: number, limit: number = 50): Promise<ChatHistoryMessage[]> {
     try {
       const response = await fetch(`${API_BASE_URL}/chatbot/history/${userId}?limit=${limit}`, {
         method: 'GET',
@@ -63,8 +63,8 @@ export class ChatbotService {
         return [];
       }
 
-      const data: ApiResponse<any[]> = await response.json();
-      return data.data || [];
+      const data: ApiResponse<ChatHistoryResponse> = await response.json();
+      return data.data?.messages || [];
     } catch (error) {
       console.error('Error fetching conversation history:', error);
       return [];

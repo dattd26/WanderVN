@@ -38,3 +38,13 @@ export interface ApiResponse<T> {
   statusCode: number;
   data?: T;
 }
+
+export interface ChatHistoryMessage {
+  text: string;
+  isFromBot: boolean;
+  sentAt: string;
+}
+
+export interface ChatHistoryResponse {
+  messages: ChatHistoryMessage[];
+}
