@@ -17,15 +17,17 @@ export function AdminPartners() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- Pending applications (chưa có API thực tế) ---
-  const [applications] = useState<{
-    id: string;
-    name: string;
-    type: 'Stay' | 'Flight';
-    time: string;
-    status: 'Pending' | 'Approved' | 'Rejected';
-    icon: string;
-  }[]>([]);
+  // --- Pending applications (Mapped from inactive partners) ---
+  const applications = (pagedResult?.items ?? [])
+    .filter((p) => !p.isActive)
+    .map((p) => ({
+      id: p.id.toString(),
+      name: p.fullName || p.email,
+      type: 'Stay' as const,
+      time: p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN') : '',
+      status: 'Pending' as const,
+      icon: 'apartment',
+    }));
 
   // --- State tìm kiếm & phân trang ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -129,7 +131,11 @@ export function AdminPartners() {
         <PartnerTabs activeTab={activeTab} onChange={setActiveTab} />
 
         {activeTab === 'pending' && (
-          <PartnerPendingTab applications={applications} />
+          <PartnerPendingTab 
+            applications={applications} 
+            onApprove={(id) => handleTogglePartner(Number(id), false)}
+            onReject={(id) => alert(`Chức năng từ chối đối tác ${id} đang được phát triển.`)}
+          />
         )}
 
         {activeTab === 'list' && (
