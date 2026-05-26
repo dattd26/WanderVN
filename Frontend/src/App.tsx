@@ -31,6 +31,7 @@ function PartnerRedirect() {
 function AppLayout() {
   const { pathname } = useLocation();
   const isPartnerRoute = pathname.startsWith('/partner');
+  const isAdminRoute = pathname.startsWith('/admin');
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-on-background relative overflow-x-hidden">
@@ -38,7 +39,7 @@ function AppLayout() {
       <div className="texture-overlay" />
 
       {/* Thanh điều hướng toàn cục — ẩn cho luồng partner */}
-      {!isPartnerRoute && <Navbar />}
+      {!isPartnerRoute && !isAdminRoute && <Navbar />}
 
       {/* Nội dung chính */}
       <div className="flex-grow">
@@ -100,10 +101,10 @@ function AppLayout() {
       </div>
 
       {/* Widget Chatbot AI — chỉ hiển thị trên trang khách hàng, ẩn trên trang partner */}
-      {!isPartnerRoute && <ChatWidget />}
+      {!isPartnerRoute && !isAdminRoute && <ChatWidget />}
 
       {/* Chân trang toàn cục — ẩn cho luồng partner */}
-      {!isPartnerRoute && <Footer />}
+      {!isPartnerRoute && !isAdminRoute && <Footer />}
     </div>
   );
 }
