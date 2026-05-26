@@ -23,4 +23,14 @@ public class RoomTypeInfo
     public int TotalRooms { get; set; }
     public int AvailableRooms { get; set; }
     public List<string> Images { get; set; } = new List<string>();
+    public List<RatePlanInfo> RatePlans { get; set; } = new List<RatePlanInfo>();
+}
+
+public class RatePlanInfo
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal PriceMultiplier { get; set; }
+    public bool HasBreakfast { get; set; }
+    public bool IsRefundable { get; set; }
 }

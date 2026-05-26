@@ -16,7 +16,7 @@ export const RegisterPage: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [role, setRole] = useState<'Customer' | 'Partner'>(initialRole);
   const [agreeTerms, setAgreeTerms] = useState(false);
-  
+
   const [errors, setErrors] = useState<{
     fullName?: string;
     email?: string;
@@ -25,7 +25,7 @@ export const RegisterPage: React.FC = () => {
     terms?: string;
     general?: string;
   }>({});
-  
+
   const [registrationStep, setRegistrationStep] = useState(0); // 0 = idle, 1-4 = processing, 5 = success
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -39,7 +39,7 @@ export const RegisterPage: React.FC = () => {
 
   const validateForm = () => {
     const tempErrors: typeof errors = {};
-    
+
     if (!fullName.trim()) {
       tempErrors.fullName = 'Họ và tên là bắt buộc.';
     } else if (fullName.trim().length < 2) {
@@ -70,7 +70,6 @@ export const RegisterPage: React.FC = () => {
     return Object.keys(tempErrors).length === 0;
   };
 
-  // Run the premium multi-stage stepper
   const runStaggeredSteps = (isMock: boolean = false) => {
     let step = 1;
     setRegistrationStep(1);
@@ -78,11 +77,17 @@ export const RegisterPage: React.FC = () => {
     const interval = setInterval(() => {
       step += 1;
       setRegistrationStep(step);
-      
+
       if (step === 5) {
         clearInterval(interval);
-        setToastMessage(isMock ? 'Đăng ký thành công (Chế độ giả lập)! Chào mừng đến WanderVN.' : 'Đăng ký thành công! Chào mừng đến WanderVN.');
-        
+
+        let msg = isMock ? 'Đăng ký thành công (Chế độ giả lập)! Chào mừng đến WanderVN.' : 'Đăng ký thành công! Chào mừng đến WanderVN.';
+        if (role === 'Partner') {
+          msg = 'Đăng ký thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất để xác nhận thêm.';
+        }
+
+        setToastMessage(msg);
+
         setTimeout(() => {
           setRegistrationStep(0);
           const loginRedirectParams = new URLSearchParams();
@@ -100,7 +105,7 @@ export const RegisterPage: React.FC = () => {
     if (!validateForm()) return;
 
     setErrors({});
-    
+
     try {
       // 1. Gửi dữ liệu đăng ký thực tế lên C# ASP.NET Core Backend với role phù hợp
       await authService.register({
@@ -117,10 +122,10 @@ export const RegisterPage: React.FC = () => {
     } catch (err) {
       const error = err as Error;
       console.warn('Backend API registration failed, falling back to rich simulation mode...', error);
-      
+
       // Kiểm tra xem có phải lỗi kết nối mạng (chưa bật backend) không
       const isConnectionError = error.message?.includes('Failed to fetch') || error.message?.includes('Lỗi kết nối API');
-      
+
       if (isConnectionError) {
         // Lỗi kết nối -> Kích hoạt chế độ giả lập thông minh (Smart Fallback Mode) để giữ trải nghiệm mượt mà cho khách lữ hành
         setToastMessage('Đang kết nối ở chế độ Giả lập do máy chủ Backend chưa khởi động...');
@@ -136,7 +141,7 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <div className="relative min-h-screen w-full flex flex-col justify-between overflow-x-hidden select-none">
-      
+
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-fade-in bg-surface border border-secondary/35 shadow-[0_10px_30px_rgba(115,92,0,0.15)] px-6 py-4 flex items-center gap-3 rounded-md max-w-md w-[90%] md:w-auto">
@@ -147,9 +152,9 @@ export const RegisterPage: React.FC = () => {
 
       {/* Cinematic Background */}
       <div className="fixed inset-0 z-0">
-        <img 
-          alt="Cinematic Ninh Binh landscape" 
-          className="w-full h-full object-cover select-none transform scale-105 filter brightness-[0.7]" 
+        <img
+          alt="Cinematic Ninh Binh landscape"
+          className="w-full h-full object-cover select-none transform scale-105 filter brightness-[0.7]"
           src="https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1920&q=80"
         />
         <div className="absolute inset-0 cinematic-overlay bg-black/35"></div>
@@ -160,10 +165,10 @@ export const RegisterPage: React.FC = () => {
 
       {/* Primary Card Workspace */}
       <main className="relative z-10 flex-grow w-full flex items-center justify-center px-margin-mobile py-8 md:py-16 md:px-margin-desktop">
-        
-        <AuthCardWrapper 
-          title="Đăng Ký Tài Khoản" 
-          subtitle={role === 'Partner' 
+
+        <AuthCardWrapper
+          title="Đăng Ký Tài Khoản"
+          subtitle={role === 'Partner'
             ? "Đăng ký tài khoản Đối tác để bắt đầu kinh doanh và đăng ký cơ sở lưu trú của bạn."
             : "Hãy bắt đầu chuyến phiêu lưu di sản của bạn bằng việc tạo tài khoản khách lữ hành."
           }
@@ -177,7 +182,7 @@ export const RegisterPage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            
+
             {/* Vai trò đăng ký (Loại tài khoản) */}
             <div className="flex flex-col gap-2 select-none mb-6">
               <label className="font-label-md text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/80">
@@ -187,22 +192,20 @@ export const RegisterPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setRole('Customer')}
-                  className={`py-2 text-[10px] font-semibold uppercase tracking-wider rounded transition-all duration-300 ${
-                    role === 'Customer'
+                  className={`py-2 text-[10px] font-semibold uppercase tracking-wider rounded transition-all duration-300 ${role === 'Customer'
                       ? 'bg-[#B59A5A] text-white shadow-sm'
                       : 'text-on-surface-variant hover:text-primary'
-                  }`}
+                    }`}
                 >
                   Lữ khách
                 </button>
                 <button
                   type="button"
                   onClick={() => setRole('Partner')}
-                  className={`py-2 text-[10px] font-semibold uppercase tracking-wider rounded transition-all duration-300 ${
-                    role === 'Partner'
+                  className={`py-2 text-[10px] font-semibold uppercase tracking-wider rounded transition-all duration-300 ${role === 'Partner'
                       ? 'bg-[#B59A5A] text-white shadow-sm'
                       : 'text-on-surface-variant hover:text-primary'
-                  }`}
+                    }`}
                 >
                   Đối tác
                 </button>
@@ -211,22 +214,22 @@ export const RegisterPage: React.FC = () => {
 
             {/* Full Name */}
             <div className="relative group flex flex-col gap-1">
-              <label 
+              <label
                 className={`block font-label-md text-xs uppercase tracking-wider transition-colors duration-300 ${errors.fullName ? 'text-error' : 'text-on-surface-variant group-focus-within:text-secondary'}`}
                 htmlFor="fullName"
               >
                 Họ và Tên
               </label>
 
-              <input 
+              <input
                 className={`w-full bg-transparent border-b py-2 focus:outline-none focus:ring-0 transition-all placeholder:text-surface-variant/70 font-body-md text-sm bg-surface-container-lowest/10
-                  ${errors.fullName 
-                    ? 'border-error focus:border-error' 
+                  ${errors.fullName
+                    ? 'border-error focus:border-error'
                     : 'border-outline-variant focus:border-secondary'
                   }`}
-                id="fullName" 
-                name="fullName" 
-                placeholder="Nhập đầy đủ họ tên của bạn" 
+                id="fullName"
+                name="fullName"
+                placeholder="Nhập đầy đủ họ tên của bạn"
                 type="text"
                 value={fullName}
                 onChange={(e) => {
@@ -241,21 +244,21 @@ export const RegisterPage: React.FC = () => {
 
             {/* Email Address */}
             <div className="relative group flex flex-col gap-1">
-              <label 
+              <label
                 className={`block font-label-md text-xs uppercase tracking-wider transition-colors duration-300 ${errors.email ? 'text-error' : 'text-on-surface-variant group-focus-within:text-secondary'}`}
                 htmlFor="email"
               >
                 Địa chỉ Email
               </label>
-              <input 
+              <input
                 className={`w-full bg-transparent border-b py-2 focus:outline-none focus:ring-0 transition-all placeholder:text-surface-variant/70 font-body-md text-sm bg-surface-container-lowest/10
-                  ${errors.email 
-                    ? 'border-error focus:border-error' 
+                  ${errors.email
+                    ? 'border-error focus:border-error'
                     : 'border-outline-variant focus:border-secondary'
                   }`}
-                id="email" 
-                name="email" 
-                placeholder="your@email.com" 
+                id="email"
+                name="email"
+                placeholder="your@email.com"
                 type="email"
                 value={email}
                 onChange={(e) => {
@@ -270,21 +273,21 @@ export const RegisterPage: React.FC = () => {
 
             {/* Phone Number */}
             <div className="relative group flex flex-col gap-1">
-              <label 
+              <label
                 className={`block font-label-md text-xs uppercase tracking-wider transition-colors duration-300 ${errors.phoneNumber ? 'text-error' : 'text-on-surface-variant group-focus-within:text-secondary'}`}
                 htmlFor="phoneNumber"
               >
                 Số điện thoại <span className="text-on-surface-variant/50 lowercase italic">(tùy chọn)</span>
               </label>
-              <input 
+              <input
                 className={`w-full bg-transparent border-b py-2 focus:outline-none focus:ring-0 transition-all placeholder:text-surface-variant/70 font-body-md text-sm bg-surface-container-lowest/10
-                  ${errors.phoneNumber 
-                    ? 'border-error focus:border-error' 
+                  ${errors.phoneNumber
+                    ? 'border-error focus:border-error'
                     : 'border-outline-variant focus:border-secondary'
                   }`}
-                id="phoneNumber" 
-                name="phoneNumber" 
-                placeholder="vd: 0912345678" 
+                id="phoneNumber"
+                name="phoneNumber"
+                placeholder="vd: 0912345678"
                 type="tel"
                 value={phoneNumber}
                 onChange={(e) => {
@@ -299,21 +302,21 @@ export const RegisterPage: React.FC = () => {
 
             {/* Password */}
             <div className="relative group flex flex-col gap-1">
-              <label 
+              <label
                 className={`block font-label-md text-xs uppercase tracking-wider transition-colors duration-300 ${errors.password ? 'text-error' : 'text-on-surface-variant group-focus-within:text-secondary'}`}
                 htmlFor="password"
               >
                 Mật khẩu hành trình
               </label>
-              <input 
+              <input
                 className={`w-full bg-transparent border-b py-2 focus:outline-none focus:ring-0 transition-all placeholder:text-surface-variant/70 font-body-md text-sm bg-surface-container-lowest/10
-                  ${errors.password 
-                    ? 'border-error focus:border-error' 
+                  ${errors.password
+                    ? 'border-error focus:border-error'
                     : 'border-outline-variant focus:border-secondary'
                   }`}
-                id="password" 
-                name="password" 
-                placeholder="Tạo một mật khẩu an toàn" 
+                id="password"
+                name="password"
+                placeholder="Tạo một mật khẩu an toàn"
                 type="password"
                 value={password}
                 onChange={(e) => {
@@ -321,7 +324,7 @@ export const RegisterPage: React.FC = () => {
                   if (errors.password) setErrors({ ...errors, password: undefined });
                 }}
               />
-              
+
               {/* Password Strength Indicator */}
               <PasswordStrengthBar password={password} />
 
@@ -333,10 +336,10 @@ export const RegisterPage: React.FC = () => {
             {/* Terms of Service check */}
             <div className="flex flex-col pt-1">
               <div className="flex items-start gap-3">
-                <input 
+                <input
                   className={`mt-1 h-4 w-4 border-on-background/20 text-secondary focus:ring-secondary cursor-pointer transition-colors
                     ${errors.terms ? 'border-error focus:ring-error' : 'border-outline-variant'}`}
-                  id="terms" 
+                  id="terms"
                   type="checkbox"
                   checked={agreeTerms}
                   onChange={(e) => {
@@ -355,7 +358,7 @@ export const RegisterPage: React.FC = () => {
 
             {/* Submit Action */}
             <div className="pt-2">
-              <button 
+              <button
                 className="w-full bg-secondary-container text-on-secondary-container py-4 font-label-md text-xs uppercase tracking-[0.2em] shadow-md hover:opacity-90 active:scale-[0.99] transition-all flex justify-center items-center select-none group"
                 type="submit"
               >
@@ -368,8 +371,8 @@ export const RegisterPage: React.FC = () => {
           {/* Toggle to Sign In */}
           <div className="mt-6 text-center animate-fade-in select-none">
             <p className="font-body-md text-xs text-on-surface-variant">
-              Đã có tài khoản di sản? 
-              <Link 
+              Đã có tài khoản di sản?
+              <Link
                 to="/login"
                 className="text-primary font-semibold hover:text-secondary transition-colors inline-flex items-center ml-1 border-b border-transparent hover:border-secondary py-0.5 uppercase tracking-wider"
               >
@@ -384,7 +387,7 @@ export const RegisterPage: React.FC = () => {
       {/* Decorative Information overlay panel */}
       <div className="relative z-10 w-full select-none mt-auto">
         <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-6 flex justify-between items-end">
-          
+
           <div className="hidden lg:block">
             <div className="flex flex-col gap-2 text-surface-bright/70 max-w-sm">
               <span className="font-label-md text-[10px] uppercase tracking-[0.4em] text-secondary-fixed">

@@ -117,6 +117,14 @@ public class HotelRepository : IHotelRepository
                     Capacity = rt.Capacity,
                     TotalRooms = rt.TotalRooms,
                     Images = rt.RoomTypeImages.Select(img => img.ImageUrl ?? string.Empty).ToList(),
+                    RatePlans = rt.RatePlans.Select(rp => new RatePlanInfo
+                    {
+                        Id = rp.Id,
+                        Name = rp.Name,
+                        PriceMultiplier = rp.PriceMultiplier,
+                        HasBreakfast = rp.HasBreakfast,
+                        IsRefundable = rp.IsRefundable
+                    }).ToList(),
                     // Calculate available rooms by comparing total rooms with current non-cancelled bookings
                     AvailableRooms = rt.TotalRooms - _dbContext.BookingHotels
                         .Join(_dbContext.Rooms, bh => bh.RoomId, r => r.Id, (bh, r) => new { bh, r })

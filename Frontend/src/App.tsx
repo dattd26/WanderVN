@@ -31,6 +31,7 @@ function PartnerRedirect() {
 function AppLayout() {
   const { pathname } = useLocation();
   const isPartnerRoute = pathname.startsWith('/partner');
+  const isAdminRoute = pathname.startsWith('/admin');
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-on-background relative overflow-x-hidden">
@@ -38,7 +39,7 @@ function AppLayout() {
       <div className="texture-overlay" />
 
       {/* Thanh điều hướng toàn cục — ẩn cho luồng partner */}
-      {!isPartnerRoute && <Navbar />}
+      {!isPartnerRoute && !isAdminRoute && <Navbar />}
 
       {/* Nội dung chính */}
       <div className="flex-grow">
@@ -81,6 +82,21 @@ function AppLayout() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['Admin']}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="customers" element={<AdminUsers />} />
+            <Route path="partners" element={<AdminPartners />} />
+            <Route path="content" element={<AdminContent />} />
+            <Route path="finance" element={<AdminFinance />} />
+          </Route>
         </Routes>
       </div>
 
@@ -88,16 +104,26 @@ function AppLayout() {
       {!isPartnerRoute && <ChatWidget userId={Number(localStorage.getItem('userId')) || undefined} />}
 
       {/* Chân trang toàn cục — ẩn cho luồng partner */}
-      {!isPartnerRoute && <Footer />}
+      {!isPartnerRoute && !isAdminRoute && <Footer />}
     </div>
   );
 }
 
+import { ToastProvider } from './contexts/ToastContext';
+import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminDashboard } from './pages/admin/dashboard/AdminDashboard';
+import { AdminUsers } from './pages/admin/users/AdminUsers';
+import { AdminPartners } from './pages/admin/partners/AdminPartners';
+import { AdminContent } from './pages/admin/content/AdminContent';
+import { AdminFinance } from './pages/admin/finance/AdminFinance';
+
 function App() {
   return (
-    <Router>
-      <AppLayout />
-    </Router>
+    <ToastProvider>
+      <Router>
+        <AppLayout />
+      </Router>
+    </ToastProvider>
   );
 }
 

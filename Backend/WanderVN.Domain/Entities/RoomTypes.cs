@@ -25,4 +25,6 @@ public partial class RoomTypes
     public virtual ICollection<RoomTypeImages> RoomTypeImages { get; set; } = new List<RoomTypeImages>();
 
     public virtual ICollection<Rooms> Rooms { get; set; } = new List<Rooms>();
+
+    public virtual ICollection<RatePlans> RatePlans { get; set; } = new List<RatePlans>();
 }

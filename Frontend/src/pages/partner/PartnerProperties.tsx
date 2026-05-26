@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   MapPin,
   Plus,
-  Sparkles,
   Sliders
 } from 'lucide-react';
 import { PartnerHeader } from '../../components/partner/PartnerHeader';
@@ -10,25 +9,24 @@ import { PartnerSidebar } from '../../components/partner/PartnerSidebar';
 import { partnerService, propertyTypeService, hotelService } from '../../services';
 import type { PartnerHotelDto, PropertyType } from '../../types';
 
+import { useToast } from '../../contexts/ToastContext';
 import { InfoTab, type HotelFormState } from '../../components/partner/tabs/InfoTab';
 import { RoomsTab, type RoomConfig } from '../../components/partner/tabs/RoomsTab';
 import { AvailabilityTab } from '../../components/partner/tabs/AvailabilityTab';
 import { BookingsTab, type HotelBooking } from '../../components/partner/tabs/BookingsTab';
-import { AddRoomModal } from '../../components/partner/AddRoomModal';
+import { RoomFormModal } from '../../components/partner/RoomFormModal';
 import { RegisterPropertyModal } from '../../components/partner/RegisterPropertyModal';
 
-// Danh sách Tiện ích mặc định
 const AVAILABLE_AMENITIES = [
-  { id: 'wifi', label: 'Wi-Fi miễn phí' },
-  { id: 'pool', label: 'Hồ bơi vô cực' },
-  { id: 'spa', label: 'Spa & Massage' },
-  { id: 'restaurant', label: 'Nhà hàng ẩm thực' },
-  { id: 'gym', label: 'Phòng Gym hiện đại' },
-  { id: 'bar', label: 'Sky Bar Hoàng hôn' },
-  { id: 'parking', label: 'Đỗ xe miễn phí' }
+  { id: 'wifi', label: 'Wi-Fi' },
+  { id: 'pool', label: 'Hồ bơi' },
+  { id: 'spa', label: 'Spa' },
+  { id: 'restaurant', label: 'Nhà hàng' },
+  { id: 'gym', label: 'Phòng Gym' },
+  { id: 'bar', label: 'Bar' },
+  { id: 'parking', label: 'Đỗ xe' }
 ];
 
-// Các hàm tiện ích thuần túy (pure helpers) đặt ngoài Component để tránh cảnh báo lọt lưới của linter react-hooks/purity
 const getHeritageRandomImage = (): string => {
   const randomImages = [
     'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=500&q=80',
@@ -40,10 +38,15 @@ const getHeritageRandomImage = (): string => {
 
 export const PartnerProperties: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', content: string } | null>(null);
+  const { triggerMessage } = useToast();
 
   const [hotels, setHotels] = useState<PartnerHotelDto[]>([]);
   const [selectedHotelId, setSelectedHotelId] = useState<number | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalHotels, setTotalHotels] = useState(0);
+  const ITEMS_PER_PAGE = 5;
 
   const [isAddHotelModalOpen, setIsAddHotelModalOpen] = useState(false);
   const [isAddRoomModalOpen, setIsAddRoomModalOpen] = useState(false);
@@ -59,6 +62,7 @@ export const PartnerProperties: React.FC = () => {
   });
 
   const [rooms, setRooms] = useState<RoomConfig[]>([]);
+  const [roomToEdit, setRoomToEdit] = useState<RoomConfig | undefined>(undefined);
 
   // ── State quản lý Đơn đặt phòng (Bookings) ──
   const [bookingsData, setBookingsData] = useState<Record<number, HotelBooking[]>>({
@@ -128,7 +132,14 @@ export const PartnerProperties: React.FC = () => {
     const fetchHotels = async () => {
       try {
         setLoading(true);
-        const data = await partnerService.getMyHotels();
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+        const response: any = await partnerService.getMyHotels(currentPage, ITEMS_PER_PAGE);
+        const data = Array.isArray(response) ? response : (response?.items || []);
+        const fetchedTotalPages = Array.isArray(response) ? 1 : (response?.totalPages || 1);
+        const fetchedTotalCount = Array.isArray(response) ? data.length : (response?.totalCount || data.length);
+
+        setTotalPages(fetchedTotalPages);
+        setTotalHotels(fetchedTotalCount);
 
         if (data.length === 0) {
           const fallbackHotels: PartnerHotelDto[] = [
@@ -182,7 +193,7 @@ export const PartnerProperties: React.FC = () => {
     };
 
     fetchHotels();
-  }, []);
+  }, [currentPage]);
 
   // ── Gọi API lấy danh mục loại hình lưu trú từ Backend ──
   useEffect(() => {
@@ -197,11 +208,6 @@ export const PartnerProperties: React.FC = () => {
     fetchPropertyTypes();
   }, []);
 
-  // Kích hoạt thông báo toast thành công/thất bại
-  const triggerMessage = (type: 'success' | 'error', content: string) => {
-    setMessage({ type, content });
-    setTimeout(() => setMessage(null), 4000);
-  };
 
   // Xử lý khi click chuyển đổi cơ sở bên cột trái
   const handleSelectHotel = async (hotelId: number) => {
@@ -265,9 +271,35 @@ export const PartnerProperties: React.FC = () => {
     triggerMessage('success', 'Lưu thay đổi cơ sở di sản thành công! Toàn bộ cấu hình đã được đồng bộ hệ thống.');
   };
 
-  // ── Xử lý khi thêm hạng phòng mới thành công từ API ──
-  const handleAddRoomSuccess = (newRoom: RoomConfig) => {
-    setRooms(prev => [...prev, newRoom]);
+  // ── Xử lý khi thêm/sửa hạng phòng thành công từ API ──
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const handleRoomSuccess = (room: any) => {
+    const processedRoom: RoomConfig = {
+      id: room.id.toString(),
+      name: room.name,
+      bedType: room.bedType,
+      size: Number(room.size),
+      maxGuests: Number(room.maxGuests),
+      quantity: Number(room.quantity),
+      price: Number(room.price),
+      description: room.description,
+      images: room.images,
+      ratePlans: room.ratePlans
+    };
+
+    if (roomToEdit) {
+      setRooms(prev => prev.map(r => r.id === processedRoom.id ? processedRoom : r));
+    } else {
+      setRooms(prev => [...prev, processedRoom]);
+    }
+  };
+
+  const handleEditRoomClick = (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    if (room) {
+      setRoomToEdit(room);
+      setIsAddRoomModalOpen(true);
+    }
   };
 
   // Xóa hạng phòng liên kết với CSDL thực tế
@@ -300,10 +332,9 @@ export const PartnerProperties: React.FC = () => {
     const roomTypeId = parseInt(roomId);
 
     try {
-      // Gọi API Backend thực tế để lưu vết chặn/gỡ chặn phòng trong CSDL
+      // chặn/gỡ chặn phòng trong CSDL
       await partnerService.toggleRoomBlock(selectedHotelId, roomTypeId, day, action);
 
-      // Cập nhật State bookingsData để tự động cập nhật hiển thị phòng trống một cách reactive
       setBookingsData(prev => {
         const hotelBookings = prev[selectedHotelId] || [];
         if (action === 'BLOCK') {
@@ -357,10 +388,15 @@ export const PartnerProperties: React.FC = () => {
   const handleRegisterHotelSuccess = async (newHotelId: number) => {
     try {
       setLoading(true);
-      const data = await partnerService.getMyHotels();
-      setHotels(data);
-      if (data.length > 0) {
-        const matchingNew = data.find(h => h.id === newHotelId) || data[0];
+      const response = await partnerService.getMyHotels(1, ITEMS_PER_PAGE);
+      const hotelsList = response?.items || [];
+      setHotels(hotelsList);
+      setTotalPages(response?.totalPages || 1);
+      setTotalHotels(response?.totalCount || hotelsList.length);
+      setCurrentPage(1); // Quay về trang đầu để hiển thị cơ sở vừa thêm
+
+      if (hotelsList.length > 0) {
+        const matchingNew = hotelsList.find((h: PartnerHotelDto) => h.id === newHotelId) || hotelsList[0];
         setSelectedHotelId(matchingNew.id);
         loadHotelIntoForm(matchingNew);
         await fetchHotelDetails(matchingNew.id);
@@ -391,7 +427,7 @@ export const PartnerProperties: React.FC = () => {
         <main className="flex-1 w-full max-w-[1240px] mx-auto px-margin-mobile md:px-gutter py-10 md:py-12 space-y-8 z-10">
 
           {/* Tiêu đề & Action bar */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-5 border-b border-[#E6E2DD]">
+          <div className="sticky top-0 z-20 bg-[#FAF6F0] flex flex-col md:flex-row md:items-end justify-between gap-6 pb-5 pt-2 border-b border-[#E6E2DD]">
             <div className="space-y-1.5">
               <h1 className="font-display-lg text-headline-lg text-[#1C1C19] flex items-center gap-3">
                 Quản lý Cơ sở lưu trú
@@ -412,14 +448,7 @@ export const PartnerProperties: React.FC = () => {
             </button>
           </div>
 
-          {/* Toast Notification */}
-          {message && (
-            <div className={`fixed top-20 right-8 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl transition-all duration-300 transform scale-100 ${message.type === 'success' ? 'bg-[#EBF7EE] text-[#1E5C2F] border border-[#A7E2B7]' : 'bg-[#FDF2F2] text-[#9B1C1C] border border-[#F8B4B4]'
-              }`}>
-              <Sparkles className={`h-5 w-5 ${message.type === 'success' ? 'text-[#1E5C2F]' : 'text-[#9B1C1C]'}`} />
-              <p className="font-label-md text-xs tracking-wide">{message.content}</p>
-            </div>
-          )}
+          {/* Toast Notification (đã chuyển sang ToastContext) */}
 
           {/* Master Detail Bento Layout */}
           <div className="grid grid-cols-12 gap-6">
@@ -428,13 +457,18 @@ export const PartnerProperties: React.FC = () => {
             <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
               <h3 className="font-label-md text-xs uppercase tracking-widest text-[#735C00] font-bold px-1.5 flex items-center gap-2">
                 <Sliders className="h-3.5 w-3.5" />
-                Danh sách của tôi ({hotels.length})
+                Danh sách của tôi ({totalHotels || hotels.length})
               </h3>
 
               {loading ? (
-                <div className="space-y-4 animate-pulse">
-                  {[1, 2].map(i => (
-                    <div key={i} className="h-28 bg-[#FAF6F0] border border-[#E6E2DD] rounded-xl" />
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-28 bg-[#FAF6F0] border border-[#E6E2DD] rounded-xl p-4.5 flex flex-col gap-3 relative overflow-hidden">
+                      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent z-10" />
+                      <div className="h-5 bg-[#E6E2DD] rounded w-2/3 animate-pulse"></div>
+                      <div className="h-4 bg-[#E6E2DD] rounded w-full animate-pulse"></div>
+                      <div className="mt-auto h-3 bg-[#E6E2DD] rounded w-1/3 animate-pulse"></div>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -446,7 +480,7 @@ export const PartnerProperties: React.FC = () => {
                     <div
                       key={h.id}
                       onClick={() => handleSelectHotel(h.id)}
-                      className={`relative bg-[#FAF6F0] rounded-xl p-4.5 cursor-pointer border transition-all duration-300 group ${isActive
+                      className={`relative bg-[#FAF6F0] rounded-xl p-5 mb-4 cursor-pointer border transition-all duration-300 group ${isActive
                         ? 'border-[#735C00] ring-1 ring-[#735C00] bg-[#FAF6F0] shadow-md'
                         : 'border-[#E6E2DD]/80 hover:border-[#735C00]/50 hover:bg-[#FAF6F0]/50 hover:shadow'
                         }`}
@@ -478,6 +512,42 @@ export const PartnerProperties: React.FC = () => {
                     </div>
                   );
                 })
+              )}
+
+              {/* Pagination UI */}
+              {!loading && totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-5 border-t border-[#E6E2DD]">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="font-label-md text-xs px-3.5 py-2 border border-[#E6E2DD] rounded-lg text-[#444748] hover:bg-[#F1EDE8] hover:text-[#1C1C19] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Trang trước
+                  </button>
+
+                  <div className="flex items-center gap-1.5">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center font-label-md text-xs transition-colors ${currentPage === page
+                          ? 'bg-[#735C00] text-white shadow-sm'
+                          : 'text-[#444748] hover:bg-[#F1EDE8] hover:text-[#1C1C19]'
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    className="font-label-md text-xs px-3.5 py-2 border border-[#E6E2DD] rounded-lg text-[#444748] hover:bg-[#F1EDE8] hover:text-[#1C1C19] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Trang sau
+                  </button>
+                </div>
               )}
             </div>
 
@@ -562,7 +632,11 @@ export const PartnerProperties: React.FC = () => {
                   {formSubTab === 'rooms' && (
                     <RoomsTab
                       rooms={currentRooms}
-                      onAddRoomClick={() => setIsAddRoomModalOpen(true)}
+                      onAddRoomClick={() => {
+                        setRoomToEdit(undefined);
+                        setIsAddRoomModalOpen(true);
+                      }}
+                      onEditRoom={handleEditRoomClick}
                       onDeleteRoom={handleDeleteRoomType}
                     />
                   )}
@@ -593,12 +667,13 @@ export const PartnerProperties: React.FC = () => {
         <div className="texture-overlay" />
       </div>
 
-      {/* ── MODAL THÊM HẠNG PHÒNG MỚI (Tích hợp thực tế API) ── */}
-      <AddRoomModal
+      {/* ── MODAL THÊM/SỬA HẠNG PHÒNG (Tích hợp thực tế API) ── */}
+      <RoomFormModal
         isOpen={isAddRoomModalOpen}
         onClose={() => setIsAddRoomModalOpen(false)}
         hotelId={selectedHotelId || 0}
-        onSuccess={handleAddRoomSuccess}
+        roomToEdit={roomToEdit}
+        onSuccess={handleRoomSuccess}
         triggerMessage={triggerMessage}
       />
 

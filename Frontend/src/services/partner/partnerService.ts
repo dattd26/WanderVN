@@ -2,22 +2,37 @@ import { request } from '../shared/apiClient';
 import type { PartnerHotelDto } from '../../types';
 import type { HotelBooking } from '../../components/partner/tabs/BookingsTab';
 
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export const partnerService = {
   /**
-   * Lấy danh sách khách sạn của đối tác (Partner).
+   * Lấy danh sách khách sạn của đối tác (Partner) có phân trang.
    * Hỗ trợ lọc theo trạng thái (status): 0 = Chờ duyệt, 1 = Đã duyệt, 2 = Bị từ chối.
    * Nếu không truyền status, Backend sẽ trả về toàn bộ khách sạn của đối tác đó.
    */
-  async getMyHotels(status?: number): Promise<PartnerHotelDto[]> {
+  async getMyHotels(
+    pageNumber: number = 1,
+    pageSize: number = 5,
+    status?: number
+  ): Promise<PagedResult<PartnerHotelDto>> {
     const queryParams = new URLSearchParams();
+    queryParams.append('pageNumber', pageNumber.toString());
+    queryParams.append('pageSize', pageSize.toString());
+
     if (status !== undefined && status !== null) {
       queryParams.append('status', status.toString());
     }
     
     const queryString = queryParams.toString();
-    const endpoint = `/partner/hotels${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/partner/hotels?${queryString}`;
     
-    return request<PartnerHotelDto[]>(endpoint, {
+    return request<PagedResult<PartnerHotelDto>>(endpoint, {
       method: 'GET',
     });
   },
@@ -82,6 +97,12 @@ export const partnerService = {
       capacity: number;
       totalRooms: number;
       description?: string;
+      ratePlans: Array<{
+        name: string;
+        priceMultiplier: number;
+        hasBreakfast: boolean;
+        isRefundable: boolean;
+      }>;
     }
   ): Promise<{ roomTypeId: number }> {
     return request<{ roomTypeId: number }>(`/partner/hotels/${hotelId}/room-types`, {
@@ -115,11 +136,35 @@ export const partnerService = {
       basePrice: number;
       capacity: number;
       totalRooms: number;
+      description?: string;
+      ratePlans: Array<{
+        name: string;
+        priceMultiplier: number;
+        hasBreakfast: boolean;
+        isRefundable: boolean;
+      }>;
     }
   ): Promise<void> {
     return request<void>(`/partner/hotels/${hotelId}/room-types/${roomTypeId}`, {
       method: 'PUT',
       body: JSON.stringify(roomData),
+    });
+  },
+
+  /**
+   * Upload ảnh cho hạng phòng đối tác
+   */
+  async uploadRoomTypeImage(
+    hotelId: number,
+    roomTypeId: number,
+    file: File
+  ): Promise<{ imageUrl: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return request<{ imageUrl: string }>(`/partner/hotels/${hotelId}/room-types/${roomTypeId}/images`, {
+      method: 'POST',
+      body: formData,
     });
   },
 

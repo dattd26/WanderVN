@@ -34,4 +34,6 @@ public partial class Users
     public virtual ICollection<Wishlists> Wishlists { get; set; } = new List<Wishlists>();
 
     public virtual ICollection<Hotels> Hotels { get; set; } = new List<Hotels>(); // Danh sách khách sạn do người dùng này sở hữu (Partner)
+
+    public virtual ICollection<PartnerPayouts> PartnerPayouts { get; set; } = new List<PartnerPayouts>();
 }

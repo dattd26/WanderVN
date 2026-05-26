@@ -44,7 +44,23 @@ public class UpdateRoomTypeCommandHandler : IRequestHandler<UpdateRoomTypeComman
             basePrice: request.BasePrice,
             capacity: request.Capacity,
             totalRooms: request.TotalRooms,
+            description: request.Description,
             cancellationToken: cancellationToken);
+
+        if (rowsAffected > 0 && request.RatePlans != null && request.RatePlans.Any())
+        {
+            // Chuyển đổi RatePlanDto sang Domain Model
+            var domainRatePlans = request.RatePlans.Select(rp => new PartnerRatePlanModel
+            {
+                Name = rp.Name,
+                PriceMultiplier = rp.PriceMultiplier,
+                HasBreakfast = rp.HasBreakfast,
+                IsRefundable = rp.IsRefundable
+            }).ToList();
+
+            // Gọi Repository để đồng bộ các RatePlans mới bằng Dapper
+            await _partnerRepository.SyncRatePlansAsync(request.RoomTypeId, domainRatePlans, cancellationToken);
+        }
 
         return new UpdateRoomTypeResponse
         {
