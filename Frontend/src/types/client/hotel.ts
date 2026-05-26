@@ -28,6 +28,14 @@ export interface SearchHotelsQuery {
   pageSize?: number;
 }
 
+export interface RatePlanInfo {
+  id: number;
+  name: string;
+  priceMultiplier: number;
+  hasBreakfast: boolean;
+  isRefundable: boolean;
+}
+
 // Thông tin chi tiết của từng hạng phòng
 export interface RoomTypeInfo {
   id: number;
@@ -37,6 +45,7 @@ export interface RoomTypeInfo {
   totalRooms: number;
   availableRooms: number;
   images?: string[];
+  ratePlans?: RatePlanInfo[];
 }
 
 export interface HotelDetailDto {
