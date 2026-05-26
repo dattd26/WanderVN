@@ -44,7 +44,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
             FullName = request.FullName,
             PhoneNumber = request.PhoneNumber,
             RoleId = role.Id,
-            IsActive = true,
+            IsActive = request.Role == "Partner" ? false : true,
             CreatedAt = DateTimeOffset.UtcNow
         };
 
