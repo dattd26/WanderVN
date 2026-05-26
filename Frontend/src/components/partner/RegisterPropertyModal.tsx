@@ -115,12 +115,12 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
 
   // debounce logic tìm kiếm địa chỉ tỉnh/thành phố
   useEffect(() => {
-    if (!locationQuery.trim()) {
-      setLocationSuggestions([]);
-      return;
-    }
-
     const delayDebounceFn = setTimeout(async () => {
+      if (!locationQuery.trim()) {
+        setLocationSuggestions([]);
+        return;
+      }
+
       setIsSearchingLocation(true);
       try {
         const data = await searchService.getAutocomplete(locationQuery);

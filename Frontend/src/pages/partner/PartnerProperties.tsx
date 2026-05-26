@@ -74,12 +74,7 @@ export const PartnerProperties: React.FC = () => {
   // Tab phụ bên trong form chỉnh sửa (info, rooms, availability, bookings)
   const [formSubTab, setFormSubTab] = useState<'info' | 'rooms' | 'availability' | 'bookings'>('info');
 
-  // Ngày bắt đầu tuần hiển thị trên bảng Availability (mặc định là ngày hôm nay)
-  const [viewStartDate, setViewStartDate] = useState<Date>(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  });
+
 
   // Nạp dữ liệu khách sạn được chọn vào form chỉnh sửa bên phải
   const loadHotelIntoForm = (hotel: PartnerHotelDto) => {
@@ -292,110 +287,7 @@ export const PartnerProperties: React.FC = () => {
     }
   };
 
-  // Điều hướng tuần hiển thị trên bảng Availability
-  const handleNavigateWeek = (direction: 1 | -1) => {
-    setViewStartDate(prev => {
-      const d = new Date(prev);
-      d.setDate(d.getDate() + direction * 7);
-      return d;
-    });
-  };
 
-  /**
-   * Sinh danh sách các ngày ISO (YYYY-MM-DD) trong khoảng [start, end] (bao gồm cả 2 đầu).
-   */
-  const generateDateRange = (start: string, end: string): string[] => {
-    const dates: string[] = [];
-    const current = new Date(start);
-    const endDate = new Date(end);
-    while (current <= endDate) {
-      dates.push(current.toISOString().split('T')[0]);
-      current.setDate(current.getDate() + 1);
-    }
-    return dates;
-  };
-
-  /**
-   * Chặn / gỡ chặn phòng hàng loạt theo khoảng ngày cho một hoặc nhiều hạng phòng.
-   * Gọi API toggleRoomBlock tuần tự cho từng cặp (roomId × ngày), rồi cập nhật state local.
-   */
-  const handleRangeBlock = async (
-    roomIds: string[],
-    startDate: string,
-    endDate: string,
-    action: 'BLOCK' | 'UNBLOCK'
-  ) => {
-    if (!selectedHotelId || roomIds.length === 0) return;
-
-    const dates = generateDateRange(startDate, endDate);
-    if (dates.length === 0) return;
-
-    const targetRooms = rooms.filter(r => roomIds.includes(r.id));
-    if (targetRooms.length === 0) return;
-
-    setLoading(true);
-    try {
-      // Gọi API cho từng (hạng phòng × ngày) một cách tuần tự
-      for (const room of targetRooms) {
-        const roomTypeId = parseInt(room.id);
-        for (const date of dates) {
-          await partnerService.toggleRoomBlock(selectedHotelId, roomTypeId, date, action);
-        }
-      }
-
-      // Cập nhật state local sau khi tất cả API calls hoàn thành
-      setBookingsData(prev => {
-        let hotelBookings = [...(prev[selectedHotelId] || [])];
-
-        for (const room of targetRooms) {
-          if (action === 'BLOCK') {
-            // Tạo một đơn chặn phòng ảo (block booking) cho từng ngày
-            const newBlocks: HotelBooking[] = dates.map(date => {
-              const nextDate = new Date(date);
-              nextDate.setDate(nextDate.getDate() + 1);
-              return {
-                id: `BLK-${Math.floor(1000 + Math.random() * 9000)}-${date}`,
-                guestName: 'Phòng khóa / Bảo trì',
-                email: 'blocked@wandervn.com',
-                roomTypeName: room.name,
-                checkIn: date,
-                checkOut: nextDate.toISOString().split('T')[0],
-                totalPrice: 0,
-                status: 'Confirmed' as const,
-                specialRequests: `Chặn phòng theo dải ngày: ${startDate} → ${endDate}.`
-              };
-            });
-            hotelBookings = [...newBlocks, ...hotelBookings];
-          } else {
-            // Gỡ chặn: Xóa tất cả block trong khoảng ngày đó của hạng phòng này
-            hotelBookings = hotelBookings.filter(bk => {
-              const isBlock = bk.guestName === 'Phòng khóa / Bảo trì';
-              const isSameRoomType = bk.roomTypeName === room.name;
-              const isInRange = dates.includes(bk.checkIn);
-              return !(isBlock && isSameRoomType && isInRange);
-            });
-          }
-        }
-
-        return { ...prev, [selectedHotelId]: hotelBookings };
-      });
-
-      const roomNames = targetRooms.map(r => r.name).join(', ');
-      const dateLabel = `${startDate.split('-').reverse().join('/')} → ${endDate.split('-').reverse().join('/')}`;
-      triggerMessage(
-        'success',
-        action === 'BLOCK'
-          ? `Đã chặn ${dates.length} ngày (${dateLabel}) cho ${targetRooms.length} hạng phòng: ${roomNames}.`
-          : `Đã gỡ chặn ${dates.length} ngày (${dateLabel}) cho ${targetRooms.length} hạng phòng: ${roomNames}.`
-      );
-    } catch (err: unknown) {
-      console.error('⚠️ Lỗi Range Block:', err);
-      const errMsg = err instanceof Error ? err.message : 'Lỗi kết nối máy chủ khi xử lý hàng loạt.';
-      triggerMessage('error', errMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Tăng giảm phòng trống (availability) trực tiếp trên bảng ô ngày đơn lẻ
   const handleAdjustAvailability = async (roomId: string, day: string, increment: boolean) => {

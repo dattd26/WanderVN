@@ -15,6 +15,25 @@ export const AvailabilityTab: React.FC<AvailabilityTabProps> = ({
   bookings,
   onAdjustAvailability
 }) => {
+  // Tạo danh sách 7 ngày tới
+  const today = new Date();
+  const next7Days = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    
+    return {
+      logicDate: `${yyyy}-${mm}-${dd}`,
+      displayDate: `${dd}/${mm}`
+    };
+  });
+
+  const startDateDisplay = next7Days[0].displayDate;
+  const endDateDisplay = next7Days[6].displayDate;
+
   return (
     <div className="space-y-6">
 
@@ -24,7 +43,7 @@ export const AvailabilityTab: React.FC<AvailabilityTabProps> = ({
           Bảng kiểm soát số lượng phòng trống
         </h4>
         <p className="font-body-md text-[#444748] text-xs">
-          Tăng/giảm nhanh số phòng khả dụng còn trống đón khách cho từng hạng phòng trong tuần từ <strong>01/06</strong> đến <strong>07/06</strong>.
+          Tăng/giảm nhanh số phòng khả dụng còn trống đón khách cho từng hạng phòng trong 7 ngày tới (từ <strong>{startDateDisplay}</strong> đến <strong>{endDateDisplay}</strong>).
         </p>
       </div>
 
@@ -33,22 +52,20 @@ export const AvailabilityTab: React.FC<AvailabilityTabProps> = ({
           <thead>
             <tr className="bg-[#F1EDE8] border-b border-[#E6E2DD]">
               <th className="p-4 font-label-md text-[10px] uppercase tracking-wider text-[#1C1C19] font-bold">Hạng phòng</th>
-              <th className="p-4 font-mono text-[10px] uppercase text-[#1C1C19] text-center font-bold">01/06</th>
-              <th className="p-4 font-mono text-[10px] uppercase text-[#1C1C19] text-center font-bold">02/06</th>
-              <th className="p-4 font-mono text-[10px] uppercase text-[#1C1C19] text-center font-bold">03/06</th>
-              <th className="p-4 font-mono text-[10px] uppercase text-[#1C1C19] text-center font-bold">04/06</th>
-              <th className="p-4 font-mono text-[10px] uppercase text-[#1C1C19] text-center font-bold">05/06</th>
-              <th className="p-4 font-mono text-[10px] uppercase text-[#1C1C19] text-center font-bold">06/06</th>
-              <th className="p-4 font-mono text-[10px] uppercase text-[#1C1C19] text-center font-bold">07/06</th>
+              {next7Days.map((day, idx) => (
+                <th key={idx} className="p-4 font-mono text-[10px] uppercase text-[#1C1C19] text-center font-bold">
+                  {day.displayDate}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {rooms.map(room => {
-              const days = ['2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06', '2026-06-07'];
               return (
                 <tr key={room.id} className="border-b border-[#E6E2DD]/40 hover:bg-[#F1EDE8]/30">
                   <td className="p-4 font-display-lg text-xs font-bold text-[#1C1C19]">{room.name}</td>
-                  {days.map(d => {
+                  {next7Days.map(day => {
+                    const d = day.logicDate;
                     // Tính toán động số đơn đặt phòng bận trong ngày d của hạng phòng hiện tại
                     const occupiedRooms = bookings.filter(bk => {
                       const isSameRoomType = bk.roomTypeName === room.name;
