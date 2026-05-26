@@ -689,10 +689,7 @@ export const PartnerProperties: React.FC = () => {
                     <AvailabilityTab
                       rooms={currentRooms}
                       bookings={currentBookings}
-                      viewStartDate={viewStartDate}
-                      onNavigateWeek={handleNavigateWeek}
                       onAdjustAvailability={handleAdjustAvailability}
-                      onRangeBlock={handleRangeBlock}
                     />
                   )}
 
