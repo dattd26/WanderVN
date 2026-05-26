@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Navbar } from './components/shared/Navbar';
 import { Footer } from './components/shared/Footer';
+import ChatWidget from './components/ChatWidget';
 import { Home } from './pages/client/Home';
 import { SearchStays } from './pages/client/SearchStays';
 import { HotelDetail } from './pages/client/HotelDetail';
@@ -83,6 +84,8 @@ function AppLayout() {
         </Routes>
       </div>
 
+      {/* Widget Chatbot AI — chỉ hiển thị trên trang khách hàng, ẩn trên trang partner */}
+      {!isPartnerRoute && <ChatWidget />}
 
       {/* Chân trang toàn cục — ẩn cho luồng partner */}
       {!isPartnerRoute && <Footer />}
