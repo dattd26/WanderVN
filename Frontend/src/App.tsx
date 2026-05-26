@@ -12,6 +12,10 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { PartnerOnboarding } from './pages/partner/PartnerOnboarding';
 import { PartnerDashboard } from './pages/partner/PartnerDashboard';
+import { PartnerProperties } from './pages/partner/PartnerProperties';
+import { PartnerFinance } from './pages/partner/PartnerFinance';
+import { AccessDenied } from './pages/auth/AccessDenied';
+import { ProtectedRoute } from './components/shared/ProtectedRoute';
 
 /** Component điều hướng thông minh cho luồng đối tác (Partner Redirect).
  * Nếu người dùng đã đăng nhập (có token JWT trong localStorage), chuyển hướng thẳng tới Dashboard.
@@ -47,11 +51,35 @@ function AppLayout() {
           <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/access-denied" element={<AccessDenied />} />
 
           {/* Partner portal */}
           <Route path="/partner" element={<PartnerRedirect />} />
           <Route path="/partner/onboarding" element={<PartnerOnboarding />} />
-          <Route path="/partner/dashboard" element={<PartnerDashboard />} />
+          <Route
+            path="/partner/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['Partner']}>
+                <PartnerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/partner/properties"
+            element={
+              <ProtectedRoute allowedRoles={['Partner']}>
+                <PartnerProperties />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/partner/finance"
+            element={
+              <ProtectedRoute allowedRoles={['Partner']}>
+                <PartnerFinance />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </div>
 

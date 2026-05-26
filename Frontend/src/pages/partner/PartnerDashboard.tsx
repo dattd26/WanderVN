@@ -15,6 +15,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { PartnerHeader } from '../../components/partner/PartnerHeader';
+import { PartnerSidebar } from '../../components/partner/PartnerSidebar';
 import { partnerService } from '../../services';
 import type { PartnerHotelDto } from '../../types';
 
@@ -44,7 +45,6 @@ export const PartnerDashboard: React.FC = () => {
         setLoading(false);
       }
     };
-
 
     fetchHotels();
   }, []);
@@ -116,30 +116,35 @@ export const PartnerDashboard: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-body-md text-on-background relative">
-      {/* Header tối giản dành riêng cho luồng quản lý của Partner */}
-      <PartnerHeader exitTo="/" />
+    <div className="min-h-screen bg-[#FAF6F0] flex font-body-md text-[#1C1C19] relative">
+      {/* Sidebar cố định bên trái */}
+      <PartnerSidebar hotelName={allHotels[0]?.name || 'Hanoi Boutique Hotel'} />
 
-      <main className="flex-1 w-full max-w-[1200px] mx-auto px-margin-mobile md:px-gutter py-10 md:py-14 space-y-10 z-10">
-        
-        {/* Tiêu đề trang phong cách tạp chí cao cấp (EB Garamond Serif) */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-outline-variant/40">
-          <div className="space-y-2 max-w-2xl">
-            <h1 className="font-display-lg text-display-lg-mobile md:text-headline-lg text-primary leading-tight">
-              Cơ sở lưu trú của tôi
-            </h1>
-            <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-              Theo dõi và quản lý danh sách các khách sạn, biệt thự, khu nghỉ dưỡng của bạn. Cập nhật trạng thái kiểm duyệt, số phòng và theo dõi lượt đặt phòng trực tuyến tức thì.
-            </p>
+      {/* Vùng nội dung chính bên phải */}
+      <div className="flex-grow flex flex-col min-h-screen relative overflow-x-hidden">
+        {/* Header tối giản dành riêng cho luồng quản lý của Partner */}
+        <PartnerHeader exitTo="/" />
+
+        <main className="flex-1 w-full max-w-[1200px] mx-auto px-margin-mobile md:px-gutter py-10 md:py-14 space-y-10 z-10">
+          
+          {/* Tiêu đề trang phong cách tạp chí cao cấp (EB Garamond Serif) */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-outline-variant/40">
+            <div className="space-y-2 max-w-2xl">
+              <h1 className="font-display-lg text-display-lg-mobile md:text-headline-lg text-[#1C1C19] leading-tight">
+                Bảng điều khiển đối tác
+              </h1>
+              <p className="font-body-md text-[#444748] leading-relaxed">
+                Chào mừng quý đối tác đến với cổng quản trị lưu trú WanderVN. Theo dõi tổng doanh thu đối soát, quản lý các cơ sở lưu trú và cập nhật tình trạng booking trực tiếp từ đây.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/partner/onboarding')}
+              className="font-label-md text-label-md uppercase tracking-widest bg-[#1C1C19] text-[#FAF6F0] px-6 py-3.5 rounded-lg shadow-md hover:bg-secondary hover:text-on-secondary transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 whitespace-nowrap self-start md:self-auto"
+            >
+              <Plus className="h-4 w-4" />
+              Đăng ký cơ sở mới
+            </button>
           </div>
-          <button
-            onClick={() => navigate('/partner/onboarding')}
-            className="font-label-md text-label-md uppercase tracking-widest bg-primary text-on-primary px-6 py-3.5 rounded-lg shadow-md hover:bg-secondary hover:text-on-secondary transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 whitespace-nowrap self-start md:self-auto"
-          >
-            <Plus className="h-4 w-4" />
-            Đăng ký cơ sở mới
-          </button>
-        </div>
 
         {/* ── Bảng Thống kê Hiệu năng (Dashboard Metrics) ── */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -446,6 +451,7 @@ export const PartnerDashboard: React.FC = () => {
       
       {/* Lớp phủ họa tiết nhiễu đá vôi phong cách luxury đặc trưng */}
       <div className="texture-overlay" />
+      </div>
     </div>
   );
 };

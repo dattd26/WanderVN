@@ -20,6 +20,7 @@ public class RoomTypeInfo
     public string Name { get; set; } = string.Empty;
     public decimal BasePrice { get; set; }
     public int Capacity { get; set; }
+    public int TotalRooms { get; set; }
     public int AvailableRooms { get; set; }
     public List<string> Images { get; set; } = new List<string>();
 }

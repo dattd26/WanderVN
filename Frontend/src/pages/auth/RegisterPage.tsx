@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { authService } from '../../services/auth/authService';
 import { AuthCardWrapper } from '../../components/auth/AuthCardWrapper';
 import { PasswordStrengthBar } from '../../components/auth/PasswordStrengthBar';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '';
+  const initialRole = searchParams.get('role') === 'Partner' ? 'Partner' : 'Customer';
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [role, setRole] = useState<'Customer' | 'Partner'>(initialRole);
   const [agreeTerms, setAgreeTerms] = useState(false);
   
   const [errors, setErrors] = useState<{
@@ -80,7 +85,11 @@ export const RegisterPage: React.FC = () => {
         
         setTimeout(() => {
           setRegistrationStep(0);
-          navigate('/login');
+          const loginRedirectParams = new URLSearchParams();
+          if (redirect) loginRedirectParams.append('redirect', redirect);
+          if (role) loginRedirectParams.append('role', role);
+          const loginRedirectStr = loginRedirectParams.toString();
+          navigate(`/login${loginRedirectStr ? `?${loginRedirectStr}` : ''}`);
         }, 3000);
       }
     }, 1000);
@@ -93,13 +102,13 @@ export const RegisterPage: React.FC = () => {
     setErrors({});
     
     try {
-      // 1. Gửi dữ liệu đăng ký thực tế lên C# ASP.NET Core Backend
-      // Để trải nghiệm stepper trọn vẹn, ta gọi API trước
+      // 1. Gửi dữ liệu đăng ký thực tế lên C# ASP.NET Core Backend với role phù hợp
       await authService.register({
         email,
         password,
         fullName,
-        phoneNumber: phoneNumber || undefined
+        phoneNumber: phoneNumber || undefined,
+        role
       });
 
       // 2. Nếu API đăng ký thành công, khởi động luồng Stepper di sản tuyệt đẹp
@@ -154,7 +163,10 @@ export const RegisterPage: React.FC = () => {
         
         <AuthCardWrapper 
           title="Đăng Ký Tài Khoản" 
-          subtitle="Hãy bắt đầu chuyến phiêu lưu di sản của bạn bằng việc tạo tài khoản khách lữ hành."
+          subtitle={role === 'Partner' 
+            ? "Đăng ký tài khoản Đối tác để bắt đầu kinh doanh và đăng ký cơ sở lưu trú của bạn."
+            : "Hãy bắt đầu chuyến phiêu lưu di sản của bạn bằng việc tạo tài khoản khách lữ hành."
+          }
           widthClass="max-w-[460px]"
           registrationStep={registrationStep}
         >
@@ -166,6 +178,37 @@ export const RegisterPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             
+            {/* Vai trò đăng ký (Loại tài khoản) */}
+            <div className="flex flex-col gap-2 select-none mb-6">
+              <label className="font-label-md text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/80">
+                Loại tài khoản
+              </label>
+              <div className="grid grid-cols-2 p-1 bg-surface-container-high/20 border border-outline-variant/35 rounded">
+                <button
+                  type="button"
+                  onClick={() => setRole('Customer')}
+                  className={`py-2 text-[10px] font-semibold uppercase tracking-wider rounded transition-all duration-300 ${
+                    role === 'Customer'
+                      ? 'bg-[#B59A5A] text-white shadow-sm'
+                      : 'text-on-surface-variant hover:text-primary'
+                  }`}
+                >
+                  Lữ khách
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('Partner')}
+                  className={`py-2 text-[10px] font-semibold uppercase tracking-wider rounded transition-all duration-300 ${
+                    role === 'Partner'
+                      ? 'bg-[#B59A5A] text-white shadow-sm'
+                      : 'text-on-surface-variant hover:text-primary'
+                  }`}
+                >
+                  Đối tác
+                </button>
+              </div>
+            </div>
+
             {/* Full Name */}
             <div className="relative group flex flex-col gap-1">
               <label 
@@ -174,6 +217,7 @@ export const RegisterPage: React.FC = () => {
               >
                 Họ và Tên
               </label>
+
               <input 
                 className={`w-full bg-transparent border-b py-2 focus:outline-none focus:ring-0 transition-all placeholder:text-surface-variant/70 font-body-md text-sm bg-surface-container-lowest/10
                   ${errors.fullName 
