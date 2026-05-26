@@ -1,3 +1,6 @@
+/* Leaflet base styles cho map OpenStreetMap — phải đặt trước @tailwind */
+@import 'leaflet/dist/leaflet.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -49,4 +52,117 @@
 .backdrop-blur-md {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+/* =============================================
+   CINEMATIC HERO — Heritage Alley Edition
+   ============================================= */
+
+/* Ken Burns: phóng đại rồi thu về, tạo cảm giác thở */
+@keyframes hero-ken-burns {
+  0%   { transform: scale(1.08); }
+  100% { transform: scale(1.0); }
+}
+.hero-ken-burns {
+  animation: hero-ken-burns 9s ease-out forwards;
+}
+
+/* Vignette bốn góc: tối dần viền màn hình */
+.hero-vignette {
+  background: radial-gradient(ellipse 130% 130% at 50% 50%, transparent 55%, rgba(17, 16, 14, 0.65) 100%);
+  pointer-events: none;
+}
+
+/* Film grain noise texture phủ nhẹ toàn bộ hero */
+.hero-film-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* Transition text: trượt lên nhẹ khi đổi destination */
+@keyframes text-enter {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.hero-text-enter {
+  animation: text-enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Fade-up utilities cho initial page load */
+@keyframes cinematic-fade-up {
+  0%   { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: cinematic-fade-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-fade-up-delay-1 {
+  animation: cinematic-fade-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.35s;
+  opacity: 0;
+}
+.animate-fade-up-delay-2 {
+  animation: cinematic-fade-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.7s;
+  opacity: 0;
+}
+
+/* =============================================
+   FLIGHT DETAIL MODAL ANIMATIONS
+   ============================================= */
+
+/* Backdrop fade-in */
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.modal-backdrop {
+  animation: modal-backdrop-in 0.2s ease-out forwards;
+}
+
+/* Modal panel slide up & fade */
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.modal-enter {
+  animation: modal-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Booking bar slide-up (fixed bottom) */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Skeleton shimmer bar */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.shimmer-bar {
+  background: linear-gradient(
+    90deg,
+    #1f1f1f 25%,
+    #2a2a2a 50%,
+    #1f1f1f 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite linear;
 }

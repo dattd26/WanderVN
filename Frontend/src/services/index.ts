@@ -1,7 +1,12 @@
 // Điểm xuất khẩu (export) tập trung toàn bộ các dịch vụ API của hệ thống Frontend WanderVN
 
-export * from './apiClient';
-export * from './searchService';
-export * from './propertyTypeService';
-export * from './userService';
-export * from './payoutService';
+export * from './shared/apiClient';
+export * from './client/searchService';
+export * from './client/propertyTypeService';
+export * from './client/flightService';
+export * from './client/paymentService';
+export * from './client/hotelService';
+
+export * from './client/geocodingService';
+export * from './partner/partnerService';
+

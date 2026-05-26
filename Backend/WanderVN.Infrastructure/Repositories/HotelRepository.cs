@@ -8,6 +8,7 @@ using Dapper;
 using Microsoft.EntityFrameworkCore;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Application.Features.Hotels.Queries.SearchHotels;
+using WanderVN.Application.Features.Hotels.Queries.GetHotelDetail;
 using WanderVN.Infrastructure.Data;
 
 namespace WanderVN.Infrastructure.Repositories;
@@ -57,12 +58,82 @@ public class HotelRepository : IHotelRepository
         }
 
         // Gọi trực tiếp Stored Procedure giúp tối ưu hóa hiệu năng biên dịch thực thi của SQL Server
-        var hotels = await connection.QueryAsync<SearchHotelsDto>(
+        var hotelsResult = (await connection.QueryAsync<SearchHotelsDto>(
             "sp_SearchHotels",
             parameters,
             commandType: CommandType.StoredProcedure
-        );
+        )).ToList();
 
-        return hotels.ToList();
+        // Tải thêm các tiện ích liên kết với từng khách sạn đã tìm thấy bằng Dapper
+        var hotelIds = hotelsResult.Select(h => h.Id).ToList();
+        if (hotelIds.Any())
+        {
+            var amenitiesMap = await connection.QueryAsync<(int HotelId, string Name)>(
+                @"SELECT ha.HotelId, a.Name 
+                  FROM HotelAmenities ha 
+                  JOIN Amenities a ON ha.AmenityId = a.Id 
+                  WHERE ha.HotelId IN @HotelIds",
+                new { HotelIds = hotelIds }
+            );
+
+            var groupedAmenities = amenitiesMap
+                .GroupBy(x => x.HotelId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.Name).ToList());
+
+            foreach (var hotel in hotelsResult)
+            {
+                if (groupedAmenities.TryGetValue(hotel.Id, out var list))
+                {
+                    hotel.Amenities = list;
+                }
+            }
+        }
+
+        return hotelsResult;
+    }
+
+    public async Task<HotelDetailDto?> GetHotelDetailAsync(int hotelId, CancellationToken cancellationToken)
+    {
+        // Use EF Core for complex object mapping and available room calculation
+        var hotel = await _dbContext.Hotels
+            .Include(h => h.Location)
+            .Include(h => h.HotelImages)
+            .Include(h => h.RoomTypes)
+            .Where(h => h.Id == hotelId && h.IsActive == true)
+            .Select(h => new HotelDetailDto
+            {
+                Id = h.Id,
+                Name = h.Name,
+                Address = h.Address,
+                StarRating = h.StarRating,
+                Description = h.Description,
+                LocationName = h.Location != null ? h.Location.Name : null,
+                Images = h.HotelImages.OrderByDescending(img => img.IsPrimary).Select(img => img.ImageUrl ?? string.Empty).ToList(),
+                RoomTypes = h.RoomTypes.Select(rt => new RoomTypeInfo
+                {
+                    Id = rt.Id,
+                    Name = rt.Name,
+                    BasePrice = rt.BasePrice,
+                    Capacity = rt.Capacity,
+                    TotalRooms = rt.TotalRooms,
+                    Images = rt.RoomTypeImages.Select(img => img.ImageUrl ?? string.Empty).ToList(),
+                    RatePlans = rt.RatePlans.Select(rp => new RatePlanInfo
+                    {
+                        Id = rp.Id,
+                        Name = rp.Name,
+                        PriceMultiplier = rp.PriceMultiplier,
+                        HasBreakfast = rp.HasBreakfast,
+                        IsRefundable = rp.IsRefundable
+                    }).ToList(),
+                    // Calculate available rooms by comparing total rooms with current non-cancelled bookings
+                    AvailableRooms = rt.TotalRooms - _dbContext.BookingHotels
+                        .Join(_dbContext.Rooms, bh => bh.RoomId, r => r.Id, (bh, r) => new { bh, r })
+                        .Join(_dbContext.Bookings, x => x.bh.BookingId, b => b.Id, (x, b) => new { x.bh, x.r, b })
+                        .Count(x => x.r.RoomTypeId == rt.Id && x.b.Status != "Cancelled" && !(x.bh.CheckOutDate <= DateOnly.FromDateTime(System.DateTime.Today) || x.bh.CheckInDate >= DateOnly.FromDateTime(System.DateTime.Today)))
+                }).ToList()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return hotel;
     }
 }
