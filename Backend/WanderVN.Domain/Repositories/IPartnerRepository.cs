@@ -131,4 +131,27 @@ public interface IPartnerRepository
         DateOnly blockDate,
         string action,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Lấy danh sách đặt phòng của một khách sạn cụ thể sử dụng Dapper.
+    /// </summary>
+    Task<List<PartnerHotelBookingModel>> GetHotelBookingsAsync(
+        int hotelId,
+        CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// DTO chứa dữ liệu trả về cho danh sách đặt phòng khách sạn của partner.
+/// </summary>
+public class PartnerHotelBookingModel
+{
+    public string Id { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string RoomTypeName { get; set; } = string.Empty;
+    public string CheckIn { get; set; } = string.Empty;
+    public string CheckOut { get; set; } = string.Empty;
+    public decimal TotalPrice { get; set; }
+    public string Status { get; set; } = "Confirmed";
+    public string? SpecialRequests { get; set; }
 }

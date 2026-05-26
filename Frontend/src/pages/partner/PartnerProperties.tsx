@@ -112,6 +112,17 @@ export const PartnerProperties: React.FC = () => {
         price: rt.basePrice
       }));
       setRooms(mappedRooms);
+
+      // Tải danh sách đặt phòng thực tế từ Backend
+      try {
+        const bookings = await partnerService.getHotelBookings(hotelId);
+        setBookingsData(prev => ({
+          ...prev,
+          [hotelId]: bookings
+        }));
+      } catch (err) {
+        console.warn('⚠️ Lỗi gọi API lấy danh sách đặt phòng, sử dụng dữ liệu mặc định:', err);
+      }
     } catch (error) {
       console.error('Lỗi khi tải chi tiết khách sạn:', error);
     }
@@ -450,27 +461,6 @@ export const PartnerProperties: React.FC = () => {
     }
   };
 
-  // Xử lý khi đăng ký đơn đặt phòng vãng lai từ BookingsTab
-  const handleRegisterWalkInBooking = (newBookingData: Omit<HotelBooking, 'id' | 'status'>) => {
-    if (!selectedHotelId) return;
-
-    const newBooking: HotelBooking = {
-      ...newBookingData,
-      id: `BK-${Math.floor(1000 + Math.random() * 9000)}`,
-      status: 'Confirmed'
-    };
-
-    setBookingsData(prev => {
-      const hotelBookings = prev[selectedHotelId] || [];
-      return {
-        ...prev,
-        [selectedHotelId]: [newBooking, ...hotelBookings]
-      };
-    });
-
-    triggerMessage('success', `Ghi nhận khách vãng lai "${newBooking.guestName}" thành công! Lịch trống đã tự động cập nhật.`);
-  };
-
   // Xử lý sau khi đăng ký cơ sở di sản thành công từ Modal
   const handleRegisterHotelSuccess = async (newHotelId: number) => {
     try {
@@ -696,8 +686,6 @@ export const PartnerProperties: React.FC = () => {
                   {formSubTab === 'bookings' && (
                     <BookingsTab
                       bookings={currentBookings}
-                      rooms={currentRooms}
-                      onAddWalkInBooking={handleRegisterWalkInBooking}
                     />
                   )}
                 </div>

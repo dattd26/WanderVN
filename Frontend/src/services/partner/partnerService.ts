@@ -1,5 +1,6 @@
 import { request } from '../shared/apiClient';
 import type { PartnerHotelDto } from '../../types';
+import type { HotelBooking } from '../../components/partner/tabs/BookingsTab';
 
 export const partnerService = {
   /**
@@ -135,6 +136,15 @@ export const partnerService = {
     return request<{ success: boolean; message: string }>(`/partner/hotels/${hotelId}/room-types/${roomTypeId}/toggle-block`, {
       method: 'POST',
       body: JSON.stringify({ blockDate, action }),
+    });
+  },
+
+  /**
+   * Lấy danh sách đặt phòng của một khách sạn cụ thể dành cho Partner.
+   */
+  async getHotelBookings(hotelId: number): Promise<HotelBooking[]> {
+    return request<HotelBooking[]>(`/partner/hotels/${hotelId}/bookings`, {
+      method: 'GET',
     });
   },
 };

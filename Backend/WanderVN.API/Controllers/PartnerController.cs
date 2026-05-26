@@ -10,6 +10,7 @@ using WanderVN.Application.Features.Partner.Commands.AddRoomType;
 using WanderVN.Application.Features.Partner.Commands.DeleteRoomType;
 using WanderVN.Application.Features.Partner.Commands.UpdateRoomType;
 using WanderVN.Application.Features.Partner.Commands.ToggleRoomBlock;
+using WanderVN.Application.Features.Partner.Queries.GetHotelBookings;
 
 namespace WanderVN.API.Controllers;
 
@@ -138,5 +139,16 @@ public class PartnerController : ControllerBase
         if (!result.Success)
             return BadRequest(new ErrorResponse(result.Message, 400));
         return Ok(new ApiResponse<ToggleRoomBlockResponse>(true, result.Message, 200, result));
+    }
+
+    /// <summary>
+    /// GET: api/v1/partner/hotels/{hotelId}/bookings — Lấy danh sách đặt phòng của khách sạn dành cho Partner.
+    /// </summary>
+    [HttpGet("hotels/{hotelId:int}/bookings")]
+    public async Task<IActionResult> GetHotelBookings([FromRoute] int hotelId)
+    {
+        var query = new GetHotelBookingsQuery { HotelId = hotelId };
+        var result = await _mediator.Send(query);
+        return Ok(new ApiResponse<object>(true, "Lấy danh sách đặt phòng thành công.", 200, result));
     }
 }
