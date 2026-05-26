@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bed, Plus, Trash2 } from 'lucide-react';
+import { Bed, Plus, Trash2, Edit } from 'lucide-react';
 
 // Định nghĩa cấu trúc cấu hình của một hạng phòng
 export interface RoomConfig {
@@ -10,18 +10,24 @@ export interface RoomConfig {
   maxGuests: number;
   quantity: number;
   price: number;
+  description?: string;
+  images?: string[];
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  ratePlans?: any[];
 }
 
 // Cấu hình Props cho component RoomsTab
 interface RoomsTabProps {
   rooms: RoomConfig[];
   onAddRoomClick: () => void;
+  onEditRoom?: (roomId: string) => void;
   onDeleteRoom: (roomId: string) => void;
 }
 
 export const RoomsTab: React.FC<RoomsTabProps> = ({
   rooms,
   onAddRoomClick,
+  onEditRoom,
   onDeleteRoom
 }) => {
   return (
@@ -68,12 +74,24 @@ export const RoomsTab: React.FC<RoomsTabProps> = ({
                   <div className="font-mono text-xs font-bold text-[#735C00]">₫{room.price.toLocaleString('vi-VN')} <span className="text-[10px] text-[#444748] font-normal">/đêm</span></div>
                   <div className="text-[10px] text-[#444748] font-semibold bg-[#F1EDE8] px-2 py-0.5 rounded inline-block mt-1">Số lượng: {room.quantity} phòng</div>
                 </div>
-                <button
-                  onClick={() => onDeleteRoom(room.id)}
-                  className="text-red-500 hover:text-red-700 bg-red-500/10 hover:bg-red-500/20 p-2 rounded transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {onEditRoom && (
+                    <button
+                      onClick={() => onEditRoom(room.id)}
+                      className="text-[#735C00] hover:text-[#5c4a00] bg-[#735C00]/10 hover:bg-[#735C00]/20 p-2 rounded transition-colors"
+                      title="Chỉnh sửa"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onDeleteRoom(room.id)}
+                    className="text-red-500 hover:text-red-700 bg-red-500/10 hover:bg-red-500/20 p-2 rounded transition-colors"
+                    title="Xóa"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))

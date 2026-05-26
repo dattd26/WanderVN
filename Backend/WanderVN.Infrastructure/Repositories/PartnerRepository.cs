@@ -19,9 +19,11 @@ public class PartnerRepository : IPartnerRepository
         _dbContext = dbContext;
     }
 
-    public async Task<List<PartnerHotelDashboardModel>> ListMyHotelsAsync(
+    public async Task<(List<PartnerHotelDashboardModel> Items, int TotalCount)> ListMyHotelsAsync(
         int partnerId,
         int? statusFilter,
+        int pageNumber,
+        int pageSize,
         CancellationToken cancellationToken)
     {
         var connection = _dbContext.Database.GetDbConnection();
@@ -31,14 +33,19 @@ public class PartnerRepository : IPartnerRepository
         var parameters = new DynamicParameters();
         parameters.Add("PartnerId", partnerId);
         parameters.Add("Status", statusFilter);
+        parameters.Add("PageNumber", pageNumber);
+        parameters.Add("PageSize", pageSize);
 
-        var result = await connection.QueryAsync<PartnerHotelDashboardModel>(
+        using var multi = await connection.QueryMultipleAsync(
             "sp_Partner_ListMyHotels",
             parameters,
             commandType: CommandType.StoredProcedure
         );
 
-        return result.ToList();
+        var totalCount = await multi.ReadFirstAsync<int>();
+        var items = (await multi.ReadAsync<PartnerHotelDashboardModel>()).ToList();
+
+        return (items, totalCount);
     }
 
     public async Task<SubmitHotelResult> SubmitHotelAsync(
@@ -177,6 +184,7 @@ public class PartnerRepository : IPartnerRepository
         decimal basePrice,
         int capacity,
         int totalRooms,
+        string? description,
         CancellationToken cancellationToken)
     {
         // Mở kết nối cơ sở dữ liệu nếu kết nối đang đóng
@@ -192,6 +200,7 @@ public class PartnerRepository : IPartnerRepository
         parameters.Add("BasePrice", basePrice);
         parameters.Add("Capacity", capacity);
         parameters.Add("TotalRooms", totalRooms);
+        parameters.Add("Description", description);
 
         // Thực thi Stored Procedure sp_Partner_UpdateRoomType
         var affectedRows = await connection.QuerySingleAsync<int>(
@@ -265,5 +274,91 @@ public class PartnerRepository : IPartnerRepository
         );
 
         return result.ToList();
+    }
+
+    public async Task<bool> IsRoomTypeOwnedByPartnerAsync(
+        int roomTypeId,
+        int hotelId,
+        int partnerId,
+        CancellationToken cancellationToken)
+    {
+        var connection = _dbContext.Database.GetDbConnection();
+        if (connection.State == ConnectionState.Closed)
+            await connection.OpenAsync(cancellationToken);
+
+        const string sql = @"
+            SELECT COUNT(1)
+            FROM RoomTypes rt
+            INNER JOIN Hotels h ON rt.HotelId = h.Id
+            WHERE rt.Id = @RoomTypeId AND rt.HotelId = @HotelId AND h.OwnerId = @PartnerId";
+
+        var count = await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition(sql, new { RoomTypeId = roomTypeId, HotelId = hotelId, PartnerId = partnerId }, cancellationToken: cancellationToken)
+        );
+
+        return count > 0;
+    }
+
+    public async Task<int> AddRoomTypeImageAsync(
+        int roomTypeId,
+        string imageUrl,
+        CancellationToken cancellationToken)
+    {
+        var connection = _dbContext.Database.GetDbConnection();
+        if (connection.State == ConnectionState.Closed)
+            await connection.OpenAsync(cancellationToken);
+
+        const string sql = @"
+            INSERT INTO RoomTypeImages (RoomTypeId, ImageUrl, IsPrimary)
+            VALUES (@RoomTypeId, @ImageUrl, 0);
+            SELECT CAST(SCOPE_IDENTITY() as int);";
+
+        return await connection.QuerySingleAsync<int>(
+            new CommandDefinition(sql, new { RoomTypeId = roomTypeId, ImageUrl = imageUrl }, cancellationToken: cancellationToken)
+        );
+    }
+
+    public async Task SyncRatePlansAsync(
+        int roomTypeId,
+        List<PartnerRatePlanModel> ratePlans,
+        CancellationToken cancellationToken)
+    {
+        var connection = _dbContext.Database.GetDbConnection();
+        if (connection.State == ConnectionState.Closed)
+            await connection.OpenAsync(cancellationToken);
+
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            // Xóa các RatePlans cũ của hạng phòng này
+            const string deleteSql = "DELETE FROM RatePlans WHERE RoomTypeId = @RoomTypeId";
+            await connection.ExecuteAsync(deleteSql, new { RoomTypeId = roomTypeId }, transaction);
+
+            // Thêm các RatePlans mới
+            if (ratePlans != null && ratePlans.Any())
+            {
+                const string insertSql = @"
+                    INSERT INTO RatePlans (RoomTypeId, Name, PriceMultiplier, HasBreakfast, IsRefundable)
+                    VALUES (@RoomTypeId, @Name, @PriceMultiplier, @HasBreakfast, @IsRefundable)";
+
+                var parameters = ratePlans.Select(rp => new
+                {
+                    RoomTypeId = roomTypeId,
+                    Name = rp.Name,
+                    PriceMultiplier = rp.PriceMultiplier,
+                    HasBreakfast = rp.HasBreakfast,
+                    IsRefundable = rp.IsRefundable
+                });
+
+                await connection.ExecuteAsync(insertSql, parameters, transaction);
+            }
+
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
     }
 }

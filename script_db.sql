@@ -428,7 +428,25 @@ CREATE TABLE [dbo].[RoomTypes](
     [Capacity] [int] NOT NULL,
     [TotalRooms] [int] NOT NULL,
     [Description] [nvarchar](500) NULL,
-PRIMARY KEY CLUSTERED
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+
+/****** Object:  Table [dbo].[RatePlans] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[RatePlans](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [RoomTypeId] [int] NOT NULL,
+    [Name] [nvarchar](100) NOT NULL,
+    [PriceMultiplier] [decimal](18, 2) NOT NULL,
+    [HasBreakfast] [bit] NOT NULL,
+    [IsRefundable] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
 (
     [Id] ASC
 )) ON [PRIMARY]
@@ -942,4 +960,6 @@ GO
 USE [master]
 GO
 ALTER DATABASE [WanderVN] SET  READ_WRITE 
+GOALTER TABLE [dbo].[RatePlans]  WITH CHECK ADD FOREIGN KEY([RoomTypeId])
+REFERENCES [dbo].[RoomTypes] ([Id])
 GO

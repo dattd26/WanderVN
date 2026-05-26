@@ -1,6 +1,7 @@
 using MediatR;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Domain.Repositories;
+using WanderVN.Domain.Entities;
 
 namespace WanderVN.Application.Features.Partner.Commands.AddRoomType;
 
@@ -9,13 +10,16 @@ public class AddRoomTypeCommandHandler : IRequestHandler<AddRoomTypeCommand, Add
 {
     private readonly IPartnerRepository _partnerRepository;
     private readonly ICurrentUserService _currentUser;
+    private readonly IApplicationDbContext _dbContext;
 
     public AddRoomTypeCommandHandler(
         IPartnerRepository partnerRepository,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IApplicationDbContext dbContext)
     {
         _partnerRepository = partnerRepository;
         _currentUser = currentUser;
+        _dbContext = dbContext;
     }
 
     public async Task<AddRoomTypeResponse> Handle(AddRoomTypeCommand request, CancellationToken cancellationToken)
@@ -33,6 +37,8 @@ public class AddRoomTypeCommandHandler : IRequestHandler<AddRoomTypeCommand, Add
             throw new ArgumentException("Sức chứa của phòng phải lớn hơn 0 khách.");
         if (request.TotalRooms <= 0)
             throw new ArgumentException("Số lượng phòng trống tối thiểu phải từ 1 phòng trở lên.");
+        if (request.RatePlans == null || !request.RatePlans.Any())
+            throw new ArgumentException("Phải cung cấp ít nhất một gói giá (Rate Plan) cho hạng phòng này.");
 
         // Thực thi nghiệp vụ qua tầng Repository và cơ sở dữ liệu
         var roomTypeId = await _partnerRepository.AddRoomTypeAsync(
@@ -44,6 +50,19 @@ public class AddRoomTypeCommandHandler : IRequestHandler<AddRoomTypeCommand, Add
             totalRooms: request.TotalRooms,
             description: request.Description,
             cancellationToken: cancellationToken);
+
+        // Lưu danh sách RatePlans vào db
+        var ratePlansToInsert = request.RatePlans.Select(rp => new RatePlans
+        {
+            RoomTypeId = roomTypeId,
+            Name = rp.Name,
+            PriceMultiplier = rp.PriceMultiplier,
+            HasBreakfast = rp.HasBreakfast,
+            IsRefundable = rp.IsRefundable
+        }).ToList();
+
+        _dbContext.RatePlans.AddRange(ratePlansToInsert);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new AddRoomTypeResponse
         {
