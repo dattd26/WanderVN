@@ -16,8 +16,10 @@ export function AdminDashboard() {
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
-    // Trigger smooth fade-in interaction on mount
-    setAnimate(true);
+    const timer = setTimeout(() => {
+      setAnimate(true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const logs: SystemLog[] = [
@@ -68,10 +70,9 @@ export function AdminDashboard() {
   ];
 
   return (
-    <div 
-      className={`p-admin-lg max-w-admin-container-max mx-auto w-full transition-opacity duration-500 ease-out ${
-        animate ? 'opacity-100' : 'opacity-0'
-      }`}
+    <div
+      className={`p-admin-lg max-w-admin-container-max mx-auto w-full transition-opacity duration-500 ease-out ${animate ? 'opacity-100' : 'opacity-0'
+        }`}
     >
       {/* KPI Section */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-admin-lg mb-admin-lg">
@@ -168,8 +169,8 @@ export function AdminDashboard() {
           </div>
           <div className="h-[300px] w-full relative mb-admin-md border-l border-b border-admin-outline-variant flex items-end justify-between px-admin-md pb-admin-xs">
             {/* Simple Grid Lines background */}
-            <div 
-              className="absolute inset-0 opacity-25 pointer-events-none" 
+            <div
+              className="absolute inset-0 opacity-25 pointer-events-none"
               style={{
                 backgroundImage: 'radial-gradient(#e2e8f0 1px, transparent 1px)',
                 backgroundSize: '24px 24px'
@@ -177,16 +178,16 @@ export function AdminDashboard() {
             />
             {/* Simple SVG Visualization for Revenue Growth */}
             <svg className="absolute inset-0 w-full h-full px-admin-md" preserveAspectRatio="none" viewBox="0 0 100 100">
-              <path 
-                d="M 0 80 Q 20 70 40 75 T 80 30 T 100 20" 
-                fill="none" 
-                stroke="#115cb9" 
-                strokeWidth="2" 
+              <path
+                d="M 0 80 Q 20 70 40 75 T 80 30 T 100 20"
+                fill="none"
+                stroke="#115cb9"
+                strokeWidth="2"
                 vectorEffect="non-scaling-stroke"
               />
-              <path 
-                d="M 0 80 Q 20 70 40 75 T 80 30 T 100 20 V 100 H 0 Z" 
-                fill="url(#revenueGrad)" 
+              <path
+                d="M 0 80 Q 20 70 40 75 T 80 30 T 100 20 V 100 H 0 Z"
+                fill="url(#revenueGrad)"
                 opacity="0.1"
               />
               <defs>
@@ -220,26 +221,26 @@ export function AdminDashboard() {
             <div className="relative w-48 h-48 mb-admin-xl">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 192 192">
                 <circle cx="96" cy="96" fill="transparent" r="80" stroke="#eff4ff" strokeWidth="24"></circle>
-                <circle 
-                  className="transition-all duration-1000" 
-                  cx="96" 
-                  cy="96" 
-                  fill="transparent" 
-                  r="80" 
-                  stroke="#002b5b" 
-                  strokeDasharray="502" 
-                  strokeDashoffset="150" 
+                <circle
+                  className="transition-all duration-1000"
+                  cx="96"
+                  cy="96"
+                  fill="transparent"
+                  r="80"
+                  stroke="#002b5b"
+                  strokeDasharray="502"
+                  strokeDashoffset="150"
                   strokeWidth="24"
                 />
-                <circle 
-                  className="transition-all duration-1000" 
-                  cx="96" 
-                  cy="96" 
-                  fill="transparent" 
-                  r="80" 
-                  stroke="#659dfe" 
-                  strokeDasharray="502" 
-                  strokeDashoffset="400" 
+                <circle
+                  className="transition-all duration-1000"
+                  cx="96"
+                  cy="96"
+                  fill="transparent"
+                  r="80"
+                  stroke="#659dfe"
+                  strokeDasharray="502"
+                  strokeDashoffset="400"
                   strokeWidth="24"
                 />
               </svg>
@@ -280,8 +281,8 @@ export function AdminDashboard() {
           </div>
           <div className="divide-y divide-admin-outline-variant">
             {logs.map((log) => (
-              <div 
-                key={log.id} 
+              <div
+                key={log.id}
                 className="p-admin-md flex items-center gap-admin-lg hover:bg-admin-surface-container transition-colors"
               >
                 <div className={`w-10 h-10 rounded-full ${log.bgIconClass} flex items-center justify-center ${log.textIconClass}`}>

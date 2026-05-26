@@ -1,6 +1,6 @@
 // Dịch vụ API quản lý người dùng - kết nối với UsersController ASP.NET Core
 
-import { request } from './apiClient';
+import { request } from './shared/apiClient';
 import type { UserDto, UserDetailsDto, PagedResult, GetUsersQuery, CreateCustomerPayload, UpdateCustomerPayload, ChangePartnerPasswordPayload } from '../types';
 
 export const userService = {

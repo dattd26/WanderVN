@@ -54,8 +54,9 @@ export function ChangePasswordPartner({
                 setSuccessMsg(null);
                 onClose();
             }, 1000);
-        } catch (err: any) {
-            setError(err?.message || 'Có lỗi xảy ra khi cập nhật mật khẩu.');
+        } catch (err) {
+            const error = err as Error;
+            setError(error.message || 'Có lỗi xảy ra khi cập nhật mật khẩu.');
         } finally {
             setIsSaving(false);
         }

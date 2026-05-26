@@ -18,7 +18,14 @@ export function AdminPartners() {
   const [error, setError] = useState<string | null>(null);
 
   // --- Pending applications (chưa có API thực tế) ---
-  const [applications] = useState<any[]>([]);
+  const [applications] = useState<{
+    id: string;
+    name: string;
+    type: 'Stay' | 'Flight';
+    time: string;
+    status: 'Pending' | 'Approved' | 'Rejected';
+    icon: string;
+  }[]>([]);
 
   // --- State tìm kiếm & phân trang ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,17 +68,20 @@ export function AdminPartners() {
   }, [debouncedSearch, filterStatus, pageNumber, pageSize]);
 
   useEffect(() => {
-    fetchPartners();
+    const timer = setTimeout(() => {
+      fetchPartners();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchPartners]);
 
   const handleTogglePartner = async (id: number, currentStatus: boolean) => {
     try {
       await userService.toggleActive(id, !currentStatus);
-      setPagedResult((prev) =>
+      setPagedResult((prev: PagedResult<UserDto> | null) =>
         prev
           ? {
               ...prev,
-              items: prev.items.map((p) =>
+              items: prev.items.map((p: UserDto) =>
                 p.id === id ? { ...p, isActive: !p.isActive } : p
               ),
             }
@@ -103,8 +113,8 @@ export function AdminPartners() {
   const totalPages = pagedResult?.totalPages ?? 0;
   const currentPage = pagedResult?.pageNumber ?? 1;
   const pendingCount = applications.filter((app) => app.status === 'Pending').length;
-  const activeCount = partners.filter((p) => p.isActive).length;
-  const inactiveCount = partners.filter((p) => !p.isActive).length;
+  const activeCount = partners.filter((p: UserDto) => p.isActive).length;
+  const inactiveCount = partners.filter((p: UserDto) => !p.isActive).length;
 
   return (
     <div className="p-admin-xl space-y-admin-lg max-w-admin-container-max mx-auto w-full">

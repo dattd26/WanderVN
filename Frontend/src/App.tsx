@@ -81,14 +81,21 @@ function AppLayout() {
               </ProtectedRoute>
             }
           />
-          <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="customers" element={<AdminUsers />} />
-          <Route path="partners" element={<AdminPartners />} />
-          <Route path="content" element={<AdminContent />} />
-          <Route path="finance" element={<AdminFinance />} />
-        </Route>
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['Admin']}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="customers" element={<AdminUsers />} />
+            <Route path="partners" element={<AdminPartners />} />
+            <Route path="content" element={<AdminContent />} />
+            <Route path="finance" element={<AdminFinance />} />
+          </Route>
         </Routes>
       </div>
 
@@ -102,6 +109,12 @@ function AppLayout() {
 }
 
 import { ToastProvider } from './contexts/ToastContext';
+import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminDashboard } from './pages/admin/dashboard/AdminDashboard';
+import { AdminUsers } from './pages/admin/users/AdminUsers';
+import { AdminPartners } from './pages/admin/partners/AdminPartners';
+import { AdminContent } from './pages/admin/content/AdminContent';
+import { AdminFinance } from './pages/admin/finance/AdminFinance';
 
 function App() {
   return (

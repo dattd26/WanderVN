@@ -12,7 +12,10 @@ export function AdminSidebar() {
 
   useEffect(() => {
     if (isSubmenuActive) {
-      setIsUsersOpen(true);
+      const timer = setTimeout(() => {
+        setIsUsersOpen(true);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [location.pathname, isSubmenuActive]);
 

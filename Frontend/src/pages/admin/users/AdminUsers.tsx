@@ -56,7 +56,10 @@ export function AdminUsers() {
   }, [debouncedSearch, pageNumber, pageSize, filterStatus]); // ✅ deps đủ
 
   useEffect(() => {
-    fetchCustomers();
+    const timer = setTimeout(() => {
+      fetchCustomers();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchCustomers]);
 
   // --- Handlers ---
@@ -82,9 +85,10 @@ export function AdminUsers() {
     try {
       await userService.updateCustomer(userId, { isActive: !currentActive });
       fetchCustomers();
-    } catch (err: any) {
-      console.error('Lỗi khi thay đổi trạng thái:', err);
-      alert(err.message || `Có lỗi xảy ra khi ${actionText} người dùng.`);
+    } catch (err) {
+      const error = err as Error;
+      console.error('Lỗi khi thay đổi trạng thái:', error);
+      alert(error.message || `Có lỗi xảy ra khi ${actionText} người dùng.`);
     }
   };
 
@@ -94,9 +98,10 @@ export function AdminUsers() {
       await userService.deleteCustomer(userId);
       alert('Xóa khách hàng thành công!');
       fetchCustomers();
-    } catch (err: any) {
-      console.error('Lỗi khi xóa người dùng:', err);
-      alert(err.message || 'Có lỗi xảy ra khi xóa người dùng này.');
+    } catch (err) {
+      const error = err as Error;
+      console.error('Lỗi khi xóa người dùng:', error);
+      alert(error.message || 'Có lỗi xảy ra khi xóa người dùng này.');
     }
   };
 
@@ -105,8 +110,8 @@ export function AdminUsers() {
   const totalItems = pagedResult?.totalItems ?? 0;
   const totalPages = pagedResult?.totalPages ?? 0;
   const currentPage = pagedResult?.pageNumber ?? 1;
-  const totalActive = users.filter(u => u.isActive === true).length;
-  const totalLocked = users.filter(u => u.isActive === false).length;
+  const totalActive = users.filter((u: UserDto) => u.isActive === true).length;
+  const totalLocked = users.filter((u: UserDto) => u.isActive === false).length;
 
   return (
     <div className="p-admin-xl space-y-admin-xl max-w-admin-container-max mx-auto w-full">

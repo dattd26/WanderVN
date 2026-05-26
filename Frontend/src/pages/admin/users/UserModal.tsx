@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom'; // <-- Đã thêm Portal để sửa triệt để lỗi trắng Header
 import { userService } from '../../../services';
-import type { UserDetailsDto } from '../../../types';
+import type { UserDetailsDto, UserHotelDto } from '../../../types';
 
 interface UserModalProps {
   isOpen: boolean;
@@ -49,7 +49,7 @@ const initialFormState: FormState = {
 
 export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalProps) {
   const [formData, setFormData] = useState<FormState>(initialFormState);
-  const [hotels, setHotels] = useState<any[]>([]);
+  const [hotels, setHotels] = useState<UserHotelDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,37 +61,41 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
   useEffect(() => {
     if (!isOpen) return;
 
-    if (isEditMode && userId) {
-      setIsLoading(true);
-      setError(null);
-      setSuccessMsg(null);
-      userService
-        .getCustomerById(userId)
-        .then((data: UserDetailsDto) => {
-          setFormData({
-            fullName: data.fullName || '',
-            email: data.email || '',
-            phoneNumber: data.phoneNumber || '',
-            roleId: getRoleIdFromName(data.roleName),
-            isActive: data.isActive !== false,
-            avatarUrl: data.avatarUrl || '',
-            password: '',
-            confirmPassword: '',
-            newPassword: '',
-          });
-          setHotels(data.hotels || []);
-        })
-        .catch((err) =>
-          setError(err instanceof Error ? err.message : 'Không thể tải thông tin người dùng')
-        )
-        .finally(() => setIsLoading(false));
-    } else {
-      // Chế độ tạo mới: Reset về trạng thái trống
-      setFormData(initialFormState);
-      setHotels([]);
-      setError(null);
-      setSuccessMsg(null);
-    }
+    const timer = setTimeout(() => {
+      if (isEditMode && userId) {
+        setIsLoading(true);
+        setError(null);
+        setSuccessMsg(null);
+        userService
+          .getCustomerById(userId)
+          .then((data: UserDetailsDto) => {
+            setFormData({
+              fullName: data.fullName || '',
+              email: data.email || '',
+              phoneNumber: data.phoneNumber || '',
+              roleId: getRoleIdFromName(data.roleName),
+              isActive: data.isActive !== false,
+              avatarUrl: data.avatarUrl || '',
+              password: '',
+              confirmPassword: '',
+              newPassword: '',
+            });
+            setHotels(data.hotels || []);
+          })
+          .catch((err) =>
+            setError(err instanceof Error ? err.message : 'Không thể tải thông tin người dùng')
+          )
+          .finally(() => setIsLoading(false));
+      } else {
+        // Chế độ tạo mới: Reset về trạng thái trống
+        setFormData(initialFormState);
+        setHotels([]);
+        setError(null);
+        setSuccessMsg(null);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [isOpen, userId, isEditMode]);
 
   if (!isOpen) return null;
@@ -422,7 +426,7 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
                     Khách sạn liên kết ({hotels.length})
                   </h5>
                   <div className="space-y-admin-sm">
-                    {hotels.map((hotel: any) => (
+                    {hotels.map((hotel: UserHotelDto) => (
                       <div
                         key={hotel.id}
                         className="flex items-center justify-between p-admin-md bg-admin-surface-container-low border border-admin-outline-variant/50 rounded-lg"

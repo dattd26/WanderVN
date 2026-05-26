@@ -68,11 +68,17 @@ export function AdminFinance() {
     }, []);
 
     useEffect(() => {
-        fetchPayouts();
+        const timer = setTimeout(() => {
+            fetchPayouts();
+        }, 0);
+        return () => clearTimeout(timer);
     }, [fetchPayouts]);
 
     useEffect(() => {
-        fetchStats();
+        const timer = setTimeout(() => {
+            fetchStats();
+        }, 0);
+        return () => clearTimeout(timer);
     }, [fetchStats]);
 
     const handleConfirm = async (p: PayoutDto) => {

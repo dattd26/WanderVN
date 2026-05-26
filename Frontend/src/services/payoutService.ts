@@ -1,6 +1,6 @@
 // Dịch vụ API tài chính (Partner Payouts) - kết nối với PayoutsController ASP.NET Core
 
-import { request } from './apiClient';
+import { request } from './shared/apiClient';
 import type {
   PagedResult,
   PayoutDto,
