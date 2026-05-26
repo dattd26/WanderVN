@@ -3,8 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { HotelSearchForm } from '../../components/client/HotelSearchForm';
 import { FiltersSidebar } from '../../components/client/FiltersSidebar';
 import { HotelCard } from '../../components/client/HotelCard';
+import { HotelMapModal } from '../../components/client/HotelMapModal';
 import type { SearchHotelsDto } from '../../types';
-import { searchService } from '../../services';
+import { searchService, geocodingService } from '../../services';
 import { Loader2, Hotel } from 'lucide-react';
 
 export const SearchStays: React.FC = () => {
@@ -19,58 +20,85 @@ export const SearchStays: React.FC = () => {
   // Lọc theo khoảng giá từ sidebar (VNĐ)
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 500000, max: 8000000 });
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
   // States tải dữ liệu trực tiếp từ C# Backend
   const [hotels, setHotels] = useState<SearchHotelsDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Tọa độ trung tâm bản đồ (lấy từ /api/v1/geocoding/location/:id qua Nominatim)
+  const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+
+  // Modal bản đồ — mở khi user click "Xem trên Bản đồ" trong FiltersSidebar
+  const [showMap, setShowMap] = useState<boolean>(false);
+
   // Tìm tên địa điểm hiện tại trực tiếp từ URL query parameters để hiển thị tiêu đề kết quả tìm kiếm (Instant UX)
   const currentLocationName = searchParams.get('locationName') || 'Việt Nam';
 
   useEffect(() => {
-    const fetchHotels = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
+      setHotels([]); // 🧹 QUAN TRỌNG: Dọn sạch danh sách cũ (Hà Nội) trước khi gọi API mới (Đà Nẵng)
       try {
         const finalCheckIn = checkInDate || new Date().toISOString().split('T')[0];
         const finalCheckOut = checkOutDate || new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
-        // Gọi API tìm kiếm khách sạn thông qua service tập trung
-        const data = await searchService.searchHotels({
-          locationId,
-          capacity,
-          pageNumber: 1,
-          pageSize: 20,
-          checkInDate: finalCheckIn,
-          checkOutDate: finalCheckOut
-        });
+        // Gọi song song 2 API: search hotels + geocode location
+        const [hotelsResult, geoResult] = await Promise.allSettled([
+          searchService.searchHotels({
+            locationId,
+            capacity,
+            pageNumber: 1,
+            pageSize: 20,
+            checkInDate: finalCheckIn,
+            checkOutDate: finalCheckOut
+          }),
+          geocodingService.geocodeLocation(locationId)
+        ]);
 
-        setHotels(data);
-      } catch (err) {
-        console.error('⚠️ Lỗi gọi API C# Backend:', err);
-        const errMsg = err instanceof Error ? err.message : 'Không thể kết nối đến máy chủ WanderVN. Vui lòng kiểm tra lại kết nối mạng.';
-        setError(errMsg);
-        setHotels([]);
+        if (hotelsResult.status === 'fulfilled') {
+          setHotels(hotelsResult.value);
+        } else {
+          console.error('⚠️ Lỗi gọi API search hotels:', hotelsResult.reason);
+          const errMsg = hotelsResult.reason instanceof Error
+            ? hotelsResult.reason.message
+            : 'Không thể kết nối đến máy chủ WanderVN.';
+          setError(errMsg);
+          setHotels([]);
+        }
+
+        if (geoResult.status === 'fulfilled') {
+          setMapCenter([geoResult.value.latitude, geoResult.value.longitude]);
+        } else {
+          console.warn('⚠️ Không lấy được tọa độ địa điểm:', geoResult.reason);
+          setMapCenter(null);
+        }
       } finally {
-        // Trì hoãn nhẹ 300ms để hiệu ứng loading mượt mà
         setTimeout(() => setLoading(false), 300);
       }
     };
 
-    fetchHotels();
+    fetchData();
   }, [locationId, checkInDate, checkOutDate, capacity]);
 
-  // Bộ lọc phụ ở Client-side (Lọc theo Giá, Loại phòng)
+  // Bộ lọc phụ ở Client-side (Lọc theo Giá, Loại hình, Tiện ích)
   const displayedHotels = hotels.filter((hotel) => {
-    // 1. Lọc theo giá
     if (hotel.minPrice > priceRange.max) return false;
 
-    // 2. Lọc theo Loại hình lưu trú động (Khách sạn, Resort, Villa, Homestay...)
     if (selectedTypes.length > 0) {
       if (!hotel.propertyTypeCode || !selectedTypes.includes(hotel.propertyTypeCode)) {
         return false;
       }
+    }
+
+    if (selectedAmenities.length > 0) {
+      const hotelAmenities = hotel.amenities || [];
+      const hasAllAmenities = selectedAmenities.every(amenity => 
+        hotelAmenities.includes(amenity)
+      );
+      if (!hasAllAmenities) return false;
     }
 
     return true;
@@ -89,23 +117,26 @@ export const SearchStays: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Results Layout */}
-      <main className="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-16 flex flex-col lg:flex-row gap-12">
+      {/* Main Results Layout — 2 cột: Filters | List. Bản đồ mở qua modal khi click "Xem trên Bản đồ" */}
+      <main className="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-16 flex flex-col lg:flex-row gap-8 lg:gap-12">
 
         {/* Bộ lọc bên trái Sidebar */}
         <FiltersSidebar
           onPriceChange={(min, max) => setPriceRange({ min, max })}
           onTypeChange={(types) => setSelectedTypes(types)}
+          onAmenityChange={(amenities) => setSelectedAmenities(amenities)}
+          onMapClick={() => setShowMap(true)}
+          mapCenter={mapCenter}
+          hotels={displayedHotels}
         />
 
         {/* Danh sách kết quả bên phải */}
         <section className="w-full lg:w-3/4 space-y-8">
 
-          {/* Header tóm tắt kết quả */}
           <div className="flex justify-between items-center border-b border-outline-variant/30 pb-4">
             <div>
               <h2 className="font-display-lg text-headline-md text-on-surface">
-                {displayedHotels.length} Khách sạn chọn lọc tại {currentLocationName}
+                {displayedHotels.length} Khách sạn tại {currentLocationName}
               </h2>
               {error && (
                 <span className="font-caption text-caption text-error-color mt-1 block font-medium text-red-500">
@@ -122,7 +153,6 @@ export const SearchStays: React.FC = () => {
             </div>
           </div>
 
-          {/* Trạng thái Loading */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-32 gap-4">
               <Loader2 className="h-10 w-10 text-secondary animate-spin" />
@@ -151,6 +181,15 @@ export const SearchStays: React.FC = () => {
           )}
         </section>
       </main>
+
+      {/* Modal bản đồ OpenStreetMap fullscreen */}
+      <HotelMapModal
+        isOpen={showMap}
+        onClose={() => setShowMap(false)}
+        center={mapCenter}
+        hotels={displayedHotels}
+        locationName={currentLocationName}
+      />
     </div>
   );
 };

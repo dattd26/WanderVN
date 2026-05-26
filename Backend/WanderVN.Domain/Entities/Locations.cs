@@ -19,6 +19,11 @@ public partial class Locations
 
     public string? ImageUrl { get; set; }
 
+    // Tọa độ địa lý dùng để center bản đồ OpenStreetMap khi user search địa điểm này
+    public decimal? Latitude { get; set; }
+
+    public decimal? Longitude { get; set; }
+
     // Mối quan hệ tự liên kết (Địa điểm cha)
     public virtual Locations? Parent { get; set; }
 

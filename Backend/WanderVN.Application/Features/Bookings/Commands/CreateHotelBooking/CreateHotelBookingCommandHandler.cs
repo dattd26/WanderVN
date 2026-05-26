@@ -22,29 +22,39 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
 
     public async Task<HotelBookingResponse> Handle(CreateHotelBookingCommand request, CancellationToken cancellationToken)
     {
-        // Validate dates
+        // Kiểm tra định dạng ngày check-in và check-out
         if (!DateTime.TryParseExact(request.Request.CheckInDate, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var checkIn) ||
             !DateTime.TryParseExact(request.Request.CheckOutDate, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var checkOut))
         {
-            throw new ArgumentException("Invalid date format. Use yyyy-MM-dd");
+            throw new ArgumentException("Định dạng ngày không hợp lệ. Vui lòng sử dụng định dạng yyyy-MM-dd");
         }
 
         if (checkIn >= checkOut)
-            throw new ArgumentException("Check-in must be before check-out");
+            throw new ArgumentException("Ngày nhận phòng phải trước ngày trả phòng");
 
-        // Find RoomType (correct DbSet)
+        // Tìm loại phòng trong cơ sở dữ liệu
         var roomType = await _dbContext.RoomTypes
             .Where(rt => rt.Id == request.Request.RoomTypeId)
             .Select(rt => new WanderVN.Domain.Entities.RoomTypes { Id = rt.Id, BasePrice = rt.BasePrice })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (roomType == null)
-            throw new KeyNotFoundException("Room type not found");
+            throw new KeyNotFoundException("Không tìm thấy loại phòng yêu cầu");
 
-        // Calculate total price
+        // Tìm phòng trống thuộc loại phòng được chọn trước khi tiến hành đặt hàng để tránh lỗi tạo đơn hàng khi hết phòng
+        var room = await _dbContext.Rooms
+            .Where(r => r.RoomTypeId == request.Request.RoomTypeId && r.Status == "Available")
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (room == null)
+        {
+            throw new InvalidOperationException("Không còn phòng trống cho loại phòng đã chọn.");
+        }
+
+        // Tính toán tổng chi phí đặt phòng
         decimal totalPrice = request.Request.TotalPrice ?? roomType.BasePrice;
 
-        // Create booking
+        // Khởi tạo thông tin đơn đặt hàng
         var booking = new WanderVN.Domain.Entities.Bookings
         {
             UserId = request.Request.UserId,
@@ -56,30 +66,23 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        await _dbContext.Bookings.AddAsync(booking, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        // Allocate a free Room matching the RoomType
-        var room = await _dbContext.Rooms
-            .Where(r => r.RoomTypeId == request.Request.RoomTypeId && r.Status == "Available")
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (room == null)
-        {
-            throw new InvalidOperationException("No available room for selected room type");
-        }
-
+        // Khởi tạo chi tiết đặt phòng khách sạn và liên kết với đơn hàng thông qua navigation property
         var bookingHotel = new WanderVN.Domain.Entities.BookingHotels
         {
-            BookingId = booking.Id,
+            Booking = booking,
             RoomId = room.Id,
             CheckInDate = DateOnly.FromDateTime(checkIn),
             CheckOutDate = DateOnly.FromDateTime(checkOut)
         };
 
-        await _dbContext.BookingHotels.AddAsync(bookingHotel, cancellationToken);
+        // Cập nhật trạng thái phòng sang Đã đặt
         room.Status = "Booked";
 
+        // Thêm đơn hàng và chi tiết đặt phòng vào context
+        await _dbContext.Bookings.AddAsync(booking, cancellationToken);
+        await _dbContext.BookingHotels.AddAsync(bookingHotel, cancellationToken);
+
+        // Thực hiện lưu toàn bộ thay đổi xuống DB trong một transaction duy nhất
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new HotelBookingResponse

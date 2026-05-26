@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Map, Sliders, Check } from 'lucide-react';
-import type { PropertyType } from '../../types';
+import type { PropertyType, SearchHotelsDto } from '../../types';
 import { propertyTypeService } from '../../services';
+import { HotelMapPreview } from './HotelMapPreview';
 
 interface FiltersSidebarProps {
   onPriceChange?: (min: number, max: number) => void;
   onTypeChange?: (types: string[]) => void;
   onAmenityChange?: (amenities: string[]) => void;
+  onMapClick?: () => void;
+  mapCenter?: [number, number] | null;
+  hotels?: SearchHotelsDto[];
 }
 
 export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   onPriceChange,
   onTypeChange,
-  onAmenityChange
+  onAmenityChange,
+  onMapClick,
+  mapCenter,
+  hotels = []
 }) => {
   const [maxPrice, setMaxPrice] = useState(8000000);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -70,13 +77,31 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
 
   return (
     <aside className="w-full lg:w-1/4 space-y-10">
-      {/* Khối Bản đồ Thu nhỏ */}
-      <div className="w-full h-48 bg-surface-container rounded-lg border border-outline-variant/30 overflow-hidden relative group cursor-pointer limestone-shadow">
-        <img
-          alt="Bản đồ khu vực"
-          className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
-          src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=400&q=80"
-        />
+      {/* Khối Bản đồ Thu nhỏ — click để mở modal map fullscreen */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onMapClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onMapClick?.();
+          }
+        }}
+        className="block w-full h-48 bg-surface-container rounded-lg border border-outline-variant/30 overflow-hidden relative group cursor-pointer limestone-shadow focus:outline-none focus:ring-2 focus:ring-secondary"
+        aria-label="Xem khách sạn trên bản đồ"
+      >
+        {mapCenter ? (
+          <div className="w-full h-full transition-opacity duration-500 opacity-90 group-hover:opacity-100">
+            <HotelMapPreview center={mapCenter} hotels={hotels} />
+          </div>
+        ) : (
+          <img
+            alt="Bản đồ khu vực"
+            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
+            src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=400&q=80"
+          />
+        )}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span className="bg-surface text-primary px-4 py-2 font-label-md text-label-md shadow-sm border border-outline/20 flex items-center gap-2 group-hover:bg-primary group-hover:text-on-primary transition-colors duration-300">
             <Map className="h-4 w-4" />

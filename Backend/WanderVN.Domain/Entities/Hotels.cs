@@ -25,6 +25,25 @@ public partial class Hotels
 
     public DateTimeOffset? CreatedAt { get; set; }
 
+    // Tọa độ địa lý dùng để hiển thị marker trên bản đồ OpenStreetMap
+    public decimal? Latitude { get; set; }
+
+    public decimal? Longitude { get; set; }
+
+    // ── Partner Onboarding ──
+    // Status workflow: 0 = Pending (vừa submit, chờ admin duyệt) / 1 = Approved / 2 = Rejected.
+    // Khi Rejected, RejectReason ghi lý do để partner sửa và submit lại.
+    public int Status { get; set; }
+
+    // Chính sách hủy phòng toàn cơ sở: 'flexible' | 'moderate' | 'strict'
+    public string? CancellationPolicy { get; set; }
+
+    public string? RejectReason { get; set; }
+
+    public DateTimeOffset? SubmittedAt { get; set; }
+
+    public DateTimeOffset? ApprovedAt { get; set; }
+
     public virtual ICollection<HotelImages> HotelImages { get; set; } = new List<HotelImages>();
 
     public virtual Locations? Location { get; set; }

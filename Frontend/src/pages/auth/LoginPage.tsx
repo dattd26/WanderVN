@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { authService } from '../../services/auth/authService';
 import { AuthCardWrapper } from '../../components/auth/AuthCardWrapper';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
@@ -57,8 +60,8 @@ export const LoginPage: React.FC = () => {
       
       setTimeout(() => {
         setIsLoading(false);
-        // Chuyển hướng về trang chủ
-        navigate('/');
+        // Chuyển hướng về trang đích hoặc trang chủ
+        navigate(redirect);
         // Reload nhẹ để Navbar cập nhật trạng thái đăng nhập
         window.location.reload();
       }, 1500);
@@ -215,7 +218,7 @@ export const LoginPage: React.FC = () => {
               <div className="flex items-center justify-center gap-2 py-1 select-none">
                 <span className="font-body-md text-xs text-on-surface-variant opacity-75">Lần đầu tiên đến di sản?</span>
                 <Link 
-                  to="/register"
+                  to={`/register${searchParams.toString() ? `?${searchParams.toString()}` : ''}`}
                   className="font-label-md text-xs text-secondary border-b border-transparent hover:border-secondary transition-all font-semibold uppercase tracking-wider"
                 >
                   Đăng ký tài khoản

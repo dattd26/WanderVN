@@ -17,6 +17,9 @@ public partial class RoomTypes
 
     public int TotalRooms { get; set; }
 
+    // Mô tả ngắn cho loại phòng — ban công, view, m², tiện nghi đặc trưng
+    public string? Description { get; set; }
+
     public virtual Hotels? Hotel { get; set; }
 
     public virtual ICollection<RoomTypeImages> RoomTypeImages { get; set; } = new List<RoomTypeImages>();
