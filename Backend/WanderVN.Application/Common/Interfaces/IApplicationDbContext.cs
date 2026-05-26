@@ -25,6 +25,10 @@ public interface IApplicationDbContext
     DbSet<Wishlists> Wishlists { get; }
     DbSet<PropertyTypes> PropertyTypes { get; }
     DbSet<RatePlans> RatePlans { get; }
+    DbSet<HomeTravelMoods> HomeTravelMoods { get; }
+    DbSet<HomeEditorialDestinations> HomeEditorialDestinations { get; }
+    DbSet<HomeWeekendEscapes> HomeWeekendEscapes { get; }
+    DbSet<HomeStayCollections> HomeStayCollections { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
