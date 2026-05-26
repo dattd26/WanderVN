@@ -28,4 +28,6 @@ public partial class Bookings
     public virtual ICollection<Payments> Payments { get; set; } = new List<Payments>();
 
     public virtual Users? User { get; set; }
+
+    public virtual ICollection<PartnerPayouts> PartnerPayouts { get; set; } = new List<PartnerPayouts>();
 }
