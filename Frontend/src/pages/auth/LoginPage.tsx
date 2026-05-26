@@ -55,6 +55,7 @@ export const LoginPage: React.FC = () => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.role);
       localStorage.setItem('userEmail', email);
+      localStorage.setItem('userId', data.userId.toString());
 
       setToastMessage('Chào mừng quay trở lại! Đang tải hành trình của bạn...');
       

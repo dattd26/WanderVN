@@ -101,7 +101,7 @@ function AppLayout() {
       </div>
 
       {/* Widget Chatbot AI — chỉ hiển thị trên trang khách hàng, ẩn trên trang partner */}
-      {!isPartnerRoute && !isAdminRoute && <ChatWidget />}
+      {!isPartnerRoute && <ChatWidget userId={Number(localStorage.getItem('userId')) || undefined} />}
 
       {/* Chân trang toàn cục — ẩn cho luồng partner */}
       {!isPartnerRoute && !isAdminRoute && <Footer />}
