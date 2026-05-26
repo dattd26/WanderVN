@@ -13,6 +13,7 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPartnerPayoutRepository, PartnerPayoutRepository>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(WanderVN.Application.Common.Interfaces.IApplicationDbContext).Assembly));
 

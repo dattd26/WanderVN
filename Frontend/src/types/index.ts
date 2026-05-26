@@ -5,3 +5,4 @@ export * from './location';
 export * from './hotel';
 export * from './propertyType';
 export * from './user';
+export * from './payout';

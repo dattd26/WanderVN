@@ -10,7 +10,7 @@ import { PartnerPagination } from './components/PartnerPagination';
 import { PartnerTableFilters } from './components/PartnerTableFilters';
 
 export function AdminPartners() {
-  const [activeTab, setActiveTab] = useState<'pending' | 'list'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'list'>('list');
 
   // --- Dữ liệu Partner List ---
   const [pagedResult, setPagedResult] = useState<PagedResult<UserDto> | null>(null);
