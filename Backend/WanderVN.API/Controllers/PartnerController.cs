@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using WanderVN.API.Common.Responses;
 using WanderVN.Application.Features.Partner.Commands.SubmitHotel;
 using WanderVN.Application.Features.Partner.Commands.UploadHotelImage;
+using WanderVN.Application.Features.Partner.Commands.UploadRoomTypeImage;
 using WanderVN.Application.Features.Partner.Queries.GetMyHotels;
 
 using WanderVN.Application.Features.Partner.Commands.AddRoomType;
@@ -40,8 +41,8 @@ public class PartnerController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 5)
     {
-        var query = new GetMyHotelsQuery 
-        { 
+        var query = new GetMyHotelsQuery
+        {
             Status = status,
             PageNumber = pageNumber,
             PageSize = pageSize
@@ -100,6 +101,33 @@ public class PartnerController : ControllerBase
         command.HotelId = hotelId;
         var result = await _mediator.Send(command);
         return Ok(new ApiResponse<AddRoomTypeResponse>(true, "Thêm hạng phòng thành công.", 200, result));
+    }
+
+    /// <summary>
+    /// Upload ảnh hạng phòng
+    /// </summary>
+    [HttpPost("hotels/{hotelId:int}/room-types/{roomTypeId:int}/images")]
+    [RequestSizeLimit(10_000_000)] // 10MB
+    public async Task<IActionResult> UploadRoomTypeImage(
+        [FromRoute] int hotelId,
+        [FromRoute] int roomTypeId,
+        [FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            throw new ArgumentException("Vui lòng chọn file ảnh để upload.");
+
+        await using var stream = file.OpenReadStream();
+
+        var command = new UploadRoomTypeImageCommand
+        {
+            HotelId = hotelId,
+            RoomTypeId = roomTypeId,
+            FileStream = stream,
+            FileName = file.FileName
+        };
+
+        var result = await _mediator.Send(command);
+        return Ok(new ApiResponse<UploadRoomTypeImageResponse>(true, "Tải ảnh hạng phòng thành công.", 200, result));
     }
 
     /// <summary>

@@ -1,6 +1,6 @@
 using MediatR;
 using System.Collections.Generic;
-using WanderVN.Application.Features.Partner.Commands.AddRoomType;
+using WanderVN.Application.DTOs.Request;
 
 namespace WanderVN.Application.Features.Partner.Commands.UpdateRatePlans;
 

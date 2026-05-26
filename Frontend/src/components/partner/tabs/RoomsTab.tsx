@@ -10,6 +10,9 @@ export interface RoomConfig {
   maxGuests: number;
   quantity: number;
   price: number;
+  description?: string;
+  images?: string[];
+  ratePlans?: any[];
 }
 
 // Cấu hình Props cho component RoomsTab

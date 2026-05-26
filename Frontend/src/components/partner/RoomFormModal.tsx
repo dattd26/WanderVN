@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { Bed, UploadCloud, X, Plus, Image as ImageIcon } from 'lucide-react';
 import { partnerService } from '../../services';
+import { type RoomConfig } from './tabs/RoomsTab';
 
-// Định nghĩa cấu hình Props đầu vào cho AddRoomModal
-interface AddRoomModalProps {
+// Định nghĩa cấu hình Props đầu vào cho RoomFormModal
+interface RoomFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   hotelId: number;
+  roomToEdit?: RoomConfig;
   onSuccess: (newRoom: {
     id: string;
     name: string;
@@ -29,10 +31,11 @@ export interface RatePlanForm {
   isRefundable: boolean;
 }
 
-export const AddRoomModal: React.FC<AddRoomModalProps> = ({
+export const RoomFormModal: React.FC<RoomFormModalProps> = ({
   isOpen,
   onClose,
   hotelId,
+  roomToEdit,
   onSuccess,
   triggerMessage
 }) => {
@@ -55,9 +58,49 @@ export const AddRoomModal: React.FC<AddRoomModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Rate plans state
+  // Rate plans state
   const [ratePlans, setRatePlans] = useState<RatePlanForm[]>([
     { id: '1', name: 'Standard (Mặc định)', priceMultiplier: 1, hasBreakfast: false, isRefundable: true }
   ]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (roomToEdit) {
+        setNewRoomForm({
+          name: roomToEdit.name,
+          bedType: roomToEdit.bedType,
+          size: roomToEdit.size,
+          maxGuests: roomToEdit.maxGuests,
+          quantity: roomToEdit.quantity,
+          price: roomToEdit.price,
+          description: roomToEdit.description || ''
+        });
+        setPreviewUrls(roomToEdit.images || []);
+        // Simulate existing images logic here (currently we don't have existing image blobs)
+        setImages([]);
+
+        if (roomToEdit.ratePlans && roomToEdit.ratePlans.length > 0) {
+          setRatePlans(roomToEdit.ratePlans.map((rp: any, index: number) => ({
+            id: rp.id || Date.now().toString() + index,
+            name: rp.name,
+            priceMultiplier: rp.priceMultiplier,
+            hasBreakfast: rp.hasBreakfast,
+            isRefundable: rp.isRefundable
+          })));
+        } else {
+          setRatePlans([{ id: '1', name: 'Standard (Mặc định)', priceMultiplier: 1, hasBreakfast: false, isRefundable: true }]);
+        }
+      } else {
+        setNewRoomForm({
+          name: '', bedType: '1 King Bed', size: 32, maxGuests: 2, quantity: 5, price: 1500000, description: ''
+        });
+        setImages([]);
+        setPreviewUrls([]);
+        setPrimaryImageIndex(0);
+        setRatePlans([{ id: '1', name: 'Standard (Mặc định)', priceMultiplier: 1, hasBreakfast: false, isRefundable: true }]);
+      }
+    }
+  }, [isOpen, roomToEdit]);
 
   if (!isOpen) return null;
 
@@ -139,8 +182,7 @@ export const AddRoomModal: React.FC<AddRoomModalProps> = ({
 
     setSubmitting(true);
     try {
-      // Gọi API Backend thực tế để ghi nhận hạng phòng
-      const result = await partnerService.addRoomType(hotelId, {
+      const roomPayload = {
         name: newRoomForm.name.trim(),
         basePrice: newRoomForm.price,
         capacity: newRoomForm.maxGuests,
@@ -152,15 +194,32 @@ export const AddRoomModal: React.FC<AddRoomModalProps> = ({
           hasBreakfast: rp.hasBreakfast,
           isRefundable: rp.isRefundable
         }))
-      });
+      };
 
-      // TODO: Xử lý upload ảnh và lưu RatePlans (hiện tại giả lập gộp vào trả về)
-      if (images.length > 0) {
-        console.log(`Đang xử lý tải lên ${images.length} ảnh cho hạng phòng mới...`);
+      let currentRoomTypeId = roomToEdit ? parseInt(roomToEdit.id) : 0;
+
+      if (roomToEdit) {
+        await partnerService.updateRoomType(hotelId, currentRoomTypeId, roomPayload);
+      } else {
+        const result = await partnerService.addRoomType(hotelId, roomPayload);
+        currentRoomTypeId = result.roomTypeId;
       }
-      
+
+      if (images.length > 0 && currentRoomTypeId > 0) {
+        console.log(`Đang xử lý tải lên ${images.length} ảnh cho hạng phòng...`);
+        // Upload từng ảnh
+        for (const file of images) {
+          try {
+            await partnerService.uploadRoomTypeImage(hotelId, currentRoomTypeId, file);
+          } catch (uploadErr) {
+            console.error('Lỗi upload ảnh:', uploadErr);
+            triggerMessage('error', `Tải ảnh ${file.name} thất bại.`);
+          }
+        }
+      }
+
       const newRoom = {
-        id: result.roomTypeId.toString(),
+        id: currentRoomTypeId.toString(),
         name: newRoomForm.name.trim(),
         bedType: newRoomForm.bedType,
         size: newRoomForm.size,
@@ -171,9 +230,11 @@ export const AddRoomModal: React.FC<AddRoomModalProps> = ({
         ratePlans: ratePlans
       };
 
-      triggerMessage('success', `Đã thêm hạng phòng "${newRoom.name}" thành công vào hệ thống CSDL!`);
+      triggerMessage('success', roomToEdit
+        ? `Đã cập nhật hạng phòng "${newRoom.name}" thành công!`
+        : `Đã thêm hạng phòng "${newRoom.name}" thành công vào hệ thống CSDL!`);
       onSuccess(newRoom);
-      
+
       // Cleanup
       previewUrls.forEach(url => URL.revokeObjectURL(url));
       onClose();
@@ -197,15 +258,15 @@ export const AddRoomModal: React.FC<AddRoomModalProps> = ({
   return (
     <div className={`fixed inset-0 z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
       <div className="absolute inset-0 bg-[#1C1C19]/60 backdrop-blur-sm" onClick={onClose} />
-      
+
       {/* Slide-over Panel */}
       <div className={`absolute right-0 top-0 h-full w-full max-w-2xl bg-[#FAF6F0] shadow-2xl transform transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        
+
         {/* Tiêu đề Panel */}
         <div className="px-7 py-6 border-b border-[#E6E2DD] bg-[#FAF6F0] flex justify-between items-center shrink-0">
           <h3 className="font-display-lg text-xl font-bold text-[#1C1C19] flex items-center gap-2.5">
             <Bed className="h-6 w-6 text-[#735C00]" />
-            Thêm hạng phòng di sản mới
+            {roomToEdit ? 'Chỉnh sửa hạng phòng' : 'Thêm hạng phòng di sản mới'}
           </h3>
           <button onClick={onClose} className="text-[#444748] hover:text-[#1C1C19] p-1 rounded-full hover:bg-[#F1EDE8] transition-colors">
             <X className="h-6 w-6" />
@@ -219,7 +280,7 @@ export const AddRoomModal: React.FC<AddRoomModalProps> = ({
             {/* Khối: Thông tin cơ bản */}
             <div className="space-y-5">
               <h4 className="font-label-md text-sm uppercase tracking-widest text-[#735C00] font-bold border-b border-[#E6E2DD] pb-2">1. Thông tin cơ bản</h4>
-              
+
               <div className="space-y-2">
                 <label className="font-label-md text-xs uppercase tracking-wider text-[#444748] font-bold block">Tên hạng phòng *</label>
                 <input type="text" required disabled={submitting} placeholder="Ví dụ: Executive River View Suite"
@@ -277,8 +338,8 @@ export const AddRoomModal: React.FC<AddRoomModalProps> = ({
                 <span>2. Hình ảnh phòng</span>
                 <span className="text-[10px] text-[#444748] normal-case tracking-normal font-normal">Kéo thả để upload (ít nhất 1 ảnh)</span>
               </h4>
-              
-              <div 
+
+              <div
                 className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${isDragging ? 'border-[#735C00] bg-[#735C00]/5' : 'border-[#E6E2DD] hover:border-[#735C00]/50'}`}
                 onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()}
               >
@@ -318,7 +379,7 @@ export const AddRoomModal: React.FC<AddRoomModalProps> = ({
                   <Plus className="h-3.5 w-3.5 mr-1" /> Thêm gói
                 </button>
               </h4>
-              
+
               <div className="space-y-3">
                 {ratePlans.map((rp, index) => (
                   <div key={rp.id} className="bg-white border border-[#E6E2DD] rounded-xl p-4 relative group shadow-sm">
@@ -377,7 +438,7 @@ export const AddRoomModal: React.FC<AddRoomModalProps> = ({
             {submitting && (
               <div className="w-3.5 h-3.5 border-2 border-[#FAF6F0] border-t-transparent rounded-full animate-spin"></div>
             )}
-            {submitting ? 'Đang gửi...' : 'Xác nhận thêm'}
+            {submitting ? 'Đang gửi...' : (roomToEdit ? 'Lưu thay đổi' : 'Xác nhận thêm')}
           </button>
         </div>
 

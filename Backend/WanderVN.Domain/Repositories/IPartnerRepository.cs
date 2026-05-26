@@ -122,6 +122,7 @@ public interface IPartnerRepository
         decimal basePrice,
         int capacity,
         int totalRooms,
+        string? description,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -139,6 +140,31 @@ public interface IPartnerRepository
     /// </summary>
     Task<List<PartnerHotelBookingModel>> GetHotelBookingsAsync(
         int hotelId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Kiểm tra xem hạng phòng có thuộc quyền sở hữu của đối tác hay không.
+    /// </summary>
+    Task<bool> IsRoomTypeOwnedByPartnerAsync(
+        int roomTypeId,
+        int hotelId,
+        int partnerId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Thêm hình ảnh cho hạng phòng sử dụng Dapper.
+    /// </summary>
+    Task<int> AddRoomTypeImageAsync(
+        int roomTypeId,
+        string imageUrl,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Đồng bộ hóa các gói giá (RatePlans) của hạng phòng sử dụng Dapper.
+    /// </summary>
+    Task SyncRatePlansAsync(
+        int roomTypeId,
+        List<PartnerRatePlanModel> ratePlans,
         CancellationToken cancellationToken);
 }
 

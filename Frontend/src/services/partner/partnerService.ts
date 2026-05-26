@@ -136,11 +136,35 @@ export const partnerService = {
       basePrice: number;
       capacity: number;
       totalRooms: number;
+      description?: string;
+      ratePlans: Array<{
+        name: string;
+        priceMultiplier: number;
+        hasBreakfast: boolean;
+        isRefundable: boolean;
+      }>;
     }
   ): Promise<void> {
     return request<void>(`/partner/hotels/${hotelId}/room-types/${roomTypeId}`, {
       method: 'PUT',
       body: JSON.stringify(roomData),
+    });
+  },
+
+  /**
+   * Upload ảnh cho hạng phòng đối tác
+   */
+  async uploadRoomTypeImage(
+    hotelId: number,
+    roomTypeId: number,
+    file: File
+  ): Promise<{ imageUrl: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return request<{ imageUrl: string }>(`/partner/hotels/${hotelId}/room-types/${roomTypeId}/images`, {
+      method: 'POST',
+      body: formData,
     });
   },
 

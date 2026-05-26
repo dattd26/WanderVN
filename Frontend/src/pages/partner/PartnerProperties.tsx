@@ -14,21 +14,19 @@ import { InfoTab, type HotelFormState } from '../../components/partner/tabs/Info
 import { RoomsTab, type RoomConfig } from '../../components/partner/tabs/RoomsTab';
 import { AvailabilityTab } from '../../components/partner/tabs/AvailabilityTab';
 import { BookingsTab, type HotelBooking } from '../../components/partner/tabs/BookingsTab';
-import { AddRoomModal } from '../../components/partner/AddRoomModal';
+import { RoomFormModal } from '../../components/partner/RoomFormModal';
 import { RegisterPropertyModal } from '../../components/partner/RegisterPropertyModal';
 
-// Danh sách Tiện ích mặc định
 const AVAILABLE_AMENITIES = [
-  { id: 'wifi', label: 'Wi-Fi miễn phí' },
-  { id: 'pool', label: 'Hồ bơi vô cực' },
-  { id: 'spa', label: 'Spa & Massage' },
-  { id: 'restaurant', label: 'Nhà hàng ẩm thực' },
-  { id: 'gym', label: 'Phòng Gym hiện đại' },
-  { id: 'bar', label: 'Sky Bar Hoàng hôn' },
-  { id: 'parking', label: 'Đỗ xe miễn phí' }
+  { id: 'wifi', label: 'Wi-Fi' },
+  { id: 'pool', label: 'Hồ bơi' },
+  { id: 'spa', label: 'Spa' },
+  { id: 'restaurant', label: 'Nhà hàng' },
+  { id: 'gym', label: 'Phòng Gym' },
+  { id: 'bar', label: 'Bar' },
+  { id: 'parking', label: 'Đỗ xe' }
 ];
 
-// Các hàm tiện ích thuần túy (pure helpers) đặt ngoài Component để tránh cảnh báo lọt lưới của linter react-hooks/purity
 const getHeritageRandomImage = (): string => {
   const randomImages = [
     'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=500&q=80',
@@ -64,6 +62,7 @@ export const PartnerProperties: React.FC = () => {
   });
 
   const [rooms, setRooms] = useState<RoomConfig[]>([]);
+  const [roomToEdit, setRoomToEdit] = useState<RoomConfig | undefined>(undefined);
 
   // ── State quản lý Đơn đặt phòng (Bookings) ──
   const [bookingsData, setBookingsData] = useState<Record<number, HotelBooking[]>>({
@@ -271,9 +270,34 @@ export const PartnerProperties: React.FC = () => {
     triggerMessage('success', 'Lưu thay đổi cơ sở di sản thành công! Toàn bộ cấu hình đã được đồng bộ hệ thống.');
   };
 
-  // ── Xử lý khi thêm hạng phòng mới thành công từ API ──
-  const handleAddRoomSuccess = (newRoom: RoomConfig) => {
-    setRooms(prev => [...prev, newRoom]);
+  // ── Xử lý khi thêm/sửa hạng phòng thành công từ API ──
+  const handleRoomSuccess = (room: any) => {
+    const processedRoom: RoomConfig = {
+      id: room.id.toString(),
+      name: room.name,
+      bedType: room.bedType,
+      size: Number(room.size),
+      maxGuests: Number(room.maxGuests),
+      quantity: Number(room.quantity),
+      price: Number(room.price),
+      description: room.description,
+      images: room.images,
+      ratePlans: room.ratePlans
+    };
+
+    if (roomToEdit) {
+      setRooms(prev => prev.map(r => r.id === processedRoom.id ? processedRoom : r));
+    } else {
+      setRooms(prev => [...prev, processedRoom]);
+    }
+  };
+
+  const handleEditRoomClick = (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    if (room) {
+      setRoomToEdit(room);
+      setIsAddRoomModalOpen(true);
+    }
   };
 
   // Xóa hạng phòng liên kết với CSDL thực tế
@@ -606,8 +630,11 @@ export const PartnerProperties: React.FC = () => {
                   {formSubTab === 'rooms' && (
                     <RoomsTab
                       rooms={currentRooms}
-                      onAddRoomClick={() => setIsAddRoomModalOpen(true)}
-                      onEditRoom={() => triggerMessage('success', 'Tính năng sửa hạng phòng đang được phát triển!')}
+                      onAddRoomClick={() => {
+                        setRoomToEdit(undefined);
+                        setIsAddRoomModalOpen(true);
+                      }}
+                      onEditRoom={handleEditRoomClick}
                       onDeleteRoom={handleDeleteRoomType}
                     />
                   )}
@@ -638,12 +665,13 @@ export const PartnerProperties: React.FC = () => {
         <div className="texture-overlay" />
       </div>
 
-      {/* ── MODAL THÊM HẠNG PHÒNG MỚI (Tích hợp thực tế API) ── */}
-      <AddRoomModal
+      {/* ── MODAL THÊM/SỬA HẠNG PHÒNG (Tích hợp thực tế API) ── */}
+      <RoomFormModal
         isOpen={isAddRoomModalOpen}
         onClose={() => setIsAddRoomModalOpen(false)}
         hotelId={selectedHotelId || 0}
-        onSuccess={handleAddRoomSuccess}
+        roomToEdit={roomToEdit}
+        onSuccess={handleRoomSuccess}
         triggerMessage={triggerMessage}
       />
 
