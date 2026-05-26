@@ -93,11 +93,15 @@ function AppLayout() {
   );
 }
 
+import { ToastProvider } from './contexts/ToastContext';
+
 function App() {
   return (
-    <Router>
-      <AppLayout />
-    </Router>
+    <ToastProvider>
+      <Router>
+        <AppLayout />
+      </Router>
+    </ToastProvider>
   );
 }
 

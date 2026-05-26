@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   MapPin,
   Plus,
-  Sparkles,
   Sliders
 } from 'lucide-react';
 import { PartnerHeader } from '../../components/partner/PartnerHeader';
@@ -10,6 +9,7 @@ import { PartnerSidebar } from '../../components/partner/PartnerSidebar';
 import { partnerService, propertyTypeService, hotelService } from '../../services';
 import type { PartnerHotelDto, PropertyType } from '../../types';
 
+import { useToast } from '../../contexts/ToastContext';
 import { InfoTab, type HotelFormState } from '../../components/partner/tabs/InfoTab';
 import { RoomsTab, type RoomConfig } from '../../components/partner/tabs/RoomsTab';
 import { AvailabilityTab } from '../../components/partner/tabs/AvailabilityTab';
@@ -40,11 +40,11 @@ const getHeritageRandomImage = (): string => {
 
 export const PartnerProperties: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', content: string } | null>(null);
+  const { triggerMessage } = useToast();
 
   const [hotels, setHotels] = useState<PartnerHotelDto[]>([]);
   const [selectedHotelId, setSelectedHotelId] = useState<number | null>(null);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalHotels, setTotalHotels] = useState(0);
@@ -137,7 +137,7 @@ export const PartnerProperties: React.FC = () => {
         const data = Array.isArray(response) ? response : (response?.items || []);
         const fetchedTotalPages = Array.isArray(response) ? 1 : (response?.totalPages || 1);
         const fetchedTotalCount = Array.isArray(response) ? data.length : (response?.totalCount || data.length);
-        
+
         setTotalPages(fetchedTotalPages);
         setTotalHotels(fetchedTotalCount);
 
@@ -208,11 +208,6 @@ export const PartnerProperties: React.FC = () => {
     fetchPropertyTypes();
   }, []);
 
-  // Kích hoạt thông báo toast thành công/thất bại
-  const triggerMessage = (type: 'success' | 'error', content: string) => {
-    setMessage({ type, content });
-    setTimeout(() => setMessage(null), 4000);
-  };
 
   // Xử lý khi click chuyển đổi cơ sở bên cột trái
   const handleSelectHotel = async (hotelId: number) => {
@@ -311,10 +306,9 @@ export const PartnerProperties: React.FC = () => {
     const roomTypeId = parseInt(roomId);
 
     try {
-      // Gọi API Backend thực tế để lưu vết chặn/gỡ chặn phòng trong CSDL
+      // chặn/gỡ chặn phòng trong CSDL
       await partnerService.toggleRoomBlock(selectedHotelId, roomTypeId, day, action);
 
-      // Cập nhật State bookingsData để tự động cập nhật hiển thị phòng trống một cách reactive
       setBookingsData(prev => {
         const hotelBookings = prev[selectedHotelId] || [];
         if (action === 'BLOCK') {
@@ -374,7 +368,7 @@ export const PartnerProperties: React.FC = () => {
       setTotalPages(response?.totalPages || 1);
       setTotalHotels(response?.totalCount || hotelsList.length);
       setCurrentPage(1); // Quay về trang đầu để hiển thị cơ sở vừa thêm
-      
+
       if (hotelsList.length > 0) {
         const matchingNew = hotelsList.find((h: PartnerHotelDto) => h.id === newHotelId) || hotelsList[0];
         setSelectedHotelId(matchingNew.id);
@@ -428,14 +422,7 @@ export const PartnerProperties: React.FC = () => {
             </button>
           </div>
 
-          {/* Toast Notification */}
-          {message && (
-            <div className={`fixed top-20 right-8 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl transition-all duration-300 transform scale-100 ${message.type === 'success' ? 'bg-[#EBF7EE] text-[#1E5C2F] border border-[#A7E2B7]' : 'bg-[#FDF2F2] text-[#9B1C1C] border border-[#F8B4B4]'
-              }`}>
-              <Sparkles className={`h-5 w-5 ${message.type === 'success' ? 'text-[#1E5C2F]' : 'text-[#9B1C1C]'}`} />
-              <p className="font-label-md text-xs tracking-wide">{message.content}</p>
-            </div>
-          )}
+          {/* Toast Notification (đã chuyển sang ToastContext) */}
 
           {/* Master Detail Bento Layout */}
           <div className="grid grid-cols-12 gap-6">
@@ -451,10 +438,10 @@ export const PartnerProperties: React.FC = () => {
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="h-28 bg-[#FAF6F0] border border-[#E6E2DD] rounded-xl p-4.5 flex flex-col gap-3 relative overflow-hidden">
-                       <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent z-10" />
-                       <div className="h-5 bg-[#E6E2DD] rounded w-2/3 animate-pulse"></div>
-                       <div className="h-4 bg-[#E6E2DD] rounded w-full animate-pulse"></div>
-                       <div className="mt-auto h-3 bg-[#E6E2DD] rounded w-1/3 animate-pulse"></div>
+                      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent z-10" />
+                      <div className="h-5 bg-[#E6E2DD] rounded w-2/3 animate-pulse"></div>
+                      <div className="h-4 bg-[#E6E2DD] rounded w-full animate-pulse"></div>
+                      <div className="mt-auto h-3 bg-[#E6E2DD] rounded w-1/3 animate-pulse"></div>
                     </div>
                   ))}
                 </div>
@@ -511,17 +498,16 @@ export const PartnerProperties: React.FC = () => {
                   >
                     Trang trước
                   </button>
-                  
+
                   <div className="flex items-center gap-1.5">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center font-label-md text-xs transition-colors ${
-                          currentPage === page 
-                            ? 'bg-[#735C00] text-white shadow-sm' 
-                            : 'text-[#444748] hover:bg-[#F1EDE8] hover:text-[#1C1C19]'
-                        }`}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center font-label-md text-xs transition-colors ${currentPage === page
+                          ? 'bg-[#735C00] text-white shadow-sm'
+                          : 'text-[#444748] hover:bg-[#F1EDE8] hover:text-[#1C1C19]'
+                          }`}
                       >
                         {page}
                       </button>
