@@ -57,6 +57,9 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .WithMany(a => a.FlightsDepAirport)
                 .HasForeignKey(f => f.DepAirportId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
+
+            // Cấu hình kiểu decimal cho Price của chuyến bay
+            entity.Property(f => f.Price).HasColumnType("decimal(18, 2)");
         });
 
         modelBuilder.Entity<Roles>().HasData(
@@ -77,6 +80,10 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .WithMany(p => p.Hotels)
                 .HasForeignKey(h => h.PropertyTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Cấu hình kiểu decimal cho Latitude và Longitude của khách sạn
+            entity.Property(h => h.Latitude).HasColumnType("decimal(9, 6)");
+            entity.Property(h => h.Longitude).HasColumnType("decimal(9, 6)");
         });
 
         modelBuilder.Entity<Rooms>(entity =>
@@ -109,6 +116,26 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .WithMany(p => p.InverseParent)
                 .HasForeignKey(l => l.ParentId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Cấu hình kiểu decimal cho Latitude và Longitude của địa điểm
+            entity.Property(l => l.Latitude).HasColumnType("decimal(9, 6)");
+            entity.Property(l => l.Longitude).HasColumnType("decimal(9, 6)");
+        });
+
+        // Cấu hình kiểu decimal cho các thuộc tính tiền tệ của các thực thể khác
+        modelBuilder.Entity<Bookings>(entity =>
+        {
+            entity.Property(b => b.TotalPrice).HasColumnType("decimal(18, 2)");
+        });
+
+        modelBuilder.Entity<Payments>(entity =>
+        {
+            entity.Property(p => p.Amount).HasColumnType("decimal(18, 2)");
+        });
+
+        modelBuilder.Entity<RoomTypes>(entity =>
+        {
+            entity.Property(r => r.BasePrice).HasColumnType("decimal(18, 2)");
         });
 
         OnModelCreatingPartial(modelBuilder);
