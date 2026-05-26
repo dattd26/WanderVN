@@ -467,7 +467,7 @@ export const PartnerProperties: React.FC = () => {
                     <div
                       key={h.id}
                       onClick={() => handleSelectHotel(h.id)}
-                      className={`relative bg-[#FAF6F0] rounded-xl p-4.5 cursor-pointer border transition-all duration-300 group ${isActive
+                      className={`relative bg-[#FAF6F0] rounded-xl p-5 mb-4 cursor-pointer border transition-all duration-300 group ${isActive
                         ? 'border-[#735C00] ring-1 ring-[#735C00] bg-[#FAF6F0] shadow-md'
                         : 'border-[#E6E2DD]/80 hover:border-[#735C00]/50 hover:bg-[#FAF6F0]/50 hover:shadow'
                         }`}
@@ -621,6 +621,7 @@ export const PartnerProperties: React.FC = () => {
                     <RoomsTab
                       rooms={currentRooms}
                       onAddRoomClick={() => setIsAddRoomModalOpen(true)}
+                      onEditRoom={() => triggerMessage('success', 'Tính năng sửa hạng phòng đang được phát triển!')}
                       onDeleteRoom={handleDeleteRoomType}
                     />
                   )}

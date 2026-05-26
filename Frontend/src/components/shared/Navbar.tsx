@@ -70,11 +70,10 @@ export const Navbar: React.FC = () => {
               <li key={link.name} className="relative group/link py-1">
                 <Link
                   to={link.path}
-                  className={`font-label-md text-xs lg:text-[13px] xl:text-label-md uppercase tracking-wider xl:tracking-widest whitespace-nowrap transition-all duration-300 ${
-                    isActive
+                  className={`font-label-md text-xs lg:text-[13px] xl:text-label-md uppercase tracking-wider xl:tracking-widest whitespace-nowrap transition-all duration-300 ${isActive
                       ? 'text-secondary font-semibold'
                       : 'text-primary hover:text-secondary hover:opacity-80'
-                  }`}
+                    }`}
                 >
                   {link.name}
                 </Link>
