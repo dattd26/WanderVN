@@ -4,6 +4,7 @@ export interface ChatMessage {
   sender: 'user' | 'bot';
   timestamp: Date;
   hotelSuggestions?: HotelSuggestion[];
+  flightSearchUrl?: string;
 }
 
 export interface HotelSuggestion {
@@ -30,6 +31,7 @@ export interface ChatbotResponse {
   reply?: string;
   timestamp?: string;
   hotelSuggestions?: HotelSuggestion[];
+  flightSearchUrl?: string;
 }
 
 export interface ApiResponse<T> {
