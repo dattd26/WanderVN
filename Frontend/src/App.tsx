@@ -9,6 +9,7 @@ import { SearchFlights } from './pages/client/SearchFlights';
 import { FlightCheckout } from './pages/client/FlightCheckout';
 import { HotelCheckout } from './pages/client/HotelCheckout';
 import { VNPayReturn } from './pages/client/VNPayReturn';
+import { ZaloPayReturn } from './pages/client/ZaloPayReturn';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { PartnerOnboarding } from './pages/partner/PartnerOnboarding';
@@ -51,6 +52,7 @@ function AppLayout() {
           <Route path="/flights/checkout" element={<FlightCheckout />} />
           <Route path="/booking" element={<HotelCheckout />} />
           <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
+          <Route path="/payment/zalopay-return" element={<ZaloPayReturn />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/access-denied" element={<AccessDenied />} />
