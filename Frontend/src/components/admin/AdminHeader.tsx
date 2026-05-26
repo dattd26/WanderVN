@@ -1,4 +1,5 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
+import logo from '../../assets/images/logo.png';
 
 export function AdminHeader() {
   const location = useLocation();
@@ -18,6 +19,9 @@ export function AdminHeader() {
     /* ĐÃ SỬA: Thay đổi z-40 thành z-20 để không đè lên lớp backdrop đen mờ của Modal */
     <header className="flex justify-between items-center h-16 px-admin-xl w-full sticky top-0 z-20 bg-white shadow-sm border-b border-admin-outline-variant select-none">
       <div className="flex items-center gap-admin-xl flex-1">
+        <Link to="/admin/dashboard" className="flex items-center gap-2 group mr-2 shrink-0">
+          <img src={logo} alt="WanderVN Logo" className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+        </Link>
         <h2 className="font-admin-sans text-admin-headline-md font-bold text-admin-primary">
           {getHeaderTitle()}
         </h2>

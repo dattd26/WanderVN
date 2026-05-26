@@ -48,7 +48,7 @@ export const VNPayReturn: React.FC = () => {
               Thanh toán thành công
             </span>
             <h1 className="font-display-lg text-headline-lg text-primary mb-4">
-              Hành Trình Di Sản Được Xác Nhận!
+              Bạn sẽ sớm nhận được Email thông tin từ hệ thống!
             </h1>
             <p className="font-body-md text-on-surface-variant mb-8 leading-relaxed max-w-lg mx-auto">
               Chúc mừng! Yêu cầu thanh toán qua cổng <strong>VNPay</strong> đã được phê duyệt và xác thực an toàn. Chuyến đi của quý khách đã chính thức được bảo lưu.
