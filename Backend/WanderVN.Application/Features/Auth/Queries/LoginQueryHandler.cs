@@ -35,6 +35,7 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, AuthResponse>
 
         return new AuthResponse
         {
+            UserId = user.Id,
             Token = token,
             Role = user.Role?.Name ?? "Customer"
         };
