@@ -19,9 +19,11 @@ public class PartnerRepository : IPartnerRepository
         _dbContext = dbContext;
     }
 
-    public async Task<List<PartnerHotelDashboardModel>> ListMyHotelsAsync(
+    public async Task<(List<PartnerHotelDashboardModel> Items, int TotalCount)> ListMyHotelsAsync(
         int partnerId,
         int? statusFilter,
+        int pageNumber,
+        int pageSize,
         CancellationToken cancellationToken)
     {
         var connection = _dbContext.Database.GetDbConnection();
@@ -31,14 +33,19 @@ public class PartnerRepository : IPartnerRepository
         var parameters = new DynamicParameters();
         parameters.Add("PartnerId", partnerId);
         parameters.Add("Status", statusFilter);
+        parameters.Add("PageNumber", pageNumber);
+        parameters.Add("PageSize", pageSize);
 
-        var result = await connection.QueryAsync<PartnerHotelDashboardModel>(
+        using var multi = await connection.QueryMultipleAsync(
             "sp_Partner_ListMyHotels",
             parameters,
             commandType: CommandType.StoredProcedure
         );
 
-        return result.ToList();
+        var totalCount = await multi.ReadFirstAsync<int>();
+        var items = (await multi.ReadAsync<PartnerHotelDashboardModel>()).ToList();
+
+        return (items, totalCount);
     }
 
     public async Task<SubmitHotelResult> SubmitHotelAsync(

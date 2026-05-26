@@ -35,9 +35,17 @@ public class PartnerController : ControllerBase
     /// Hỗ trợ query string ?status=0 (Pending) | 1 (Approved) | 2 (Rejected).
     /// </summary>
     [HttpGet("hotels")]
-    public async Task<IActionResult> GetMyHotels([FromQuery] int? status)
+    public async Task<IActionResult> GetMyHotels(
+        [FromQuery] int? status,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 5)
     {
-        var query = new GetMyHotelsQuery { Status = status };
+        var query = new GetMyHotelsQuery 
+        { 
+            Status = status,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
         var result = await _mediator.Send(query);
         return Ok(new ApiResponse<object>(true, "Lấy danh sách thành công.", 200, result));
     }
@@ -139,6 +147,23 @@ public class PartnerController : ControllerBase
         if (!result.Success)
             return BadRequest(new ErrorResponse(result.Message, 400));
         return Ok(new ApiResponse<ToggleRoomBlockResponse>(true, result.Message, 200, result));
+    }
+
+    /// <summary>
+    /// PUT: api/v1/partner/hotels/{hotelId}/room-types/{roomTypeId}/rate-plans — Cập nhật danh sách rate plans và hệ số giá cho hạng phòng.
+    /// </summary>
+    [HttpPut("hotels/{hotelId:int}/room-types/{roomTypeId:int}/rate-plans")]
+    public async Task<IActionResult> UpdateRatePlans(
+        [FromRoute] int hotelId,
+        [FromRoute] int roomTypeId,
+        [FromBody] WanderVN.Application.Features.Partner.Commands.UpdateRatePlans.UpdateRatePlansCommand command)
+    {
+        command.HotelId = hotelId;
+        command.RoomTypeId = roomTypeId;
+        var result = await _mediator.Send(command);
+        if (!result.Success)
+            return BadRequest(new ErrorResponse(result.Message, 400));
+        return Ok(new ApiResponse<WanderVN.Application.Features.Partner.Commands.UpdateRatePlans.UpdateRatePlansResponse>(true, result.Message, 200, result));
     }
 
     /// <summary>

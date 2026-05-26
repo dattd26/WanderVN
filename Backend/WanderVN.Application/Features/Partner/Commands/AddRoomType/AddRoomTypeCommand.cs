@@ -23,6 +23,15 @@ public class AddRoomTypeCommand : IRequest<AddRoomTypeResponse>
 
     // Mô tả ngắn gọn về tiện ích và cấu trúc hạng phòng
     public string? Description { get; set; }
+    public List<RatePlanDto> RatePlans { get; set; } = new List<RatePlanDto>();
+}
+
+public class RatePlanDto
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal PriceMultiplier { get; set; }
+    public bool HasBreakfast { get; set; }
+    public bool IsRefundable { get; set; }
 }
 
 // Kết quả trả về sau khi thêm hạng phòng thành công

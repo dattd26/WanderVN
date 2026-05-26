@@ -1,11 +1,12 @@
 using MediatR;
 using WanderVN.Application.Common.Interfaces;
+using WanderVN.Application.Common.Models;
 using WanderVN.Application.Features.Partner.DTOs;
 using WanderVN.Domain.Repositories;
 
 namespace WanderVN.Application.Features.Partner.Queries.GetMyHotels;
 
-public class GetMyHotelsQueryHandler : IRequestHandler<GetMyHotelsQuery, List<PartnerHotelDto>>
+public class GetMyHotelsQueryHandler : IRequestHandler<GetMyHotelsQuery, PagedResult<PartnerHotelDto>>
 {
     private readonly IPartnerRepository _partnerRepository;
     private readonly ICurrentUserService _currentUser;
@@ -18,15 +19,21 @@ public class GetMyHotelsQueryHandler : IRequestHandler<GetMyHotelsQuery, List<Pa
         _currentUser = currentUser;
     }
 
-    public async Task<List<PartnerHotelDto>> Handle(GetMyHotelsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<PartnerHotelDto>> Handle(GetMyHotelsQuery request, CancellationToken cancellationToken)
     {
         var partnerId = _currentUser.UserId
             ?? throw new UnauthorizedAccessException("Yêu cầu xác thực để lấy danh sách khách sạn.");
 
-        var hotels = await _partnerRepository.ListMyHotelsAsync(partnerId, request.Status, cancellationToken);
+        var (hotels, totalCount) = await _partnerRepository.ListMyHotelsAsync(
+            partnerId,
+            request.Status,
+            request.PageNumber,
+            request.PageSize,
+            cancellationToken
+        );
 
-        // Map từ Domain model sang DTO của Application
-        return hotels.Select(h => new PartnerHotelDto
+        // Map từ Domain model sang DTO của Application (tiếng Việt)
+        var mappedItems = hotels.Select(h => new PartnerHotelDto
         {
             Id = h.Id,
             Name = h.Name,
@@ -46,5 +53,7 @@ public class GetMyHotelsQueryHandler : IRequestHandler<GetMyHotelsQuery, List<Pa
             RoomTypeCount = h.RoomTypeCount,
             TotalBookings = h.TotalBookings
         }).ToList();
+
+        return new PagedResult<PartnerHotelDto>(mappedItems, totalCount, request.PageNumber, request.PageSize);
     }
 }

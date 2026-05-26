@@ -44,6 +44,11 @@ export const PartnerProperties: React.FC = () => {
 
   const [hotels, setHotels] = useState<PartnerHotelDto[]>([]);
   const [selectedHotelId, setSelectedHotelId] = useState<number | null>(null);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalHotels, setTotalHotels] = useState(0);
+  const ITEMS_PER_PAGE = 5;
 
   const [isAddHotelModalOpen, setIsAddHotelModalOpen] = useState(false);
   const [isAddRoomModalOpen, setIsAddRoomModalOpen] = useState(false);
@@ -128,7 +133,13 @@ export const PartnerProperties: React.FC = () => {
     const fetchHotels = async () => {
       try {
         setLoading(true);
-        const data = await partnerService.getMyHotels();
+        const response: any = await partnerService.getMyHotels(currentPage, ITEMS_PER_PAGE);
+        const data = Array.isArray(response) ? response : (response?.items || []);
+        const fetchedTotalPages = Array.isArray(response) ? 1 : (response?.totalPages || 1);
+        const fetchedTotalCount = Array.isArray(response) ? data.length : (response?.totalCount || data.length);
+        
+        setTotalPages(fetchedTotalPages);
+        setTotalHotels(fetchedTotalCount);
 
         if (data.length === 0) {
           const fallbackHotels: PartnerHotelDto[] = [
@@ -182,7 +193,7 @@ export const PartnerProperties: React.FC = () => {
     };
 
     fetchHotels();
-  }, []);
+  }, [currentPage]);
 
   // ── Gọi API lấy danh mục loại hình lưu trú từ Backend ──
   useEffect(() => {
@@ -357,10 +368,15 @@ export const PartnerProperties: React.FC = () => {
   const handleRegisterHotelSuccess = async (newHotelId: number) => {
     try {
       setLoading(true);
-      const data = await partnerService.getMyHotels();
-      setHotels(data);
-      if (data.length > 0) {
-        const matchingNew = data.find(h => h.id === newHotelId) || data[0];
+      const response = await partnerService.getMyHotels(1, ITEMS_PER_PAGE);
+      const hotelsList = response?.items || [];
+      setHotels(hotelsList);
+      setTotalPages(response?.totalPages || 1);
+      setTotalHotels(response?.totalCount || hotelsList.length);
+      setCurrentPage(1); // Quay về trang đầu để hiển thị cơ sở vừa thêm
+      
+      if (hotelsList.length > 0) {
+        const matchingNew = hotelsList.find((h: PartnerHotelDto) => h.id === newHotelId) || hotelsList[0];
         setSelectedHotelId(matchingNew.id);
         loadHotelIntoForm(matchingNew);
         await fetchHotelDetails(matchingNew.id);
@@ -391,7 +407,7 @@ export const PartnerProperties: React.FC = () => {
         <main className="flex-1 w-full max-w-[1240px] mx-auto px-margin-mobile md:px-gutter py-10 md:py-12 space-y-8 z-10">
 
           {/* Tiêu đề & Action bar */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-5 border-b border-[#E6E2DD]">
+          <div className="sticky top-0 z-20 bg-[#FAF6F0] flex flex-col md:flex-row md:items-end justify-between gap-6 pb-5 pt-2 border-b border-[#E6E2DD]">
             <div className="space-y-1.5">
               <h1 className="font-display-lg text-headline-lg text-[#1C1C19] flex items-center gap-3">
                 Quản lý Cơ sở lưu trú
@@ -428,13 +444,18 @@ export const PartnerProperties: React.FC = () => {
             <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
               <h3 className="font-label-md text-xs uppercase tracking-widest text-[#735C00] font-bold px-1.5 flex items-center gap-2">
                 <Sliders className="h-3.5 w-3.5" />
-                Danh sách của tôi ({hotels.length})
+                Danh sách của tôi ({totalHotels || hotels.length})
               </h3>
 
               {loading ? (
-                <div className="space-y-4 animate-pulse">
-                  {[1, 2].map(i => (
-                    <div key={i} className="h-28 bg-[#FAF6F0] border border-[#E6E2DD] rounded-xl" />
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-28 bg-[#FAF6F0] border border-[#E6E2DD] rounded-xl p-4.5 flex flex-col gap-3 relative overflow-hidden">
+                       <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent z-10" />
+                       <div className="h-5 bg-[#E6E2DD] rounded w-2/3 animate-pulse"></div>
+                       <div className="h-4 bg-[#E6E2DD] rounded w-full animate-pulse"></div>
+                       <div className="mt-auto h-3 bg-[#E6E2DD] rounded w-1/3 animate-pulse"></div>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -478,6 +499,43 @@ export const PartnerProperties: React.FC = () => {
                     </div>
                   );
                 })
+              )}
+
+              {/* Pagination UI */}
+              {!loading && totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-5 border-t border-[#E6E2DD]">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="font-label-md text-xs px-3.5 py-2 border border-[#E6E2DD] rounded-lg text-[#444748] hover:bg-[#F1EDE8] hover:text-[#1C1C19] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Trang trước
+                  </button>
+                  
+                  <div className="flex items-center gap-1.5">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center font-label-md text-xs transition-colors ${
+                          currentPage === page 
+                            ? 'bg-[#735C00] text-white shadow-sm' 
+                            : 'text-[#444748] hover:bg-[#F1EDE8] hover:text-[#1C1C19]'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    className="font-label-md text-xs px-3.5 py-2 border border-[#E6E2DD] rounded-lg text-[#444748] hover:bg-[#F1EDE8] hover:text-[#1C1C19] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Trang sau
+                  </button>
+                </div>
               )}
             </div>
 

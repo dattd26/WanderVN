@@ -24,6 +24,7 @@ public interface IApplicationDbContext
     DbSet<Users> Users { get; }
     DbSet<Wishlists> Wishlists { get; }
     DbSet<PropertyTypes> PropertyTypes { get; }
+    DbSet<RatePlans> RatePlans { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

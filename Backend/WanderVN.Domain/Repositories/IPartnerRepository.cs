@@ -43,12 +43,14 @@ public class SubmitHotelResult
 public interface IPartnerRepository
 {
     /// <summary>
-    /// Lấy danh sách các khách sạn của đối tác kèm theo trạng thái duyệt và thống kê
+    /// Lấy danh sách các khách sạn của đối tác kèm theo trạng thái duyệt và thống kê có phân trang
     /// qua Stored Procedure <c>sp_Partner_ListMyHotels</c>.
     /// </summary>
-    Task<List<PartnerHotelDashboardModel>> ListMyHotelsAsync(
+    Task<(List<PartnerHotelDashboardModel> Items, int TotalCount)> ListMyHotelsAsync(
         int partnerId,
         int? statusFilter,
+        int pageNumber,
+        int pageSize,
         CancellationToken cancellationToken);
 
     /// <summary>
