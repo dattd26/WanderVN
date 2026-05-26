@@ -10,6 +10,7 @@ import { HotelCheckout } from './pages/client/HotelCheckout';
 import { VNPayReturn } from './pages/client/VNPayReturn';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 import { PartnerOnboarding } from './pages/partner/PartnerOnboarding';
 import { PartnerDashboard } from './pages/partner/PartnerDashboard';
 
@@ -47,6 +48,7 @@ function AppLayout() {
           <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           {/* Partner portal */}
           <Route path="/partner" element={<PartnerRedirect />} />

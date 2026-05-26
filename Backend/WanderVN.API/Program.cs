@@ -12,6 +12,7 @@ using WanderVN.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
 builder.Services.AddInfrastructureServices(builder.Configuration);

@@ -169,7 +169,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                                 </tr>
                                 <tr>
                                     <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Tổng tiền:</td>
-                                    <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #d32f2f;'>${totalPrice:N2} USD</td>
+                                    <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #d32f2f;'>${totalPrice:N2} VNĐ</td>
                                 </tr>
                                 <tr>
                                     <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Trạng thái đơn:</td>
