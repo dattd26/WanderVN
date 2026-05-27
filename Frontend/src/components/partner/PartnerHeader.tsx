@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { CloudCheck, LogOut, User, ChevronDown, Globe } from 'lucide-react';
+import logo from '../../assets/images/logo.png';
 
 interface PartnerHeaderProps {
   /** Nhãn trạng thái lưu nháp (vd: "Đã lưu nháp lúc 10:45") — ẩn nếu để trống */
@@ -45,13 +46,24 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({
   return (
     <header className="w-full h-16 border-b border-[#E6E2DD] flex items-center justify-between px-6 bg-[#FAF6F0]/95 backdrop-blur-md sticky top-0 z-40 select-none">
 
-      {/* Cột trái: Trạng thái lưu nháp (nếu có) */}
-      <div className="flex items-center gap-3">
-        {draftStatus && (
-          <span className="hidden sm:flex items-center gap-2 font-label-md text-[11px] uppercase tracking-wider text-[#444748]">
-            <CloudCheck className="h-4.5 w-4.5 text-[#735C00]" />
-            {draftStatus}
+      {/* Cột trái: Logo thương hiệu và Trạng thái lưu nháp (nếu có) */}
+      <div className="flex items-center gap-6">
+        <Link to="/partner/dashboard" className="flex items-center gap-2.5 group">
+          <img src={logo} alt="WanderVN Logo" className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+          <span className="font-display-lg text-base text-[#735C00] tracking-tighter transition-all duration-300 group-hover:opacity-80 font-bold flex items-center gap-1.5">
+            WanderVN
+            <span className="text-[10px] font-sans font-medium bg-[#735C00]/10 text-[#735C00] px-1.5 py-0.5 rounded-md tracking-normal">Partner</span>
           </span>
+        </Link>
+
+        {draftStatus && (
+          <>
+            <div className="h-5 w-px bg-[#E6E2DD] hidden sm:block" />
+            <span className="hidden sm:flex items-center gap-2 font-label-md text-[11px] uppercase tracking-wider text-[#444748]">
+              <CloudCheck className="h-4.5 w-4.5 text-[#735C00]" />
+              {draftStatus}
+            </span>
+          </>
         )}
       </div>
 

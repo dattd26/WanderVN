@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Hotel, User, LogOut } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
+
+import logo from '../../assets/images/logo.png';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -51,12 +53,10 @@ export const Navbar: React.FC = () => {
           : 'bg-transparent py-8'
         }`}
     >
-      <div className="flex justify-between items-center gap-4 lg:gap-6 px-margin-mobile lg:px-8 xl:px-margin-desktop w-full max-w-container-max mx-auto">
+      <div className="flex justify-between items-center gap-4 lg:gap-8 px-margin-mobile lg:px-12 xl:px-16 w-full max-w-[1440px] mx-auto">
         {/* Brand Logo - Logo thương hiệu kết hợp biểu tượng khách sạn cổ điển */}
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="bg-primary text-on-primary p-2 rounded-lg group-hover:bg-secondary transition-colors duration-300">
-            <Hotel className="h-6 w-6" />
-          </div>
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <img src={logo} alt="WanderVN Logo" className="h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
           <span className="font-display-lg text-headline-lg text-primary tracking-tighter transition-all duration-300 group-hover:opacity-80">
             WanderVN
           </span>
@@ -71,8 +71,8 @@ export const Navbar: React.FC = () => {
                 <Link
                   to={link.path}
                   className={`font-label-md text-xs lg:text-[13px] xl:text-label-md uppercase tracking-wider xl:tracking-widest whitespace-nowrap transition-all duration-300 ${isActive
-                      ? 'text-secondary font-semibold'
-                      : 'text-primary hover:text-secondary hover:opacity-80'
+                    ? 'text-secondary font-semibold'
+                    : 'text-primary hover:text-secondary hover:opacity-80'
                     }`}
                 >
                   {link.name}

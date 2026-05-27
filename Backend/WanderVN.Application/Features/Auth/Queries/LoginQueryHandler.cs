@@ -29,12 +29,18 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, AuthResponse>
             throw new UnauthorizedAccessException("Email hoặc mật khẩu không đúng.");
 
         if (user.IsActive == false)
-            throw new UnauthorizedAccessException("Tài khoản đã bị khóa.");
+        {
+            if (user.Role?.Name == "Partner")
+                throw new UnauthorizedAccessException("Tài khoản của bạn đang chờ phê duyệt.");
+            else
+                throw new UnauthorizedAccessException("Tài khoản đã bị khóa.");
+        }
 
         var token = GenerateJwtToken(user);
 
         return new AuthResponse
         {
+            UserId = user.Id,
             Token = token,
             Role = user.Role?.Name ?? "Customer"
         };

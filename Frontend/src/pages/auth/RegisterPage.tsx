@@ -193,8 +193,8 @@ export const RegisterPage: React.FC = () => {
                   type="button"
                   onClick={() => setRole('Customer')}
                   className={`py-2 text-[10px] font-semibold uppercase tracking-wider rounded transition-all duration-300 ${role === 'Customer'
-                      ? 'bg-[#B59A5A] text-white shadow-sm'
-                      : 'text-on-surface-variant hover:text-primary'
+                    ? 'bg-[#B59A5A] text-white shadow-sm'
+                    : 'text-on-surface-variant hover:text-primary'
                     }`}
                 >
                   Lữ khách
@@ -203,8 +203,8 @@ export const RegisterPage: React.FC = () => {
                   type="button"
                   onClick={() => setRole('Partner')}
                   className={`py-2 text-[10px] font-semibold uppercase tracking-wider rounded transition-all duration-300 ${role === 'Partner'
-                      ? 'bg-[#B59A5A] text-white shadow-sm'
-                      : 'text-on-surface-variant hover:text-primary'
+                    ? 'bg-[#B59A5A] text-white shadow-sm'
+                    : 'text-on-surface-variant hover:text-primary'
                     }`}
                 >
                   Đối tác
@@ -277,7 +277,7 @@ export const RegisterPage: React.FC = () => {
                 className={`block font-label-md text-xs uppercase tracking-wider transition-colors duration-300 ${errors.phoneNumber ? 'text-error' : 'text-on-surface-variant group-focus-within:text-secondary'}`}
                 htmlFor="phoneNumber"
               >
-                Số điện thoại <span className="text-on-surface-variant/50 lowercase italic">(tùy chọn)</span>
+                Số điện thoại
               </label>
               <input
                 className={`w-full bg-transparent border-b py-2 focus:outline-none focus:ring-0 transition-all placeholder:text-surface-variant/70 font-body-md text-sm bg-surface-container-lowest/10
@@ -306,7 +306,7 @@ export const RegisterPage: React.FC = () => {
                 className={`block font-label-md text-xs uppercase tracking-wider transition-colors duration-300 ${errors.password ? 'text-error' : 'text-on-surface-variant group-focus-within:text-secondary'}`}
                 htmlFor="password"
               >
-                Mật khẩu hành trình
+                Mật khẩu
               </label>
               <input
                 className={`w-full bg-transparent border-b py-2 focus:outline-none focus:ring-0 transition-all placeholder:text-surface-variant/70 font-body-md text-sm bg-surface-container-lowest/10

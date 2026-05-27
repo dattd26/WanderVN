@@ -6,6 +6,7 @@ public class ChatbotResponse
     public string? Reply { get; set; }
     public DateTime? Timestamp { get; set; }
     public List<HotelSuggestion>? HotelSuggestions { get; set; }
+    public string? FlightSearchUrl { get; set; }
 }
 
 public class HotelSuggestion
