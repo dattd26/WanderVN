@@ -118,9 +118,10 @@ export function FinanceTable({ items, isLoading, error, pageSize, onRetry, onCon
                         )}
 
                         {!isLoading && items.map((p) => {
+                            const isApproved = p.status === 'Approved';
                             const isPaid = p.status === 'Paid';
                             const isRejected = p.status === 'Rejected';
-                            const disabled = isPaid || isRejected;
+                            const isPending = p.status === 'Pending';
                             return (
                                 <tr key={p.id} className="hover:bg-admin-surface-container-low/50 transition-colors">
                                     <td className="px-admin-lg py-admin-md">
@@ -158,17 +159,27 @@ export function FinanceTable({ items, isLoading, error, pageSize, onRetry, onCon
                                         )}
                                     </td>
                                     <td className="px-admin-lg py-admin-md text-right select-none">
-                                        <button
-                                            onClick={() => !disabled && onConfirm(p)}
-                                            disabled={disabled}
-                                            className={`px-admin-md py-admin-sm rounded font-admin-sans text-admin-body-sm transition-all shadow-sm ${
-                                                disabled
-                                                    ? 'bg-admin-outline-variant text-admin-on-surface-variant opacity-60 cursor-not-allowed'
-                                                    : 'bg-admin-primary text-white hover:opacity-90 active:scale-95'
-                                            }`}
-                                        >
-                                            {isPaid ? 'Đã chi trả' : isRejected ? 'Từ chối' : 'Xác nhận chi trả'}
-                                        </button>
+                                        {isApproved ? (
+                                            <button
+                                                onClick={() => onConfirm(p)}
+                                                className="px-admin-md py-admin-sm rounded font-admin-sans text-admin-body-sm font-bold transition-all shadow-sm bg-admin-primary text-white hover:opacity-90 active:scale-95"
+                                            >
+                                                Xác nhận chi trả
+                                            </button>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-admin-sans italic text-admin-on-surface-variant">
+                                                <span className="material-symbols-outlined text-[14px]">
+                                                    {isPaid ? 'check_circle' : isRejected ? 'block' : 'hourglass_empty'}
+                                                </span>
+                                                {isPaid
+                                                    ? 'Đã chi trả'
+                                                    : isRejected
+                                                        ? 'Đã từ chối'
+                                                        : isPending
+                                                            ? 'Chờ duyệt'
+                                                            : '—'}
+                                            </span>
+                                        )}
                                     </td>
                                 </tr>
                             );

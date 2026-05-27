@@ -9,37 +9,38 @@ interface UserModalProps {
   onClose: () => void;
   onSaveSuccess?: () => void; // Callback để load lại danh sách ở trang cha sau khi lưu thành công
 }
-
-// Map tên role hiển thị → RoleId trong database
 const ROLE_OPTIONS = [
-  { label: 'Customer', roleId: 3 },
+  { label: 'Customer', roleId: 4 },
   { label: 'Partner', roleId: 1 },
-  { label: 'Admin', roleId: 4 },
+  { label: 'Admin', roleId: 2 },
 ] as const;
 
-// Map ngược: roleName từ API → roleId
+const ROLE_ID_CUSTOMER = 4;
+const ROLE_ID_PARTNER = 1;
+const ROLE_ID_ADMIN = 2;
+
 const getRoleIdFromName = (roleName?: string): number => {
   const found = ROLE_OPTIONS.find(r => r.label.toLowerCase() === roleName?.toLowerCase());
-  return found ? found.roleId : 3; // Mặc định Customer
+  return found ? found.roleId : ROLE_ID_CUSTOMER; // Mặc định Customer
 };
 
 interface FormState {
   fullName: string;
   email: string;
   phoneNumber: string;
-  roleId: number;       // Dùng RoleId thay vì roleName để gửi API đúng
+  roleId: number;       
   isActive: boolean;
   avatarUrl: string;
   password: string;
-  confirmPassword: string; // Xác nhận mật khẩu khi tạo mới
-  newPassword: string;     // Đổi mật khẩu khi update (optional)
+  confirmPassword: string; 
+  newPassword: string;    
 }
 
 const initialFormState: FormState = {
   fullName: '',
   email: '',
   phoneNumber: '',
-  roleId: 3,           // Mặc định Customer
+  roleId: ROLE_ID_CUSTOMER, 
   isActive: true,
   avatarUrl: '',
   password: '',
@@ -259,9 +260,9 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
                 <h4 className="font-admin-sans text-admin-headline-sm text-admin-primary font-bold">
                   {formData.fullName || '(Chưa có tên)'}
                 </h4>
-                <span className={`text-[11px] font-bold uppercase tracking-wider px-admin-sm py-0.5 rounded-full font-admin-sans ${formData.roleId === 4
+                <span className={`text-[11px] font-bold uppercase tracking-wider px-admin-sm py-0.5 rounded-full font-admin-sans ${formData.roleId === ROLE_ID_ADMIN
                   ? 'bg-purple-100 text-purple-800'
-                  : formData.roleId === 1
+                  : formData.roleId === ROLE_ID_PARTNER
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-green-100 text-green-800'
                   }`}>
@@ -400,6 +401,9 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
                         </option>
                       ))}
                     </select>
+                    <span className="text-[11px] text-admin-on-surface-variant font-admin-sans">
+                      ⚠️ Đổi vai trò sẽ chuyển user khỏi danh sách Customer
+                    </span>
                   </div>
                 )}
 
