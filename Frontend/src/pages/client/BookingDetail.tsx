@@ -29,11 +29,7 @@ export default function BookingDetail() {
   const token = localStorage.getItem('token');
 
   useEffect(() => {
-    if (!bookingId) {
-      setError("Không tìm thấy mã hóa đơn hợp lệ trên đường dẫn.");
-      setLoading(false);
-      return;
-    }
+    if (!bookingId) return;
 
     const fetchBookingDetail = async () => {
       try {
@@ -56,8 +52,8 @@ export default function BookingDetail() {
         } else {
           setError(resData.message || "Không thể tải thông tin đơn đặt phòng.");
         }
-      } catch (err: any) {
-        console.error("Lỗi lấy chi tiết:", err);
+      } catch (error) {
+        console.error("Lỗi lấy chi tiết:", error);
         setError("Không thể kết nối đến máy chủ Back-end. Anh hãy kiểm tra xem API đã bật chưa nhé!");
       } finally {
         setLoading(false);
@@ -88,7 +84,8 @@ export default function BookingDetail() {
       } else {
         alert(resData.message || "Có lỗi xảy ra khi hủy phòng.");
       }
-    } catch (err: any) {
+    } catch (error: unknown) {
+      console.error("Lỗi hủy phòng:", error);
       alert("Không thể kết nối đến máy chủ.");
     } finally {
       setIsProcessing(false);
@@ -116,12 +113,23 @@ export default function BookingDetail() {
       } else {
         alert(resData.message || "Có lỗi xảy ra khi xác nhận trả phòng.");
       }
-    } catch (err: any) {
+    } catch (error: unknown) {
+      console.error("Lỗi xác nhận trả phòng:", error);
       alert("Không thể kết nối đến máy chủ.");
     } finally {
       setIsProcessing(false);
     }
   };
+
+  if (!bookingId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6]">
+        <div className="text-gray-500 text-center max-w-md p-4 font-medium bg-white rounded-lg shadow-sm border border-red-100">
+          Không tìm thấy mã hóa đơn hợp lệ trên đường dẫn.
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6]"><div className="animate-pulse text-amber-700 font-serif text-xl tracking-widest">Đang tìm kiếm hành trình...</div></div>;
   if (error || !booking) return <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6]"><div className="text-gray-500 text-center max-w-md p-4 font-medium bg-white rounded-lg shadow-sm border border-red-100">{error || "Hóa đơn không tồn tại."}</div></div>;

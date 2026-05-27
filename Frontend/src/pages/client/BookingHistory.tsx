@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { hotelService } from '../../services/client/hotelService'; 
 import type { HotelBookingHistoryDto } from '../../types'; 
@@ -20,7 +20,6 @@ type TabStatus = 'all' | 'upcoming' | 'completed' | 'cancelled';
 
 export const BookingHistory: React.FC = () => {
   const [bookings, setBookings] = useState<HotelBookingHistoryDto[]>([]);
-  const [filteredBookings, setFilteredBookings] = useState<HotelBookingHistoryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabStatus>('all');
   const [error, setError] = useState<string | null>(null);
@@ -34,27 +33,23 @@ export const BookingHistory: React.FC = () => {
 
   useEffect(() => {
     // 1. Kiểm tra xem người dùng đã đăng nhập chưa
-    if (!currentUserId) {
-      setLoading(false);
-      return;
-    }
+    if (!currentUserId) return;
 
-    setLoading(true);
-    setError(null);
+    const loadBookings = async () => {
+      setLoading(true);
+      setError(null);
 
-    // 2. Gọi API lấy danh sách
-    hotelService.getMyHotelBookings(currentUserId)
-      .then((data) => {
+      try {
+        const data = await hotelService.getMyHotelBookings(currentUserId);
+
         if (!data || !Array.isArray(data)) {
           console.warn("Dữ liệu API trả về không đúng định dạng mảng:", data);
           setBookings([]);
-          setFilteredBookings([]);
           return;
         }
 
         console.log("Danh sách đơn đặt phòng tải về thành công:", data);
 
-        // Sắp xếp đơn mới đặt lên đầu tiên
         const sortedData = [...data].sort((a, b) => {
           const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -62,38 +57,42 @@ export const BookingHistory: React.FC = () => {
         });
 
         setBookings(sortedData);
-        setFilteredBookings(sortedData);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('Lỗi kết nối API lấy lịch sử đặt phòng:', err);
         setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc Server Backend C#.');
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    loadBookings();
   }, [currentUserId, refreshKey]);
 
   // Bộ lọc Tab phân loại trạng thái hành trình theo thời gian thực tế
-  useEffect(() => {
+  const filteredBookings = useMemo(() => {
     const today = new Date().setHours(0, 0, 0, 0);
     const safeBookings = Array.isArray(bookings) ? bookings : [];
 
-    let result = [...safeBookings];
     if (activeTab === 'upcoming') {
-      result = safeBookings.filter(b => 
-        b.status !== 'Cancelled' && 
-        b.checkInDate && 
+      return safeBookings.filter(b =>
+        b.status !== 'Cancelled' &&
+        b.checkInDate &&
         new Date(b.checkInDate).getTime() >= today
       );
-    } else if (activeTab === 'completed') {
-      result = safeBookings.filter(b => 
-        b.status === 'Completed' || 
+    }
+
+    if (activeTab === 'completed') {
+      return safeBookings.filter(b =>
+        b.status === 'Completed' ||
         (b.status === 'Confirmed' && b.checkOutDate && new Date(b.checkOutDate).getTime() < today)
       );
-    } else if (activeTab === 'cancelled') {
-      result = safeBookings.filter(b => b.status === 'Cancelled');
     }
-    setFilteredBookings(result);
+
+    if (activeTab === 'cancelled') {
+      return safeBookings.filter(b => b.status === 'Cancelled');
+    }
+
+    return safeBookings;
   }, [activeTab, bookings]);
 
   // Hàm helper định dạng trạng thái Badge trực quan
