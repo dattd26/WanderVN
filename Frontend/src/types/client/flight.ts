@@ -6,6 +6,8 @@ export interface FlightSearchQuery {
   departureDate: string;
   passengerType?: string;
   returnOffers?: boolean;
+  cabinClass?: string;
+  returnDate?: string;
 }
 
 export interface FlightOfferDto {

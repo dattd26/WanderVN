@@ -31,7 +31,9 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
             Destination = request.Destination,
             DepartureDate = request.DepartureDate,
             PassengerType = request.PassengerType,
-            ReturnOffers = request.ReturnOffers
+            ReturnOffers = request.ReturnOffers,
+            CabinClass = request.CabinClass,
+            ReturnDate = request.ReturnDate
         };
 
         // Gửi yêu cầu qua Service trực tiếp tới Duffel Sandbox với chặng bay thật người dùng tìm kiếm
