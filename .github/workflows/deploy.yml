@@ -39,5 +39,5 @@ jobs:
         username: ${{ secrets.SOMEE_FTP_USERNAME }}
         password: ${{ secrets.SOMEE_FTP_PASSWORD }}
         local-dir: ./publish/
-        server-dir: / # đường dẫn thư mục root trên Somee
+        server-dir: www.wandervn.somee.com/ # đường dẫn thư mục root trên Somee
         dangerous-clean-slate: false
