@@ -1,94 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { hotelReviewService } from '../../../../services';
+import type { HotelReviewDto } from '../../../../services';
 
 type HotelStatus = 'pending' | 'approved' | 'rejected';
-
-interface HotelSubmission {
-  id: string;
-  name: string;
-  location: string;
-  category: string;
-  partnerName: string;
-  partnerCode: string;
-  submittedAt: string;
-  submittedTime: string;
-  status: HotelStatus;
-  thumbnail: string;
-  gallery: string[];
-  description: string;
-  area: string;
-  scale: string;
-  roomTypes: Array<{
-    name: string;
-    summary: string;
-    icon: string;
-    price: string;
-  }>;
-}
-
-const MOCK_HOTELS: HotelSubmission[] = [
-  {
-    id: 'HTL-4421',
-    name: 'Grand Horizon Resort',
-    location: 'Đà Nẵng, Việt Nam',
-    category: 'Resort & Spa',
-    partnerName: 'Trần Hoàng Long',
-    partnerCode: 'Partner #4421',
-    submittedAt: '12/10/2023',
-    submittedTime: '14:30 - 12/10/2023',
-    status: 'pending',
-    thumbnail:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCdxldUYcyWBIHNPIf-8XJagrGJCWNpcnvDjPLUcgTaCeK79pj7rk0KAvxpHl9RhvFNbbgU3h3_r5BVtonb0uS07x-VlCzvrQWYrI0bTRID73FpwfNGj7RoEb-d_hMjbwg2PzStatQpGWXsfK0cqgaEZyJSv83FurMkut2_JeXQ5eKt1IX4yGcycehCHsUifY1KsAs2VteFuQJksOnJxn-W3Y5kroWKRn4hv-4d7qhuQOQsFnHhiHsJUiWY-oqEJt_2SGMIGZDFW-o',
-    gallery: [
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBzK7zqOKpUZO0sO96RXM4f8v9zdkgRY2ZJSxGASdswWG4OLgqpXKJ_EOFQn8shx8LRA_5XF4_E5hnYs6TjMC9N9YHJ2oN4o2cknFaxvvma-vYmfGmMB31eA4y0gOD3bV68z653BVO9Oz7bxWCrGPuNJHKPBGhfa5y6_qeH423RPrDFUHMRs-jslISiEPnTgeKcOGm52dymzen-kCiq3tjW0TmnPdM2oRx9nafDUMbTgFAmO-Hho0GLnWm09nDCG346E3wg0ij76i0',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDGaqKON-8in9cIy1n5Ik0MXwJFfSwenZQW19mIv0GPnD2DkPY12iNZUChSHdIl4OObhIFM3duwQ2TwO4nLXGrX6Ar2Etf39oK-LjkHeGQTewY_fhjBcvpktW9Cuefkyd3g5pTc_oMoR23Cysi5zOPoGUSM-3fU6v15oURRd62cFnT4q_JMSwBmyckHn0VGSXTbIKr0ztVllf1wcfwX32B2-7bMHwWvoZahFUgWAhW6cRnFpZzTTSv63KYFehUJflZ3EjoYW0rvV0Y',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuC__76HXNRLwWXbYto2uBHH76vJ5egN1wyGW2aFIidwe9nhhgGVb65Q6zh3EpsUYk2rIxyTncdD9h340RKbwJbKQF4An5p3B8idqeajPD8TOqefyK2HxaiFKwTzjMvvg7-P9tuXio2u7b0sGlOnkXJQwu5u57wqGKsvL5cj2cnJBTtvAbSOOP16GMY8HnEKqSaeVNqw1f9TkdIA5SgQ3jXxP0nmChOc28ARuUhMPVhAeYA7MhVqSHreInouppsLeDKyTyMXG78GV3o',
-    ],
-    description:
-      'Nằm tại vị trí đắc địa nhất của bờ biển Mỹ Khê, Grand Horizon Resort mang đến trải nghiệm nghỉ dưỡng đẳng cấp với 150 phòng view biển, hệ thống spa tiêu chuẩn quốc tế và 3 nhà hàng ẩm thực đa dạng.',
-    area: '12,000 m²',
-    scale: '150 Phòng',
-    roomTypes: [
-      {
-        name: 'Deluxe Ocean View',
-        summary: '45m² • 1 Giường đôi • Ban công',
-        icon: 'king_bed',
-        price: '3,200k',
-      },
-      {
-        name: 'Premium Suite',
-        summary: '85m² • Phòng khách riêng • Bồn tắm',
-        icon: 'apartment',
-        price: '5,800k',
-      },
-    ],
-  },
-  {
-    id: 'HTL-4390',
-    name: 'Urban Boutique Hotel',
-    location: 'TP. Hồ Chí Minh',
-    category: 'Boutique Hotel',
-    partnerName: 'Nguyễn Minh Anh',
-    partnerCode: 'Partner #4390',
-    submittedAt: '10/10/2023',
-    submittedTime: '09:15 - 10/10/2023',
-    status: 'approved',
-    thumbnail:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuD6ZXP6_RrKjV7HO32LaRUgqGudJfRZcFei00qCNudYBidAx14X_qg_yExzl1tBlELLMUxgNy_cVIYlAZ_AyTxAMcc3E8ml-ZWmNub6ht_H-KqMIhk-WfCg7huUbLt0oNats5MgT62GRn3BLmvs5LU5630NPNnhUetu8laYJUU_AfZ34Sz6bmEOYovTo2bjNvOq0cnt0PQroGCnTHKDE0c3CXtmNNzgDFOp6Qb9BDGTmV4WHwE9qXJrRrJpZNfJl01my6BzKgo0oM8',
-    gallery: [],
-    description:
-      'Khách sạn boutique nằm tại trung tâm Quận 1, kiến trúc hiện đại pha trộn tinh tế với nét cổ điển Pháp thuộc, phù hợp khách doanh nhân và du lịch ngắn ngày.',
-    area: '1,800 m²',
-    scale: '42 Phòng',
-    roomTypes: [
-      {
-        name: 'Classic Room',
-        summary: '28m² • 1 Giường King • Bàn làm việc',
-        icon: 'bed',
-        price: '1,650k',
-      },
-    ],
-  },
-];
 
 const STATUS_TABS: Array<{ key: HotelStatus; label: string }> = [
   { key: 'pending', label: 'Chờ duyệt' },
@@ -113,50 +27,135 @@ const STATUS_BADGE: Record<HotelStatus, { label: string; className: string }> = 
 
 export function PartnerHotelReviewTab() {
   const [activeStatus, setActiveStatus] = useState<HotelStatus>('pending');
-  const [hotels] = useState<HotelSubmission[]>(MOCK_HOTELS);
-  const [selectedId, setSelectedId] = useState<string | null>(MOCK_HOTELS[0]?.id ?? null);
+  const [hotels, setHotels] = useState<HotelReviewDto[]>([]);
+  const [counts, setCounts] = useState<{ pending: number; approved: number; rejected: number }>({
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  });
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const filteredHotels = useMemo(
-    () => hotels.filter((h) => h.status === activeStatus),
-    [hotels, activeStatus],
-  );
+  // Pagination and status states
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize] = useState(5);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const counts = useMemo(
-    () => ({
-      pending: hotels.filter((h) => h.status === 'pending').length,
-      approved: hotels.filter((h) => h.status === 'approved').length,
-      rejected: hotels.filter((h) => h.status === 'rejected').length,
-    }),
-    [hotels],
-  );
+  const statusMap: Record<HotelStatus, number> = {
+    pending: 0,
+    approved: 1,
+    rejected: 2,
+  };
+
+  const fetchCounts = useCallback(async () => {
+    try {
+      const [pendingRes, approvedRes, rejectedRes] = await Promise.all([
+        hotelReviewService.getHotelsReview({ status: 0, pageNumber: 1, pageSize: 1 }),
+        hotelReviewService.getHotelsReview({ status: 1, pageNumber: 1, pageSize: 1 }),
+        hotelReviewService.getHotelsReview({ status: 2, pageNumber: 1, pageSize: 1 }),
+      ]);
+      setCounts({
+        pending: pendingRes.totalItems,
+        approved: approvedRes.totalItems,
+        rejected: rejectedRes.totalItems,
+      });
+    } catch (err) {
+      console.error('Lỗi khi tải số lượng hồ sơ:', err);
+    }
+  }, []);
+
+  const fetchHotels = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const statusValue = statusMap[activeStatus];
+      const result = await hotelReviewService.getHotelsReview({
+        status: statusValue,
+        pageNumber,
+        pageSize,
+      });
+      setHotels(result.items);
+      setTotalItems(result.totalItems);
+      setTotalPages(result.totalPages);
+
+      // Auto select first item if list has entries
+      if (result.items.length > 0) {
+        const hasSelected = result.items.some((h) => h.id === selectedId);
+        if (!selectedId || !hasSelected) {
+          setSelectedId(result.items[0].id);
+        }
+      } else {
+        setSelectedId(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi tải dữ liệu');
+      setHotels([]);
+      setSelectedId(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeStatus, pageNumber, pageSize, selectedId]);
+
+  useEffect(() => {
+    fetchHotels();
+    fetchCounts();
+  }, [activeStatus, pageNumber, pageSize]);
+
+  const filteredHotels = hotels;
 
   const selectedHotel = useMemo(
     () => hotels.find((h) => h.id === selectedId) ?? null,
     [hotels, selectedId],
   );
 
-  const handleSelectHotel = (id: string) => {
+  const handleSelectHotel = (id: number) => {
     setSelectedId(id);
     setIsRejecting(false);
     setRejectionReason('');
   };
 
-  const handleApprove = () => {
-    if (!selectedHotel) return;
-    alert(`Đã duyệt hồ sơ "${selectedHotel.name}" thành công!`);
+  const handleApprove = async () => {
+    if (!selectedId || !selectedHotel) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn duyệt hồ sơ của khách sạn "${selectedHotel.name}"?`)) return;
+
+    setIsLoading(true);
+    try {
+      await hotelReviewService.approveHotel(selectedId);
+      alert(`Đã duyệt hồ sơ "${selectedHotel.name}" thành công!`);
+      fetchHotels();
+      fetchCounts();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Duyệt hồ sơ thất bại.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleConfirmReject = () => {
-    if (!selectedHotel) return;
+  const handleConfirmReject = async () => {
+    if (!selectedId || !selectedHotel) return;
     if (!rejectionReason.trim()) {
       alert('Vui lòng nhập lý do từ chối.');
       return;
     }
-    alert(`Đã từ chối hồ sơ "${selectedHotel.name}".\nLý do: ${rejectionReason}`);
-    setIsRejecting(false);
-    setRejectionReason('');
+    if (!window.confirm(`Bạn có chắc chắn muốn từ chối hồ sơ của khách sạn "${selectedHotel.name}"?`)) return;
+
+    setIsLoading(true);
+    try {
+      await hotelReviewService.rejectHotel(selectedId, rejectionReason);
+      alert(`Đã từ chối hồ sơ "${selectedHotel.name}".`);
+      setIsRejecting(false);
+      setRejectionReason('');
+      fetchHotels();
+      fetchCounts();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Từ chối hồ sơ thất bại.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -189,7 +188,10 @@ export function PartnerHotelReviewTab() {
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveStatus(tab.key)}
+                onClick={() => {
+                  setActiveStatus(tab.key);
+                  setPageNumber(1);
+                }}
                 className={`pb-admin-md text-admin-label-caps font-admin-sans transition-colors ${
                   isActive
                     ? 'border-b-2 border-admin-primary text-admin-primary font-bold'
@@ -224,7 +226,27 @@ export function PartnerHotelReviewTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-admin-outline-variant/30">
-              {filteredHotels.length === 0 && (
+              {isLoading && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-admin-lg py-admin-xl text-center text-admin-on-surface-variant text-admin-body-md"
+                  >
+                    Đang tải dữ liệu hồ sơ khách sạn...
+                  </td>
+                </tr>
+              )}
+              {!isLoading && error && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-admin-lg py-admin-xl text-center text-admin-error text-admin-body-md font-medium"
+                  >
+                    Gặp lỗi khi tải dữ liệu: {error}
+                  </td>
+                </tr>
+              )}
+              {!isLoading && !error && filteredHotels.length === 0 && (
                 <tr>
                   <td
                     colSpan={5}
@@ -234,7 +256,7 @@ export function PartnerHotelReviewTab() {
                   </td>
                 </tr>
               )}
-              {filteredHotels.map((hotel) => {
+              {!isLoading && !error && filteredHotels.map((hotel) => {
                 const isSelected = hotel.id === selectedId;
                 const badge = STATUS_BADGE[hotel.status];
                 return (
@@ -248,11 +270,17 @@ export function PartnerHotelReviewTab() {
                     <td className="px-admin-lg py-admin-lg">
                       <div className="flex items-center space-x-admin-md">
                         <div className="w-12 h-12 rounded-lg bg-admin-surface-container overflow-hidden">
-                          <img
-                            alt={hotel.name}
-                            src={hotel.thumbnail}
-                            className="w-full h-full object-cover"
-                          />
+                          {hotel.thumbnail ? (
+                            <img
+                              alt={hotel.name}
+                              src={hotel.thumbnail}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-admin-surface-container-high text-admin-outline">
+                              <span className="material-symbols-outlined text-[20px]">apartment</span>
+                            </div>
+                          )}
                         </div>
                         <div>
                           <p className="font-bold text-admin-primary">{hotel.name}</p>
@@ -267,7 +295,7 @@ export function PartnerHotelReviewTab() {
                       <p className="text-admin-body-sm text-admin-outline">{hotel.partnerCode}</p>
                     </td>
                     <td className="px-admin-lg py-admin-lg text-admin-body-md text-admin-on-surface-variant">
-                      {hotel.submittedAt}
+                      {hotel.submittedTime ? hotel.submittedTime.split(' - ')[1] : 'N/A'}
                     </td>
                     <td className="px-admin-lg py-admin-lg">
                       <span
@@ -293,6 +321,58 @@ export function PartnerHotelReviewTab() {
               })}
             </tbody>
           </table>
+
+          {/* Dynamic Pagination Controls */}
+          {!isLoading && !error && totalPages > 0 && (
+            <div className="px-admin-xl py-admin-md bg-admin-surface-bright border-t border-admin-outline-variant flex items-center justify-between select-none">
+              <span className="text-admin-body-sm text-admin-on-surface-variant font-admin-sans">
+                Trang{' '}
+                <span className="font-bold text-admin-primary">{pageNumber}</span> /{' '}
+                <span className="font-bold">{totalPages}</span>
+                {' '}&middot;{' '}
+                {totalItems.toLocaleString('vi-VN')} kết quả
+              </span>
+              <div className="flex items-center gap-admin-sm">
+                <button
+                  type="button"
+                  className="p-1 rounded-lg hover:bg-admin-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-admin-primary"
+                  disabled={pageNumber <= 1}
+                  onClick={() => setPageNumber(1)}
+                >
+                  <span className="material-symbols-outlined">first_page</span>
+                </button>
+                <button
+                  type="button"
+                  className="p-1 rounded-lg hover:bg-admin-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-admin-primary"
+                  disabled={pageNumber <= 1}
+                  onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
+                >
+                  <span className="material-symbols-outlined">chevron_left</span>
+                </button>
+                <div className="flex items-center px-admin-md font-admin-sans">
+                  <span className="text-admin-body-sm font-bold text-admin-primary">{pageNumber}</span>
+                  <span className="text-admin-body-sm text-admin-on-surface-variant px-admin-md">/</span>
+                  <span className="text-admin-body-sm text-admin-on-surface-variant">{totalPages}</span>
+                </div>
+                <button
+                  type="button"
+                  className="p-1 rounded-lg hover:bg-admin-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-admin-primary"
+                  disabled={pageNumber >= totalPages}
+                  onClick={() => setPageNumber(Math.min(totalPages, pageNumber + 1))}
+                >
+                  <span className="material-symbols-outlined">chevron_right</span>
+                </button>
+                <button
+                  type="button"
+                  className="p-1 rounded-lg hover:bg-admin-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-admin-primary"
+                  disabled={pageNumber >= totalPages}
+                  onClick={() => setPageNumber(totalPages)}
+                >
+                  <span className="material-symbols-outlined">last_page</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -305,7 +385,7 @@ export function PartnerHotelReviewTab() {
               </h3>
               <p className="text-admin-body-sm text-admin-on-surface-variant flex items-center">
                 <span className="material-symbols-outlined text-[16px] mr-1">history</span>
-                Gửi lúc: {selectedHotel.submittedTime}
+                Gửi lúc: {selectedHotel.submittedTime || 'N/A'}
               </p>
             </div>
             <button
@@ -320,34 +400,42 @@ export function PartnerHotelReviewTab() {
           <div className="flex-1 overflow-y-auto p-admin-lg space-y-admin-xl">
             <div className="space-y-admin-md">
               <div className="h-48 rounded-xl overflow-hidden bg-admin-surface-container border border-admin-outline-variant">
-                <img
-                  alt={`${selectedHotel.name} - Ảnh chính`}
-                  src={selectedHotel.gallery[0] ?? selectedHotel.thumbnail}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-admin-md">
-                {selectedHotel.gallery.slice(1, 3).map((src, idx) => (
-                  <div
-                    key={src + idx}
-                    className="h-20 rounded-lg overflow-hidden border border-admin-outline-variant"
-                  >
-                    <img
-                      alt={`${selectedHotel.name} - Ảnh ${idx + 2}`}
-                      src={src}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-                {selectedHotel.gallery.length > 3 && (
-                  <div className="h-20 bg-admin-surface-container-low rounded-lg border border-admin-outline-variant flex flex-col items-center justify-center text-admin-on-surface-variant cursor-pointer hover:bg-admin-surface-container transition-colors">
-                    <span className="material-symbols-outlined">add_photo_alternate</span>
-                    <span className="text-[10px] font-bold">
-                      +{selectedHotel.gallery.length - 3} ảnh
-                    </span>
+                {selectedHotel.thumbnail || (selectedHotel.gallery && selectedHotel.gallery.length > 0) ? (
+                  <img
+                    alt={`${selectedHotel.name} - Ảnh chính`}
+                    src={selectedHotel.gallery && selectedHotel.gallery.length > 0 ? selectedHotel.gallery[0] : selectedHotel.thumbnail}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-admin-surface-container text-admin-outline">
+                    <span className="material-symbols-outlined text-[48px]">apartment</span>
                   </div>
                 )}
               </div>
+              {selectedHotel.gallery && selectedHotel.gallery.length > 1 && (
+                <div className="grid grid-cols-3 gap-admin-md">
+                  {selectedHotel.gallery.slice(1, 3).map((src, idx) => (
+                    <div
+                      key={src + idx}
+                      className="h-20 rounded-lg overflow-hidden border border-admin-outline-variant"
+                    >
+                      <img
+                        alt={`${selectedHotel.name} - Ảnh ${idx + 2}`}
+                        src={src}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                  {selectedHotel.gallery.length > 3 && (
+                    <div className="h-20 bg-admin-surface-container-low rounded-lg border border-admin-outline-variant flex flex-col items-center justify-center text-admin-on-surface-variant cursor-pointer hover:bg-admin-surface-container transition-colors">
+                      <span className="material-symbols-outlined">add_photo_alternate</span>
+                      <span className="text-[10px] font-bold">
+                        +{selectedHotel.gallery.length - 3} ảnh
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-admin-md">
@@ -378,30 +466,43 @@ export function PartnerHotelReviewTab() {
               </div>
             </div>
 
-            <div className="space-y-admin-md">
-              <h5 className="text-admin-label-caps font-admin-sans text-admin-primary border-b border-admin-outline-variant pb-admin-xs">
-                LOẠI PHÒNG ĐĂNG KÝ
-              </h5>
-              <div className="space-y-admin-sm">
-                {selectedHotel.roomTypes.map((room) => (
-                  <div
-                    key={room.name}
-                    className="flex items-center justify-between p-admin-md border border-admin-outline-variant rounded-lg"
-                  >
-                    <div className="flex items-center space-x-admin-md">
-                      <span className="material-symbols-outlined text-admin-secondary">
-                        {room.icon}
-                      </span>
-                      <div>
-                        <p className="font-bold text-admin-primary">{room.name}</p>
-                        <p className="text-admin-body-sm text-admin-outline">{room.summary}</p>
-                      </div>
-                    </div>
-                    <p className="font-bold text-admin-secondary">{room.price}</p>
-                  </div>
-                ))}
+            {selectedHotel.status === 'rejected' && selectedHotel.rejectReason && (
+              <div className="space-y-admin-xs bg-admin-error/10 p-admin-md rounded-xl border border-admin-error/20">
+                <span className="text-admin-label-caps font-admin-sans text-admin-error font-bold block">
+                  LÝ DO ĐÃ TỪ CHỐI
+                </span>
+                <p className="text-admin-body-md text-admin-error font-medium">
+                  {selectedHotel.rejectReason}
+                </p>
               </div>
-            </div>
+            )}
+
+            {selectedHotel.roomTypes && selectedHotel.roomTypes.length > 0 && (
+              <div className="space-y-admin-md">
+                <h5 className="text-admin-label-caps font-admin-sans text-admin-primary border-b border-admin-outline-variant pb-admin-xs">
+                  LOẠI PHÒNG ĐĂNG KÝ
+                </h5>
+                <div className="space-y-admin-sm">
+                  {selectedHotel.roomTypes.map((room) => (
+                    <div
+                      key={room.name}
+                      className="flex items-center justify-between p-admin-md border border-admin-outline-variant rounded-lg"
+                    >
+                      <div className="flex items-center space-x-admin-md">
+                        <span className="material-symbols-outlined text-admin-secondary">
+                          {room.icon}
+                        </span>
+                        <div>
+                          <p className="font-bold text-admin-primary">{room.name}</p>
+                          <p className="text-admin-body-sm text-admin-outline">{room.summary}</p>
+                        </div>
+                      </div>
+                      <p className="font-bold text-admin-secondary">{room.price}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {isRejecting && (
               <div className="space-y-admin-md bg-admin-error/10 p-admin-md rounded-xl border border-admin-error/20">
