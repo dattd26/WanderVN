@@ -12,6 +12,7 @@ export interface RegisterData {
 }
 
 export interface AuthResponse {
+  userId: number;
   token: string;
   role: string;
 }

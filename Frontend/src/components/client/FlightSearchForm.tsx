@@ -5,7 +5,17 @@ interface FlightSearchFormProps {
   initialOrigin?: string;
   initialDestination?: string;
   initialDepartureDate?: string;
-  onSearch: (origin: string, destination: string, departureDate: string) => void;
+  initialReturnDate?: string;
+  initialTripType?: 'round-trip' | 'one-way';
+  initialCabinClass?: 'business' | 'economy';
+  onSearch: (
+    origin: string,
+    destination: string,
+    departureDate: string,
+    tripType: 'round-trip' | 'one-way',
+    cabinClass: 'business' | 'economy',
+    returnDate?: string
+  ) => void;
 }
 
 // Danh sách các sân bay tiêu biểu tại Việt Nam phục vụ việc chọn nhanh
@@ -21,31 +31,41 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
   initialOrigin = 'HAN',
   initialDestination = 'SGN',
   initialDepartureDate = '',
+  initialReturnDate = '',
+  initialTripType = 'one-way',
+  initialCabinClass = 'business',
   onSearch
 }) => {
-  // Khởi tạo các trạng thái lựa chọn và giá trị nhập liệu
-  const [tripType, setTripType] = useState<'round-trip' | 'one-way'>('one-way');
-  const [cabinClass, setCabinClass] = useState<'business' | 'economy'>('business');
+  const [tripType, setTripType] = useState<'round-trip' | 'one-way'>(initialTripType);
+  const [cabinClass, setCabinClass] = useState<'business' | 'economy'>(initialCabinClass);
 
   const [origin, setOrigin] = useState(initialOrigin);
   const [destination, setDestination] = useState(initialDestination);
   const [departureDate, setDepartureDate] = useState(() => {
     if (initialDepartureDate) return initialDepartureDate;
-    // Mặc định ngày đi là 7 ngày sau để tránh sát ngày Sandbox
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 7);
     return futureDate.toISOString().split('T')[0];
   });
+  const [returnDate, setReturnDate] = useState(() => {
+    if (initialReturnDate) return initialReturnDate;
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 10);
+    return futureDate.toISOString().split('T')[0];
+  });
   const [guests, setGuests] = useState('1 Người');
 
-  // Hàm xử lý gửi yêu cầu tìm kiếm lên component cha
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (origin === destination) {
       alert('⚠️ Điểm xuất phát và điểm đến không được trùng nhau.');
       return;
     }
-    onSearch(origin, destination, departureDate);
+    if (tripType === 'round-trip' && returnDate <= departureDate) {
+      alert('⚠️ Ngày trở về phải sau ngày khởi hành.');
+      return;
+    }
+    onSearch(origin, destination, departureDate, tripType, cabinClass, tripType === 'round-trip' ? returnDate : undefined);
   };
 
   return (
@@ -113,7 +133,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
       </div>
 
       {/* Các trường nhập liệu điểm xuất phát, điểm đến, ngày bay, số khách */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+      <div className={`grid grid-cols-1 gap-6 items-end ${tripType === 'round-trip' ? 'md:grid-cols-6' : 'md:grid-cols-5'}`}>
         {/* Điểm xuất phát (Origin) */}
         <div className="space-y-2">
           <label className="text-caption text-white/50 block font-medium uppercase tracking-wider">
@@ -172,6 +192,25 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
             />
           </div>
         </div>
+
+        {/* Ngày trở về (Return Date) — chỉ hiện khi khứ hồi */}
+        {tripType === 'round-trip' && (
+          <div className="space-y-2">
+            <label className="text-caption text-white/50 block font-medium uppercase tracking-wider">
+              Ngày trở về
+            </label>
+            <div className="flex items-center gap-2 border-b border-white/20 pb-2">
+              <Calendar className="text-white/50 h-5 w-5 shrink-0" />
+              <input
+                type="date"
+                value={returnDate}
+                min={departureDate}
+                onChange={(e) => setReturnDate(e.target.value)}
+                className="bg-transparent border-none p-0 text-white focus:ring-0 w-full font-body-md text-body-md cursor-pointer [color-scheme:dark]"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Hành khách (Guests) */}
         <div className="space-y-2">

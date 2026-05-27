@@ -10,4 +10,6 @@ public class DuffelOfferRequestDto
     public string DepartureDate { get; set; } = string.Empty;
     public string PassengerType { get; set; } = "adult";
     public bool ReturnOffers { get; set; } = true;
+    public string CabinClass { get; set; } = "business";
+    public string ReturnDate { get; set; } = string.Empty;
 }

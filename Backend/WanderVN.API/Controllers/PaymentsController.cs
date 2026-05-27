@@ -4,9 +4,12 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using WanderVN.API.Common.Responses;
+using WanderVN.Application.DTOs.Request;
 using WanderVN.Application.DTOs.Response;
 using WanderVN.Application.Features.Payments.Commands.CreateVNPayUrl;
+using WanderVN.Application.Features.Payments.Commands.CreateZaloPayUrl;
 using WanderVN.Application.Features.Payments.Commands.ProcessVNPayIpn;
+using WanderVN.Application.Features.Payments.Commands.ProcessZaloPayCallback;
 
 namespace WanderVN.API.Controllers;
 
@@ -50,9 +53,9 @@ public class PaymentsController : ControllerBase
     /// Kênh tạo URL thanh toán ZaloPay cho đơn đặt dịch vụ.
     /// </summary>
     [HttpPost("create-zalopay-url")]
-    public async Task<IActionResult> CreateZaloPayUrl([FromBody] WanderVN.Application.DTOs.Request.CreateZaloPayUrlRequestDto request)
+    public async Task<IActionResult> CreateZaloPayUrl([FromBody] CreateZaloPayUrlRequestDto request)
     {
-        var command = new WanderVN.Application.Features.Payments.Commands.CreateZaloPayUrl.CreateZaloPayUrlCommand
+        var command = new CreateZaloPayUrlCommand
         {
             BookingId = request.BookingId
         };
@@ -102,7 +105,7 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> ZaloPayCallback([FromBody] ZaloPayCallbackRequestDto request)
     {
         Console.WriteLine($"ZaloPay Callback: {request.Data} - {request.Mac}");
-        var command = new WanderVN.Application.Features.Payments.Commands.ProcessZaloPayCallback.ProcessZaloPayCallbackCommand
+        var command = new ProcessZaloPayCallbackCommand
         {
             Data = request.Data,
             Mac = request.Mac

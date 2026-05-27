@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { MessageCircle, X, Send, Plane } from 'lucide-react';
 import type { ChatMessage } from '../types/chatbot.types';
 import { ChatbotService } from '../services/chatbotService';
 
@@ -10,6 +11,103 @@ interface ChatWidgetProps {
   location?: string;
   guests?: number;
 }
+
+// Bộ phân tích cú pháp Markdown mini để hiển thị nội dung tin nhắn đẹp và rõ ràng
+const parseInline = (text: string, isUserMessage: boolean = false) => {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={index} className={`font-semibold ${isUserMessage ? 'text-white underline decoration-white/20' : 'text-blue-700'}`}>
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+};
+
+const MarkdownRenderer = ({ text, isUser = false }: { text: string; isUser?: boolean }) => {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+
+  let currentList: React.ReactNode[] = [];
+  let currentListType: 'ul' | 'ol' | null = null;
+  let keyCounter = 0;
+
+  const flushList = () => {
+    if (currentListType && currentList.length > 0) {
+      const ListTag = currentListType;
+      const listClass = currentListType === 'ol'
+        ? "list-decimal pl-5 my-1.5 space-y-1 text-sm text-inherit"
+        : "list-disc pl-5 my-1.5 space-y-1 text-sm text-inherit";
+      elements.push(
+        <ListTag key={`list-${keyCounter++}`} className={listClass}>
+          {currentList}
+        </ListTag>
+      );
+      currentList = [];
+      currentListType = null;
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushList();
+      elements.push(<div key={`space-${keyCounter++}`} className="h-1.5" />);
+      continue;
+    }
+
+    // Kiểm tra danh sách có thứ tự (e.g. "1. **Tên khách sạn**")
+    const olMatch = line.match(/^(\s*)(\d+)\.\s+(.*)$/);
+    if (olMatch) {
+      if (currentListType !== 'ol') {
+        flushList();
+        currentListType = 'ol';
+      }
+      const content = olMatch[3];
+      currentList.push(
+        <li key={`li-${keyCounter++}`} className="text-sm leading-relaxed text-inherit">
+          {parseInline(content, isUser)}
+        </li>
+      );
+      continue;
+    }
+
+    // Kiểm tra danh sách không thứ tự (e.g. "* **Địa chỉ:**")
+    const ulMatch = line.match(/^(\s*)([*+-])\s+(.*)$/);
+    if (ulMatch) {
+      if (currentListType !== 'ul') {
+        flushList();
+        currentListType = 'ul';
+      }
+      const content = ulMatch[3];
+      currentList.push(
+        <li key={`li-${keyCounter++}`} className="text-sm leading-relaxed text-inherit">
+          {parseInline(content, isUser)}
+        </li>
+      );
+      continue;
+    }
+
+    // Đoạn văn bản thông thường
+    flushList();
+    elements.push(
+      <p key={`p-${keyCounter++}`} className="text-sm leading-relaxed mb-1 text-inherit">
+        {parseInline(line, isUser)}
+      </p>
+    );
+  }
+
+  flushList();
+
+  return <div className="markdown-body text-inherit">{elements}</div>;
+};
 
 export default function ChatWidget({
   userId,
@@ -70,6 +168,7 @@ export default function ChatWidget({
           sender: 'bot',
           timestamp: new Date(),
           hotelSuggestions: response.hotelSuggestions,
+          flightSearchUrl: response.flightSearchUrl,
         };
         setMessages((prev) => [...prev, botMessage]);
       }
@@ -109,7 +208,7 @@ export default function ChatWidget({
 
       {/* Chat Widget */}
       {isOpen && (
-        <div className="flex flex-col w-96 h-[600px] bg-white rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+        <div className="flex flex-col w-[420px] h-[600px] bg-white rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 border border-gray-100">
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
             <div className="flex items-center gap-2">
@@ -126,41 +225,57 @@ export default function ChatWidget({
           </div>
 
           {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-            {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-xs px-4 py-2 rounded-lg ${message.sender === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-none'
-                    : 'bg-gray-200 text-gray-900 rounded-bl-none'
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+            {messages.map((message) => {
+              const isUser = message.sender === 'user';
+              return (
+                <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`max-w-[85%] px-4 py-3 rounded-2xl ${
+                      isUser
+                        ? 'bg-blue-600 text-white rounded-br-none shadow-sm'
+                        : 'bg-white text-gray-800 border border-gray-100 shadow-sm rounded-bl-none'
                     }`}
-                >
-                  <p className="text-sm">{message.text}</p>
-                  {message.hotelSuggestions && message.hotelSuggestions.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      {message.hotelSuggestions.slice(0, 3).map((hotel) => (
-                        <div
-                          key={hotel.hotelId}
-                          className="bg-white bg-opacity-20 p-2 rounded text-xs"
+                  >
+                    <MarkdownRenderer text={message.text} isUser={isUser} />
+                    {message.hotelSuggestions && message.hotelSuggestions.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {message.hotelSuggestions.slice(0, 3).map((hotel) => (
+                          <Link
+                            key={hotel.hotelId}
+                            to={`/hotel/${hotel.hotelId}`}
+                            className="block bg-blue-50/50 hover:bg-blue-50 border border-blue-100 p-2.5 rounded-lg text-xs transition-colors"
+                          >
+                            <p className="font-semibold text-blue-900">{hotel.name}</p>
+                            {hotel.address && <p className="text-gray-600 mt-0.5">{hotel.address}</p>}
+                            {hotel.price && <p className="text-gray-700 font-medium mt-0.5">Giá: {hotel.price.toLocaleString('vi-VN')} VNĐ/đêm</p>}
+                            {hotel.starRating && <p className="text-yellow-500 mt-0.5">{'★'.repeat(hotel.starRating)}</p>}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                    {message.flightSearchUrl && (
+                      <div className="mt-3">
+                        <a
+                          href={message.flightSearchUrl}
+                          className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors"
                         >
-                          <p className="font-semibold">{hotel.name}</p>
-                          {hotel.address && <p className="opacity-90">{hotel.address}</p>}
-                          {hotel.price && <p className="opacity-90">Giá: ${hotel.price.toFixed(2)}</p>}
-                          {hotel.starRating && <p className="opacity-90">⭐ {hotel.starRating}/5</p>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                          <Plane size={14} />
+                          Tìm chuyến bay ngay
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-200 text-gray-900 px-4 py-2 rounded-lg rounded-bl-none">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce delay-100"></div>
-                    <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce delay-200"></div>
+                <div className="bg-white border border-gray-100 shadow-sm px-4 py-3 rounded-2xl rounded-bl-none">
+                  <div className="flex gap-1 items-center h-4">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-100"></div>
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-200"></div>
                   </div>
                 </div>
               </div>

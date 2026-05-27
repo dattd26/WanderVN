@@ -7,15 +7,13 @@ namespace WanderVN.Infrastructure.Repositories;
 
 public class HotelsRepository : GenericRepository<Hotels>, IHotelsRepository
 {
-    private readonly WanderVNDbContext _dbContext;
-
     public HotelsRepository(WanderVNDbContext context) : base(context)
     {
     }
 
     public async Task<Hotels?> GetHotelByIdWithDetails(int id, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Hotels
+        return await _context.Hotels
             .Include(h => h.Location)
             .Include(h => h.RoomTypes)
             .Include(h => h.HotelImages)

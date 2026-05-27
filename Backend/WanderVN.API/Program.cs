@@ -17,6 +17,8 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPartnerPayoutRepository, PartnerPayoutRepository>();
 
 // Truy cập HttpContext từ Application layer (ICurrentUserService)
 builder.Services.AddHttpContextAccessor();
