@@ -1,10 +1,11 @@
 import { request } from '../shared/apiClient';
-import type { HotelDetailDto, CreateHotelBookingRequest, HotelBookingResponse } from '../../types';
+import type { HotelDetailDto, CreateHotelBookingRequest, HotelBookingResponse ,HotelBookingHistoryDto} from '../../types';
 
 export const hotelService = {
   /**
    * Lấy chi tiết thông tin khách sạn và danh sách các hạng phòng có sẵn theo ID
    */
+
   async getHotelDetail(id: number | string): Promise<HotelDetailDto> {
     return request<HotelDetailDto>(`/hotels/${id}`);
   },
@@ -17,6 +18,10 @@ export const hotelService = {
       method: 'POST',
       body: JSON.stringify(bookingRequest),
     });
+  },
+  async getMyHotelBookings(userId: number | string): Promise<HotelBookingHistoryDto[]> {
+    return request<HotelBookingHistoryDto[]>(`/bookings/user/${userId}`);
   }
+  
 };
 

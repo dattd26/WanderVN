@@ -18,6 +18,8 @@ import { PartnerProperties } from './pages/partner/PartnerProperties';
 import { PartnerFinance } from './pages/partner/PartnerFinance';
 import { AccessDenied } from './pages/auth/AccessDenied';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import { BookingHistory } from './pages/client/BookingHistory'; 
+import BookingDetail from './pages/client/BookingDetail';
 
 /** Component điều hướng thông minh cho luồng đối tác (Partner Redirect).
  * Nếu người dùng đã đăng nhập (có token JWT trong localStorage), chuyển hướng thẳng tới Dashboard.
@@ -57,6 +59,8 @@ function AppLayout() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/access-denied" element={<AccessDenied />} />
+          <Route path="/booking-history" element={<BookingHistory />} />
+          <Route path="/booking-history/:bookingId" element={<BookingDetail />} />
 
           {/* Partner portal */}
           <Route path="/partner" element={<PartnerRedirect />} />

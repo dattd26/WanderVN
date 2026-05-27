@@ -44,14 +44,16 @@ export const HotelCheckout: React.FC = () => {
   // Trạng thái modal thông báo đặt phòng thành công bằng thẻ tín dụng (Demo)
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successBookingCode, setSuccessBookingCode] = useState('');
+  const storedUserStr = localStorage.getItem('user');
+  const storedUser = storedUserStr ? JSON.parse(storedUserStr) : {};
 
   // Thông tin khách hàng đặt phòng
   const [guestForm, setGuestForm] = useState({
     title: 'mr',
-    fullName: 'NGUYỄN VĂN A',
-    email: 'nguyenvana@example.com',
-    phoneNumber: '+84901234567',
-    passportNumber: 'B1234567',
+    fullName: storedUser.fullName || localStorage.getItem('fullName') || localStorage.getItem('username') || '',
+    email: storedUser.email || localStorage.getItem('email') || '',
+    phoneNumber: storedUser.phone || storedUser.phoneNumber || localStorage.getItem('phone') || '',
+    passportNumber: storedUser.passportNumber || '', // Thường khách tự nhập
     gender: 'm'
   });
 
@@ -103,13 +105,18 @@ export const HotelCheckout: React.FC = () => {
     setBookingLoading(true);
     setErrorMessage(null);
 
-    const bookingRequest: CreateHotelBookingRequest = {
-      userId: 1, // Mock User ID đã đăng nhập trên ứng dụng
-      roomTypeId: room.id,
-      checkInDate: checkInDate,
-      checkOutDate: checkOutDate,
-      totalPrice: totalAmount
-    };
+    // 1. Lấy UserId của người dùng đang đăng nhập từ localStorage ra (ép kiểu về số)
+const storedUserId = localStorage.getItem('userId') || localStorage.getItem('user_id');
+const currentUserId = storedUserId ? parseInt(storedUserId, 10) : 4005; // Dự phòng nếu lỗi thì dùng 4005
+
+// 2. Thay số 1 thành biến currentUserId vừa lấy
+const bookingRequest: CreateHotelBookingRequest = {
+  userId: currentUserId, // 👈 Đã đổi thành ID động xịn mịn!
+  roomTypeId: room.id,
+  checkInDate: checkInDate,
+  checkOutDate: checkOutDate,
+  totalPrice: totalAmount
+};
 
     try {
       const response = await hotelService.createHotelBooking(bookingRequest);
@@ -193,86 +200,88 @@ export const HotelCheckout: React.FC = () => {
           <div className="lg:col-span-8 space-y-10">
 
             {/* Khối 1: Thông tin khách hàng */}
-            <div className="border border-outline-variant/30 p-6 md:p-8 bg-surface-container-lowest rounded-lg">
-              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-outline-variant/20">
-                <span className="font-headline-md text-headline-md text-outline">01</span>
-                <h2 className="font-headline-lg text-headline-md text-primary">Thông Tin Khách Lưu Trú</h2>
-              </div>
+        <div className="border border-outline-variant/30 p-6 md:p-8 bg-surface-container-lowest rounded-lg">
+          <div className="flex items-center gap-4 mb-6 pb-6 border-b border-outline-variant/20">
+            <span className="font-headline-md text-headline-md text-outline">01</span>
+            <h2 className="font-headline-lg text-headline-md text-primary">Thông Tin Khách Lưu Trú</h2>
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col gap-1.5 col-span-1 md:col-span-2">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">
-                    Danh xưng
-                  </label>
-                  <select
-                    value={guestForm.title}
-                    onChange={(e) => setGuestForm({ ...guestForm, title: e.target.value })}
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors cursor-pointer text-on-surface"
-                  >
-                    <option className="bg-surface text-on-surface" value="mr">Ông (Mr.)</option>
-                    <option className="bg-surface text-on-surface" value="ms">Bà (Ms.)</option>
-                    <option className="bg-surface text-on-surface" value="mrs">Cô/Chị (Mrs.)</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">
-                    Họ và Tên khách (Không dấu)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={guestForm.fullName}
-                    onChange={(e) => setGuestForm({ ...guestForm, fullName: e.target.value.toUpperCase() })}
-                    placeholder="e.g. NGUYEN VAN A"
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 uppercase focus:border-b-primary transition-colors text-on-surface"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">
-                    Địa chỉ Email
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={guestForm.email}
-                    onChange={(e) => setGuestForm({ ...guestForm, email: e.target.value })}
-                    placeholder="e.g. nguyenvana@example.com"
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors text-on-surface"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">
-                    Số điện thoại liên hệ
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={guestForm.phoneNumber}
-                    onChange={(e) => setGuestForm({ ...guestForm, phoneNumber: e.target.value })}
-                    placeholder="e.g. +84 901 234 567"
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors text-on-surface"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">
-                    Số Hộ Chiếu (Passport) / CCCD
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={guestForm.passportNumber}
-                    onChange={(e) => setGuestForm({ ...guestForm, passportNumber: e.target.value.toUpperCase() })}
-                    placeholder="e.g. 036200012345"
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 uppercase focus:border-b-primary transition-colors text-on-surface"
-                  />
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-1.5 col-span-1 md:col-span-2">
+              <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">
+                Danh xưng
+              </label>
+              <select
+                value={guestForm.title}
+                onChange={(e) => setGuestForm({ ...guestForm, title: e.target.value })}
+                className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors cursor-pointer text-on-surface"
+              >
+                <option className="bg-surface text-on-surface" value="mr">Ông (Mr.)</option>
+                <option className="bg-surface text-on-surface" value="ms">Bà (Ms.)</option>
+                <option className="bg-surface text-on-surface" value="mrs">Cô/Chị (Mrs.)</option>
+              </select>
             </div>
 
+            {/* Lúc này fullName sẽ tự nhận giá trị từ localStorage nếu có, nếu không thì rỗng */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">
+                Họ và Tên khách (Không dấu)
+              </label>
+              <input
+                type="text"
+                required
+                value={guestForm.fullName} 
+                onChange={(e) => setGuestForm({ ...guestForm, fullName: e.target.value.toUpperCase() })}
+                placeholder="e.g. NGUYEN VAN A"
+                className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 uppercase focus:border-b-primary transition-colors text-on-surface"
+              />
+            </div>
+
+            {/* Email cũng tự động điền */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">
+                Địa chỉ Email
+              </label>
+              <input
+                type="email"
+                required
+                value={guestForm.email}
+                onChange={(e) => setGuestForm({ ...guestForm, email: e.target.value })}
+                placeholder="e.g. nguyenvana@example.com"
+                className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors text-on-surface"
+              />
+            </div>
+
+            {/* Số điện thoại cũng tự động điền */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">
+                Số điện thoại liên hệ
+              </label>
+              <input
+                type="tel"
+                required
+                value={guestForm.phoneNumber}
+                onChange={(e) => setGuestForm({ ...guestForm, phoneNumber: e.target.value })}
+                placeholder="e.g. +84 901 234 567"
+                className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors text-on-surface"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">
+                Số Hộ Chiếu (Passport) / CCCD
+              </label>
+              <input
+                type="text"
+                required
+                value={guestForm.passportNumber}
+                onChange={(e) => setGuestForm({ ...guestForm, passportNumber: e.target.value.toUpperCase() })}
+                placeholder="e.g. 036200012345"
+                className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 uppercase focus:border-b-primary transition-colors text-on-surface"
+              />
+            </div>
+          </div>
+        </div>
             {/* Khối 2: Tùy chọn phương thức thanh toán */}
             <div className="border border-outline-variant/30 p-6 md:p-8 bg-surface-container-lowest rounded-lg">
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-outline-variant/20">

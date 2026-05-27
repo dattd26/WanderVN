@@ -67,7 +67,19 @@ export const LoginPage: React.FC = () => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.role);
       localStorage.setItem('userEmail', email);
-      localStorage.setItem('userId', data.userId.toString());
+      try {
+  // Giải mã phần thân (payload) của JWT Token dạng chuỗi Base64
+  const tokenPayload = JSON.parse(atob(data.token.split('.')[1]));
+  
+  // Lấy ID ra (C# thường lưu trong trường 'nameid' hoặc 'sub' hoặc 'id')
+  const actualUserId = tokenPayload.nameid || tokenPayload.sub || tokenPayload.id;
+  
+  if (actualUserId) {
+    localStorage.setItem('userId', actualUserId.toString());
+  }
+} catch (error) {
+  console.error("Lỗi giải mã token để lấy userId:", error);
+}
 
       setToastMessage('Chào mừng quay trở lại! Đang tải hành trình của bạn...');
 
