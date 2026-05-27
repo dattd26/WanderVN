@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Duyệt hồ sơ khách sạn | WanderVN Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab {
+            border-bottom: 2px solid #002B5B;
+            color: #001736;
+            font-weight: 600;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "outline": "#747780",
+                      "on-secondary-container": "#003370",
+                      "on-tertiary-fixed": "#360f00",
+                      "surface-container": "#e5eeff",
+                      "secondary": "#115cb9",
+                      "error": "#ba1a1a",
+                      "surface-bright": "#f8f9ff",
+                      "secondary-fixed": "#d7e2ff",
+                      "on-primary-fixed": "#001b3d",
+                      "on-secondary-fixed-variant": "#004491",
+                      "primary-container": "#002b5b",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-container": "#cd805d",
+                      "primary-fixed": "#d6e3ff",
+                      "outline-variant": "#c4c6d0",
+                      "tertiary-container": "#4f1c02",
+                      "on-surface-variant": "#43474f",
+                      "on-surface": "#0b1c30",
+                      "surface": "#f8f9ff",
+                      "primary-fixed-dim": "#a9c7ff",
+                      "surface-dim": "#cbdbf5",
+                      "tertiary-fixed": "#ffdbcd",
+                      "surface-container-highest": "#d3e4fe",
+                      "inverse-on-surface": "#eaf1ff",
+                      "surface-tint": "#405f91",
+                      "primary": "#001736",
+                      "secondary-container": "#659dfe",
+                      "tertiary": "#2f0c00",
+                      "on-error-container": "#93000a",
+                      "secondary-fixed-dim": "#acc7ff",
+                      "surface-container-low": "#eff4ff",
+                      "on-tertiary-fixed-variant": "#713619",
+                      "on-primary-container": "#7594ca",
+                      "background": "#f8f9ff",
+                      "on-background": "#0b1c30",
+                      "inverse-primary": "#a9c7ff",
+                      "on-tertiary": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#d3e4fe",
+                      "inverse-surface": "#213145",
+                      "on-primary-fixed-variant": "#264778",
+                      "surface-container-lowest": "#ffffff",
+                      "on-error": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "surface-container-high": "#dce9ff",
+                      "tertiary-fixed-dim": "#ffb596",
+                      "on-secondary-fixed": "#001a40"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "sm": "8px",
+                      "xs": "4px",
+                      "container-max": "1440px",
+                      "base": "4px",
+                      "md": "16px",
+                      "sidebar-width": "260px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "display-lg": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "body-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "data-mono": ["JetBrains Mono"],
+                      "label-caps": ["Inter"],
+                      "headline-sm": ["Inter"],
+                      "headline-md": ["Inter"]
+              },
+              "fontSize": {
+                      "display-lg": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-sm": ["13px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "data-mono": ["14px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                      "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "headline-sm": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[260px] bg-primary-container dark:bg-primary flex flex-col py-lg px-md space-y-base overflow-y-auto border-r border-outline-variant dark:border-outline z-50">
+<div class="flex items-center space-x-md px-sm mb-xl">
+<div class="w-10 h-10 bg-on-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container text-[24px]" style="font-variation-settings: 'FILL' 1;">travel_explore</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-headline-sm font-bold text-on-primary-container dark:text-on-primary">WanderVN</h1>
+<p class="text-label-caps font-label-caps text-on-primary-container/60">Admin Console</p>
+</div>
+</div>
+<nav class="flex-1 space-y-xs">
+<a class="flex items-center space-x-md px-md py-sm text-on-primary-container/80 hover:bg-secondary-container hover:text-on-secondary-container transition-all rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-caps font-label-caps">Dashboard</span>
+</a>
+<a class="flex items-center space-x-md px-md py-sm text-on-primary-container/80 hover:bg-secondary-container hover:text-on-secondary-container transition-all rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-label-caps font-label-caps">Users</span>
+</a>
+<a class="flex items-center space-x-md px-md py-sm bg-secondary text-on-secondary rounded-lg font-bold cursor-pointer active:scale-95 duration-150 shadow-sm" href="#">
+<span class="material-symbols-outlined">handshake</span>
+<span class="text-label-caps font-label-caps">Partners</span>
+</a>
+<a class="flex items-center space-x-md px-md py-sm text-on-primary-container/80 hover:bg-secondary-container hover:text-on-secondary-container transition-all rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">article</span>
+<span class="text-label-caps font-label-caps">Content</span>
+</a>
+<a class="flex items-center space-x-md px-md py-sm text-on-primary-container/80 hover:bg-secondary-container hover:text-on-secondary-container transition-all rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-label-caps font-label-caps">Finance</span>
+</a>
+</nav>
+<div class="pt-xl border-t border-on-primary-container/10 space-y-xs">
+<a class="flex items-center space-x-md px-md py-sm text-on-primary-container/80 hover:bg-secondary-container hover:text-on-secondary-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-caps font-label-caps">Settings</span>
+</a>
+<a class="flex items-center space-x-md px-md py-sm text-on-primary-container/80 hover:bg-secondary-container hover:text-on-secondary-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span class="text-label-caps font-label-caps">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-[260px] flex-1 flex flex-col h-screen overflow-hidden">
+<!-- TopNavBar -->
+<header class="h-16 flex justify-between items-center w-full px-lg bg-surface-container-lowest sticky top-0 z-40 border-b border-outline-variant">
+<div class="flex items-center flex-1 max-w-xl">
+<div class="relative w-full group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full pl-10 pr-4 py-2 text-body-md focus:ring-2 focus:ring-primary-container transition-all" placeholder="Tìm kiếm hồ sơ khách sạn..." type="text"/>
+</div>
+</div>
+<div class="flex items-center space-x-md">
+<div class="flex space-x-sm">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border-2 border-white"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined">chat_bubble</span>
+</button>
+</div>
+<div class="h-8 w-[1px] bg-outline-variant mx-sm"></div>
+<div class="flex items-center space-x-sm">
+<div class="text-right hidden md:block">
+<p class="text-body-md font-bold text-primary">Admin</p>
+<p class="text-[10px] text-outline font-label-caps">SUPER USER</p>
+</div>
+<img alt="Admin profile photo" class="w-10 h-10 rounded-full border border-outline-variant object-cover" data-alt="A professional headshot of a corporate administrator in a sleek modern office. The individual is wearing a charcoal suit and has a confident, approachable expression. The background is a blurred high-end tech office with soft blue lighting, echoing the corporate minimalism of the WanderVN brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqExqK3ra2vLna9m2wbHCbRwmIQaYeUWpA1U2M8fjip42g-e6rNPXxhw4X-p0-SBo_ZIUZG3RXxL2WToJd6rjoug1QgAhasylu9CCGiWSO1KODyYmY3mEv1G6EebAmhODwg0HHQfat81c3rFL1pq0TESZwjOZ5jws9FLU9_1ncXxbzeAbQGiuzr8GugJK_In1H80DszgiHabo-x_CNRm7UISGmQyY7BWVWQBaAMC3JUgZRVaA1s7psJrEOSTJwAmcf8Mlna2zVIWk"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Content Area -->
+<div class="flex-1 overflow-hidden flex">
+<!-- List Section -->
+<div class="flex-1 flex flex-col p-lg space-y-lg overflow-y-auto">
+<div class="flex items-end justify-between">
+<div>
+<nav class="flex space-x-sm mb-xs text-outline text-body-sm">
+<span>Quản lý</span>
+<span>/</span>
+<span class="text-primary font-medium">Duyệt hồ sơ khách sạn</span>
+</nav>
+<h2 class="text-display-lg font-display-lg text-primary">Duyệt hồ sơ khách sạn</h2>
+</div>
+<button class="bg-primary text-on-primary px-lg py-sm rounded-lg flex items-center space-x-sm hover:opacity-90 transition-opacity active:scale-95">
+<span class="material-symbols-outlined text-[20px]">download</span>
+<span class="text-label-caps font-label-caps">Xuất báo cáo</span>
+</button>
+</div>
+<!-- Status Filter Tabs -->
+<div class="flex space-x-xl border-b border-outline-variant">
+<button class="pb-md text-label-caps font-label-caps active-tab">Chờ duyệt (0)</button>
+<button class="pb-md text-label-caps font-label-caps text-on-surface-variant hover:text-primary transition-colors">Đã duyệt (1)</button>
+<button class="pb-md text-label-caps font-label-caps text-on-surface-variant hover:text-primary transition-colors">Bị từ chối (2)</button>
+</div>
+<!-- Table Area -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<table class="w-full border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-left">
+<th class="px-lg py-md text-label-caps font-label-caps text-on-surface-variant">KHÁCH SẠN &amp; VỊ TRÍ</th>
+<th class="px-lg py-md text-label-caps font-label-caps text-on-surface-variant">ĐỐI TÁC</th>
+<th class="px-lg py-md text-label-caps font-label-caps text-on-surface-variant">NGÀY GỬI</th>
+<th class="px-lg py-md text-label-caps font-label-caps text-on-surface-variant">TRẠNG THÁI</th>
+<th class="px-lg py-md text-label-caps font-label-caps text-on-surface-variant text-right">THAO TÁC</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/30">
+<!-- Active Selection Row -->
+<tr class="hover:bg-surface-container-low/50 transition-colors bg-surface-container-high/20">
+<td class="px-lg py-lg">
+<div class="flex items-center space-x-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden">
+<img alt="Grand Horizon Resort" class="w-full h-full object-cover" data-alt="Luxurious resort property at sunset, featuring a grand architectural design with infinity pools and palm trees. The lighting is warm and golden, creating a premium travel destination feel. The image is crisp and professional, suited for a high-end travel management platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdxldUYcyWBIHNPIf-8XJagrGJCWNpcnvDjPLUcgTaCeK79pj7rk0KAvxpHl9RhvFNbbgU3h3_r5BVtonb0uS07x-VlCzvrQWYrI0bTRID73FpwfNGj7RoEb-d_hMjbwg2PzStatQpGWXsfK0cqgaEZyJSv83FurMkut2_JeXQ5eKt1IX4yGcycehCHsUifY1KsAs2VteFuQJksOnJxn-W3Y5kroWKRn4hv-4d7qhuQOQsFnHhiHsJUiWY-oqEJt_2SGMIGZDFW-o"/>
+</div>
+<div>
+<p class="font-bold text-primary">Grand Horizon Resort</p>
+<p class="text-body-sm text-on-surface-variant">Đà Nẵng, Việt Nam</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-lg">
+<p class="text-body-md font-medium">Trần Hoàng Long</p>
+<p class="text-body-sm text-outline">Partner #4421</p>
+</td>
+<td class="px-lg py-lg text-body-md text-on-surface-variant">12/10/2023</td>
+<td class="px-lg py-lg">
+<span class="px-sm py-1 bg-secondary-fixed text-on-secondary-fixed-variant text-[11px] font-bold rounded-sm uppercase tracking-wider">Chờ duyệt</span>
+</td>
+<td class="px-lg py-lg text-right">
+<button class="text-secondary font-bold text-label-caps hover:underline">Xem chi tiết</button>
+</td>
+</tr>
+<!-- Other Rows -->
+<tr class="hover:bg-surface-container-low/50 transition-colors opacity-70">
+<td class="px-lg py-lg">
+<div class="flex items-center space-x-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden grayscale">
+<img alt="Urban Boutique Hotel" class="w-full h-full object-cover" data-alt="A chic urban boutique hotel facade with modern glass architecture and minimalist lighting. The setting is a metropolitan street at twilight, radiating a sophisticated and contemporary vibe with clean lines and high-contrast shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6ZXP6_RrKjV7HO32LaRUgqGudJfRZcFei00qCNudYBidAx14X_qg_yExzl1tBlELLMUxgNy_cVIYlAZ_AyTxAMcc3E8ml-ZWmNub6ht_H-KqMIhk-WfCg7huUbLt0oNats5MgT62GRn3BLmvs5LU5630NPNnhUetu8laYJUU_AfZ34Sz6bmEOYovTo2bjNvOq0cnt0PQroGCnTHKDE0c3CXtmNNzgDFOp6Qb9BDGTmV4WHwE9qXJrRrJpZNfJl01my6BzKgo0oM8"/>
+</div>
+<div>
+<p class="font-bold text-primary">Urban Boutique Hotel</p>
+<p class="text-body-sm text-on-surface-variant">TP. Hồ Chí Minh</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-lg">
+<p class="text-body-md font-medium">Nguyễn Minh Anh</p>
+<p class="text-body-sm text-outline">Partner #4390</p>
+</td>
+<td class="px-lg py-lg text-body-md text-on-surface-variant">10/10/2023</td>
+<td class="px-lg py-lg">
+<span class="px-sm py-1 bg-surface-container-highest text-on-surface-variant text-[11px] font-bold rounded-sm uppercase tracking-wider">Đã duyệt</span>
+</td>
+<td class="px-lg py-lg text-right">
+<button class="text-secondary font-bold text-label-caps hover:underline">Xem chi tiết</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Review Detail Side Panel -->
+<aside class="w-[480px] bg-surface-container-lowest border-l border-outline-variant flex flex-col shadow-2xl relative z-30">
+<div class="p-lg border-b border-outline-variant flex justify-between items-start">
+<div>
+<h3 class="text-headline-sm font-headline-sm text-primary mb-1">Chi tiết hồ sơ</h3>
+<p class="text-body-sm text-on-surface-variant flex items-center">
+<span class="material-symbols-outlined text-[16px] mr-1">history</span>
+                            Gửi lúc: 14:30 - 12/10/2023
+                        </p>
+</div>
+<button class="p-2 hover:bg-surface-container rounded-full text-on-surface-variant">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-lg space-y-xl">
+<!-- Image Gallery -->
+<div class="space-y-md">
+<div class="h-48 rounded-xl overflow-hidden bg-surface-container border border-outline-variant">
+<img alt="Main Hotel Image" class="w-full h-full object-cover" data-alt="Interior of a luxury hotel suite with floor-to-ceiling windows overlooking a tropical coastline. The furniture is minimalist and high-end, featuring natural wood and soft cream fabrics. The morning light is bright and airy, creating an atmosphere of quiet luxury and absolute comfort." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzK7zqOKpUZO0sO96RXM4f8v9zdkgRY2ZJSxGASdswWG4OLgqpXKJ_EOFQn8shx8LRA_5XF4_E5hnYs6TjMC9N9YHJ2oN4o2cknFaxvvma-vYmfGmMB31eA4y0gOD3bV68z653BVO9Oz7bxWCrGPuNJHKPBGhfa5y6_qeH423RPrDFUHMRs-jslISiEPnTgeKcOGm52dymzen-kCiq3tjW0TmnPdM2oRx9nafDUMbTgFAmO-Hho0GLnWm09nDCG346E3wg0ij76i0"/>
+</div>
+<div class="grid grid-cols-3 gap-md">
+<div class="h-20 rounded-lg overflow-hidden border border-outline-variant">
+<img alt="Pool Area" class="w-full h-full object-cover" data-alt="Crystal clear blue infinity pool merging with the horizon of the ocean. Modern white lounge chairs are neatly arranged on a clean stone deck. The aesthetic is extremely polished and serene, using a cool blue and white palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGaqKON-8in9cIy1n5Ik0MXwJFfSwenZQW19mIv0GPnD2DkPY12iNZUChSHdIl4OObhIFM3duwQ2TwO4nLXGrX6Ar2Etf39oK-LjkHeGQTewY_fhjBcvpktW9Cuefkyd3g5pTc_oMoR23Cysi5zOPoGUSM-3fU6v15oURRd62cFnT4q_JMSwBmyckHn0VGSXTbIKr0ztVllf1wcfwX32B2-7bMHwWvoZahFUgWAhW6cRnFpZzTTSv63KYFehUJflZ3EjoYW0rvV0Y"/>
+</div>
+<div class="h-20 rounded-lg overflow-hidden border border-outline-variant">
+<img alt="Dining Room" class="w-full h-full object-cover" data-alt="An upscale hotel restaurant with intimate lighting and designer furniture. The tables are elegantly set with white linens and crystal glassware. The ambiance is warm and exclusive, typical of a high-end corporate travel recommendation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC__76HXNRLwWXbYto2uBHH76vJ5egN1wyGW2aFIidwe9nhhgGVb65Q6zh3EpsUYk2rIxyTncdD9h340RKbwJbKQF4An5p3B8idqeajPD8TOqefyK2HxaiFKwTzjMvvg7-P9tuXio2u7b0sGlOnkXJQwu5u57wqGKsvL5cj2cnJBTtvAbSOOP16GMY8HnEKqSaeVNqw1f9TkdIA5SgQ3jXxP0nmChOc28ARuUhMPVhAeYA7MhVqSHreInouppsLeDKyTyMXG78GV3o"/>
+</div>
+<div class="h-20 bg-surface-container-low rounded-lg border border-outline-variant flex flex-col items-center justify-center text-on-surface-variant cursor-pointer hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">add_photo_alternate</span>
+<span class="text-[10px] font-bold">+12 ảnh</span>
+</div>
+</div>
+</div>
+<!-- General Info -->
+<div class="space-y-md">
+<div>
+<span class="px-sm py-1 bg-primary-container text-on-primary-container text-[10px] font-bold rounded uppercase tracking-widest mb-xs inline-block">Resort &amp; Spa</span>
+<h4 class="text-headline-md font-headline-md text-primary">Grand Horizon Resort</h4>
+</div>
+<p class="text-body-md text-on-surface-variant leading-relaxed">
+                            Nằm tại vị trí đắc địa nhất của bờ biển Mỹ Khê, Grand Horizon Resort mang đến trải nghiệm nghỉ dưỡng đẳng cấp với 150 phòng view biển, hệ thống spa tiêu chuẩn quốc tế và 3 nhà hàng ẩm thực đa dạng.
+                        </p>
+<div class="grid grid-cols-2 gap-md">
+<div class="p-md bg-surface-container-low rounded-lg border border-outline-variant">
+<p class="text-label-caps font-label-caps text-outline mb-xs">DIỆN TÍCH</p>
+<p class="font-bold text-primary">12,000 m²</p>
+</div>
+<div class="p-md bg-surface-container-low rounded-lg border border-outline-variant">
+<p class="text-label-caps font-label-caps text-outline mb-xs">QUY MÔ</p>
+<p class="font-bold text-primary">150 Phòng</p>
+</div>
+</div>
+</div>
+<!-- Room Types -->
+<div class="space-y-md">
+<h5 class="text-label-caps font-label-caps text-primary border-b border-outline-variant pb-xs">LOẠI PHÒNG ĐĂNG KÝ</h5>
+<div class="space-y-sm">
+<div class="flex items-center justify-between p-md border border-outline-variant rounded-lg">
+<div class="flex items-center space-x-md">
+<span class="material-symbols-outlined text-secondary">king_bed</span>
+<div>
+<p class="font-bold text-primary">Deluxe Ocean View</p>
+<p class="text-body-sm text-outline">45m² • 1 Giường đôi • Ban công</p>
+</div>
+</div>
+<p class="font-bold text-secondary">3,200k</p>
+</div>
+<div class="flex items-center justify-between p-md border border-outline-variant rounded-lg">
+<div class="flex items-center space-x-md">
+<span class="material-symbols-outlined text-secondary">apartment</span>
+<div>
+<p class="font-bold text-primary">Premium Suite</p>
+<p class="text-body-sm text-outline">85m² • Phòng khách riêng • Bồn tắm</p>
+</div>
+</div>
+<p class="font-bold text-secondary">5,800k</p>
+</div>
+</div>
+</div>
+<!-- Rejection Reason (Hidden by default, shown via JS) -->
+<div class="space-y-md hidden bg-error-container/20 p-md rounded-xl border border-error/20" id="rejection-box">
+<label class="text-label-caps font-label-caps text-error font-bold block">LÝ DO TỪ CHỐI *</label>
+<textarea class="w-full rounded-lg border-outline-variant bg-white text-body-md focus:ring-error focus:border-error" id="rejection-reason" placeholder="Nhập lý do cụ thể để đối tác điều chỉnh..." rows="3"></textarea>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="p-lg bg-surface-container-low border-t border-outline-variant flex flex-col space-y-md">
+<div class="flex space-x-md">
+<button class="flex-1 px-lg py-md border border-error text-error font-bold rounded-lg hover:bg-error/5 transition-colors active:scale-95 text-label-caps font-label-caps" id="btn-reject-init">Từ chối</button>
+<button class="flex-[2] px-lg py-md bg-primary-container text-on-primary-container font-bold rounded-lg hover:opacity-90 transition-opacity active:scale-95 text-label-caps font-label-caps" id="btn-approve">Duyệt hồ sơ</button>
+</div>
+<!-- Confirm Rejection Action -->
+<div class="hidden flex space-x-md animate-in slide-in-from-bottom-4" id="rejection-actions">
+<button class="flex-1 px-lg py-md border border-outline text-outline font-bold rounded-lg hover:bg-surface-container-highest transition-colors text-label-caps font-label-caps" id="btn-cancel-reject">Hủy</button>
+<button class="flex-[2] px-lg py-md bg-error text-on-error font-bold rounded-lg hover:opacity-90 transition-opacity text-label-caps font-label-caps">Xác nhận từ chối</button>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<script>
+        const btnRejectInit = document.getElementById('btn-reject-init');
+        const btnApprove = document.getElementById('btn-approve');
+        const btnCancelReject = document.getElementById('btn-cancel-reject');
+        const rejectionBox = document.getElementById('rejection-box');
+        const rejectionActions = document.getElementById('rejection-actions');
+        const footerPrimaryRow = btnRejectInit.parentElement;
+
+        btnRejectInit.addEventListener('click', () => {
+            rejectionBox.classList.remove('hidden');
+            rejectionActions.classList.remove('hidden');
+            footerPrimaryRow.classList.add('hidden');
+            document.getElementById('rejection-reason').focus();
+        });
+
+        btnCancelReject.addEventListener('click', () => {
+            rejectionBox.classList.add('hidden');
+            rejectionActions.classList.add('hidden');
+            footerPrimaryRow.classList.remove('hidden');
+        });
+
+        btnApprove.addEventListener('click', () => {
+            alert('Đã duyệt hồ sơ thành công!');
+        });
+    </script>
+</body></html>

@@ -25,13 +25,13 @@ export function PartnerListTable({
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-admin-surface-container-low border-b border-admin-outline-variant select-none">
-                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">PARTNER NAME</th>
-                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">TYPE</th>
-                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">PHONE</th>
-                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">JOINED DATE</th>
-                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">REVENUE</th>
-                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase text-center">STATUS</th>
-                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase text-right">ACTIONS</th>
+                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">TÊN ĐỐI TÁC</th>
+                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">LOẠI</th>
+                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">SỐ ĐIỆN THOẠI</th>
+                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">NGÀY THAM GIA</th>
+                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase">DOANH THU</th>
+                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase text-center">TRẠNG THÁI</th>
+                            <th className="px-admin-lg py-admin-md font-admin-sans text-admin-label-caps text-admin-on-surface-variant uppercase text-right">THAO TÁC</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-admin-outline-variant">
@@ -95,7 +95,7 @@ export function PartnerListTable({
                                     </td>
                                     <td className="px-admin-lg py-admin-lg">
                                         <span className="px-2 py-1 text-[10px] font-bold rounded-sm uppercase tracking-wider bg-admin-secondary-fixed text-admin-on-secondary-fixed-variant">
-                                            {partner.roleName || 'Partner'}
+                                            {partner.roleName === 'Partner' ? 'Đối tác' : (partner.roleName || 'Đối tác')}
                                         </span>
                                     </td>
                                     <td className="px-admin-lg py-admin-lg font-admin-sans text-admin-body-sm text-admin-on-surface-variant">

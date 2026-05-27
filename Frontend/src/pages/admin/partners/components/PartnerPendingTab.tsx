@@ -14,6 +14,17 @@ interface PartnerPendingTabProps {
     onViewProfile?: (id: string) => void;
 }
 
+const TYPE_LABEL: Record<PartnerApplication['type'], string> = {
+    Stay: 'Lưu trú',
+    Flight: 'Chuyến bay',
+};
+
+const STATUS_LABEL: Record<PartnerApplication['status'], string> = {
+    Pending: 'Chờ duyệt',
+    Approved: 'Đã duyệt',
+    Rejected: 'Đã từ chối',
+};
+
 export function PartnerPendingTab({
     applications,
     onApprove,
@@ -24,7 +35,7 @@ export function PartnerPendingTab({
         return (
             <div className="p-admin-lg">
                 <div className="p-admin-lg text-center text-admin-on-surface-variant font-admin-sans">
-                    No applications pending approval.
+                    Không có hồ sơ nào đang chờ duyệt.
                 </div>
             </div>
         );
@@ -55,11 +66,11 @@ export function PartnerPendingTab({
                                             {app.name}
                                         </h3>
                                         <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider ${app.type === 'Stay' ? 'bg-admin-surface-variant text-admin-on-surface' : 'bg-admin-secondary-fixed text-admin-on-secondary-fixed-variant'}`}>
-                                            {app.type}
+                                            {TYPE_LABEL[app.type]}
                                         </span>
                                     </div>
                                     <p className="text-admin-body-sm text-admin-on-surface-variant mt-1 font-admin-sans">
-                                        Application ID: <span className="font-admin-mono">{app.id}</span> • {app.time}
+                                        Mã hồ sơ: <span className="font-admin-mono">{app.id}</span> • {app.time}
                                     </p>
                                 </div>
                             </div>
@@ -70,24 +81,24 @@ export function PartnerPendingTab({
                                             onClick={() => onViewProfile?.(app.id)}
                                             className="px-admin-md py-admin-sm font-body-md font-bold text-admin-secondary hover:bg-admin-secondary-container/10 rounded transition-colors"
                                         >
-                                            View Profile
+                                            Xem hồ sơ
                                         </button>
                                         <button
                                             onClick={() => onApprove?.(app.id)}
                                             className="px-admin-md py-admin-sm bg-admin-primary text-white font-bold rounded hover:bg-admin-on-background transition-colors"
                                         >
-                                            Approve
+                                            Duyệt
                                         </button>
                                         <button
                                             onClick={() => onReject?.(app.id)}
                                             className="px-admin-md py-admin-sm border border-error text-error font-bold rounded hover:bg-error-container transition-colors"
                                         >
-                                            Reject
+                                            Từ chối
                                         </button>
                                     </>
                                 ) : (
                                     <span className={`px-admin-lg py-admin-sm font-bold text-sm ${isApproved ? 'text-green-600' : 'text-error'}`}>
-                                        {app.status}
+                                        {STATUS_LABEL[app.status]}
                                     </span>
                                 )}
                             </div>

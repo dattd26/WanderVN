@@ -3,14 +3,15 @@ import { userService } from '../../../services';
 import type { UserDto, PagedResult } from '../../../types';
 import { PartnerModal } from './PartnerModal';
 import { PartnerStatsCards } from './components/PartnerStatsCards';
-import { PartnerTabs } from './components/PartnerTabs';
+import { PartnerTabs, type PartnerTabKey } from './components/PartnerTabs';
 import { PartnerPendingTab } from './components/PartnerPendingTab';
 import { PartnerListTable } from './components/PartnerListTable';
 import { PartnerPagination } from './components/PartnerPagination';
 import { PartnerTableFilters } from './components/PartnerTableFilters';
+import { PartnerHotelReviewTab } from './components/PartnerHotelReviewTab';
 
 export function AdminPartners() {
-  const [activeTab, setActiveTab] = useState<'pending' | 'list'>('list');
+  const [activeTab, setActiveTab] = useState<PartnerTabKey>('list');
 
   // --- Dữ liệu Partner List ---
   const [pagedResult, setPagedResult] = useState<PagedResult<UserDto> | null>(null);
@@ -131,12 +132,14 @@ export function AdminPartners() {
         <PartnerTabs activeTab={activeTab} onChange={setActiveTab} />
 
         {activeTab === 'pending' && (
-          <PartnerPendingTab 
-            applications={applications} 
+          <PartnerPendingTab
+            applications={applications}
             onApprove={(id) => handleTogglePartner(Number(id), false)}
             onReject={(id) => alert(`Chức năng từ chối đối tác ${id} đang được phát triển.`)}
           />
         )}
+
+        {activeTab === 'hotel-review' && <PartnerHotelReviewTab />}
 
         {activeTab === 'list' && (
           <>

@@ -55,8 +55,8 @@ export function PartnerTableFilters({
                     className="bg-white border border-admin-outline-variant rounded-lg text-admin-body-sm py-admin-sm px-admin-md focus:outline-none text-admin-on-surface"
                 >
                     <option value="">Tất cả trạng thái</option>
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
+                    <option value="true">Đang hoạt động</option>
+                    <option value="false">Đã khóa</option>
                 </select>
             </div>
 
