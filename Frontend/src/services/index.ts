@@ -11,4 +11,5 @@ export * from './client/geocodingService';
 export * from './partner/partnerService';
 export * from './userService';
 export * from './payoutService';
+export * from './roleService';
 

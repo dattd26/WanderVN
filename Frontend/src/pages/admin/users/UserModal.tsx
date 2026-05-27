@@ -1,45 +1,32 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom'; // <-- Đã thêm Portal để sửa triệt để lỗi trắng Header
-import { userService } from '../../../services';
-import type { UserDetailsDto, UserHotelDto } from '../../../types';
+import { userService, roleService } from '../../../services';
+import type { UserDetailsDto, UserHotelDto, RoleDto } from '../../../types';
 
 interface UserModalProps {
   isOpen: boolean;
-  userId: number | null; // null = chế độ tạo mới, number = chế độ sửa
+  userId: number | null;
   onClose: () => void;
-  onSaveSuccess?: () => void; // Callback để load lại danh sách ở trang cha sau khi lưu thành công
+  onSaveSuccess?: () => void;
 }
-
-// Map tên role hiển thị → RoleId trong database
-const ROLE_OPTIONS = [
-  { label: 'Customer', roleId: 3 },
-  { label: 'Partner', roleId: 1 },
-  { label: 'Admin', roleId: 4 },
-] as const;
-
-// Map ngược: roleName từ API → roleId
-const getRoleIdFromName = (roleName?: string): number => {
-  const found = ROLE_OPTIONS.find(r => r.label.toLowerCase() === roleName?.toLowerCase());
-  return found ? found.roleId : 3; // Mặc định Customer
-};
 
 interface FormState {
   fullName: string;
   email: string;
   phoneNumber: string;
-  roleId: number;       // Dùng RoleId thay vì roleName để gửi API đúng
+  roleId: number;
   isActive: boolean;
   avatarUrl: string;
   password: string;
-  confirmPassword: string; // Xác nhận mật khẩu khi tạo mới
-  newPassword: string;     // Đổi mật khẩu khi update (optional)
+  confirmPassword: string;
+  newPassword: string;
 }
 
 const initialFormState: FormState = {
   fullName: '',
   email: '',
   phoneNumber: '',
-  roleId: 3,           // Mặc định Customer
+  roleId: 0, // Sẽ được set lại sau khi roles tải xong (mặc định Customer)
   isActive: true,
   avatarUrl: '',
   password: '',
@@ -50,12 +37,29 @@ const initialFormState: FormState = {
 export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalProps) {
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [hotels, setHotels] = useState<UserHotelDto[]>([]);
+  const [roles, setRoles] = useState<RoleDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const isEditMode = userId !== null;
+
+  const findRoleIdByName = (list: RoleDto[], roleName?: string): number => {
+    const found = list.find((r) => r.name.toLowerCase() === roleName?.toLowerCase());
+    return found?.id ?? list.find((r) => r.name.toLowerCase() === 'customer')?.id ?? 0;
+  };
+
+  // Tải danh sách Roles động từ backend mỗi khi modal mở (tránh hard-code RoleId)
+  useEffect(() => {
+    if (!isOpen) return;
+    roleService
+      .getRoles()
+      .then(setRoles)
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : 'Không tải được danh sách vai trò')
+      );
+  }, [isOpen]);
 
   // Fetch dữ liệu khi ở chế độ chỉnh sửa
   useEffect(() => {
@@ -73,7 +77,7 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
               fullName: data.fullName || '',
               email: data.email || '',
               phoneNumber: data.phoneNumber || '',
-              roleId: getRoleIdFromName(data.roleName),
+              roleId: findRoleIdByName(roles, data.roleName),
               isActive: data.isActive !== false,
               avatarUrl: data.avatarUrl || '',
               password: '',
@@ -87,8 +91,7 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
           )
           .finally(() => setIsLoading(false));
       } else {
-        // Chế độ tạo mới: Reset về trạng thái trống
-        setFormData(initialFormState);
+        setFormData({ ...initialFormState, roleId: findRoleIdByName(roles, 'Customer') });
         setHotels([]);
         setError(null);
         setSuccessMsg(null);
@@ -96,7 +99,7 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [isOpen, userId, isEditMode]);
+  }, [isOpen, userId, isEditMode, roles]);
 
   if (!isOpen) return null;
 
@@ -107,13 +110,11 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
     return name.slice(0, 2).toUpperCase();
   };
 
-  // Xử lý sự kiện lưu Form (Cả Create lẫn Update)
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
 
-    // --- Validation phía client ---
     if (!isEditMode) {
       if (!formData.email.trim()) {
         setError('Vui lòng nhập địa chỉ email.');
@@ -177,7 +178,14 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
     }
   };
 
-  const roleName = ROLE_OPTIONS.find(r => r.roleId === formData.roleId)?.label ?? 'Customer';
+  const roleName = roles.find((r) => r.id === formData.roleId)?.name ?? 'Customer';
+  const roleLower = roleName.toLowerCase();
+  const roleBadgeClass =
+    roleLower === 'admin'
+      ? 'bg-purple-100 text-purple-800'
+      : roleLower === 'partner'
+        ? 'bg-blue-100 text-blue-800'
+        : 'bg-green-100 text-green-800';
 
   // ĐÃ SỬA: Sử dụng createPortal để đưa cấu trúc Modal ra hẳn body HTML, giải quyết triệt để lỗi che khuất
   return createPortal(
@@ -259,11 +267,7 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
                 <h4 className="font-admin-sans text-admin-headline-sm text-admin-primary font-bold">
                   {formData.fullName || '(Chưa có tên)'}
                 </h4>
-                <span className={`text-[11px] font-bold uppercase tracking-wider px-admin-sm py-0.5 rounded-full font-admin-sans ${formData.roleId === 4
-                  ? 'bg-purple-100 text-purple-800'
-                  : formData.roleId === 1
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-green-100 text-green-800'
+                <span className={`text-[11px] font-bold uppercase tracking-wider px-admin-sm py-0.5 rounded-full font-admin-sans ${roleBadgeClass
                   }`}>
                   {roleName}
                 </span>
@@ -394,12 +398,19 @@ export function UserModal({ isOpen, userId, onClose, onSaveSuccess }: UserModalP
                       onChange={(e) => setFormData({ ...formData, roleId: Number(e.target.value) })}
                       className="px-admin-md py-admin-sm bg-admin-surface-bright border border-admin-outline-variant/60 rounded-lg text-admin-body-md text-admin-on-surface focus:outline-none focus:border-admin-primary focus:ring-1 focus:ring-admin-primary transition-all cursor-pointer"
                     >
-                      {ROLE_OPTIONS.map(r => (
-                        <option key={r.roleId} value={r.roleId}>
-                          {r.label} (ID: {r.roleId})
-                        </option>
-                      ))}
+                      {roles.length === 0 ? (
+                        <option value={0} disabled>Đang tải vai trò…</option>
+                      ) : (
+                        roles.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.name}
+                          </option>
+                        ))
+                      )}
                     </select>
+                    <span className="text-[11px] text-admin-on-surface-variant font-admin-sans">
+                      ⚠️ Đổi vai trò sẽ chuyển user khỏi danh sách Customer
+                    </span>
                   </div>
                 )}
 

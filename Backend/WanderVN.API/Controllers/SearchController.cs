@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using WanderVN.API.Common.Responses;
+using WanderVN.Application.DTOs.Response;
 using WanderVN.Application.Features.Flights.Queries.SearchFlights;
 using WanderVN.Application.Features.Hotels.Queries.SearchHotels;
 using WanderVN.Application.Features.Hotels.Queries.SearchAutocomplete;
@@ -55,10 +56,10 @@ public class SearchController : ControllerBase
     {
         var data = await _mediator.Send(query);
         
-        var response = new ApiResponse<List<WanderVN.Application.DTOs.Response.FlightOfferDto>>(
-            true, 
-            "Tìm kiếm chuyến bay thành công!", 
-            200, 
+        var response = new ApiResponse<List<FlightOfferDto>>(
+            true,
+            "Tìm kiếm chuyến bay thành công!",
+            200,
             data
         );
         return Ok(response);
