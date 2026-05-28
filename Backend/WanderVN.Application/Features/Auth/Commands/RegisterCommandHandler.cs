@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Domain.Entities;
+using WanderVN.Domain.Enums;
 using WanderVN.Domain.Repositories;
 
 namespace WanderVN.Application.Features.Auth.Commands;
@@ -37,6 +38,8 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
+        var isPartnerRole = request.Role == "Partner";
+
         var user = new WanderVN.Domain.Entities.Users
         {
             Email = request.Email,
@@ -44,7 +47,10 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
             FullName = request.FullName,
             PhoneNumber = request.PhoneNumber,
             RoleId = role.Id,
-            IsActive = request.Role == "Partner" ? false : true,
+            // Partner: chờ duyệt (Status=Pending) và chưa được đăng nhập (IsActive=false).
+            // Customer: hoạt động ngay (Status=Active, IsActive=true).
+            Status = isPartnerRole ? (int)UserStatus.Pending : (int)UserStatus.Active,
+            IsActive = !isPartnerRole,
             CreatedAt = DateTimeOffset.UtcNow
         };
 

@@ -9,6 +9,12 @@ public class UserDto
     public string? AvatarUrl { get; set; }
     public string? RoleName { get; set; }
     public bool? IsActive { get; set; }
+
+    // Trạng thái xét duyệt hồ sơ: 0=Pending, 1=Active, 2=Rejected (chủ yếu dùng cho Partner).
+    public int Status { get; set; }
+    public string? RejectReason { get; set; }
+    public DateTimeOffset? ApprovedAt { get; set; }
+
     public DateTimeOffset? CreatedAt { get; set; }
 
     // Thêm trường doanh thu

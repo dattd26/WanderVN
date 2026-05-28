@@ -49,6 +49,7 @@ export const userService = {
     if (query?.pageNumber !== undefined) params.append('PageNumber', query.pageNumber.toString());
     if (query?.pageSize !== undefined) params.append('PageSize', query.pageSize.toString());
     if (query?.isActive !== undefined) params.append('IsActive', query.isActive.toString());
+    if (query?.status !== undefined) params.append('Status', query.status.toString());
     if (query?.roleName) params.append('RoleName', query.roleName);
 
     const queryString = params.toString();
@@ -71,6 +72,20 @@ export const userService = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+    });
+  },
+
+  async approvePartner(id: number): Promise<boolean> {
+    return request<boolean>(`/users/partners/${id}/approve`, {
+      method: 'POST',
+    });
+  },
+
+  async rejectPartner(id: number, rejectReason: string): Promise<boolean> {
+    return request<boolean>(`/users/partners/${id}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rejectReason }),
     });
   }
 };

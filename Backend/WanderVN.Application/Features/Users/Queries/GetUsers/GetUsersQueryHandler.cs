@@ -24,6 +24,7 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PagedResult<U
             request.PhoneNumber,
             request.RoleName,
             request.IsActive,
+            request.Status,
             pageNumber,
             pageSize,
             cancellationToken);
@@ -37,6 +38,9 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PagedResult<U
             AvatarUrl = user.AvatarUrl,
             RoleName = user.Role?.Name,
             IsActive = user.IsActive,
+            Status = user.Status,
+            RejectReason = user.RejectReason,
+            ApprovedAt = user.ApprovedAt,
             CreatedAt = user.CreatedAt,
             // Tính tổng doanh thu từ các khoản Payout đã lưu (hoặc tuỳ chỉnh logic theo GrossAmount)
             TotalRevenue = user.PartnerPayouts?.Sum(p => p.NetAmount) ?? 0m 

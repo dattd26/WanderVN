@@ -18,9 +18,9 @@ export function AdminPartners() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- Pending applications (Mapped from inactive partners) ---
+  // --- Pending applications (Mapped from status === 0) ---
   const applications = (pagedResult?.items ?? [])
-    .filter((p) => !p.isActive)
+    .filter((p) => p.status === 0) // 0 is Pending
     .map((p) => ({
       id: p.id.toString(),
       name: p.fullName || p.email,
@@ -91,7 +91,43 @@ export function AdminPartners() {
           : prev
       );
     } catch {
-      alert('Cập nhật trạng thái thất bại!');
+      alert('Cập nhật trạng thái khóa/mở khóa thất bại!');
+    }
+  };
+
+  const handleApprovePartner = async (id: number) => {
+    try {
+      await userService.approvePartner(id);
+      setPagedResult((prev: PagedResult<UserDto> | null) =>
+        prev
+          ? {
+              ...prev,
+              items: prev.items.map((p: UserDto) =>
+                p.id === id ? { ...p, status: 1, isActive: true } : p // 1 is Active
+              ),
+            }
+          : prev
+      );
+    } catch {
+      alert('Duyệt hồ sơ thất bại!');
+    }
+  };
+
+  const handleRejectPartner = async (id: number, reason: string) => {
+    try {
+      await userService.rejectPartner(id, reason);
+      setPagedResult((prev: PagedResult<UserDto> | null) =>
+        prev
+          ? {
+              ...prev,
+              items: prev.items.map((p: UserDto) =>
+                p.id === id ? { ...p, status: 2, rejectReason: reason } : p // 2 is Rejected
+              ),
+            }
+          : prev
+      );
+    } catch {
+      alert('Từ chối hồ sơ thất bại!');
     }
   };
 
@@ -116,8 +152,11 @@ export function AdminPartners() {
   const totalPages = pagedResult?.totalPages ?? 0;
   const currentPage = pagedResult?.pageNumber ?? 1;
   const pendingCount = applications.filter((app) => app.status === 'Pending').length;
-  const activeCount = partners.filter((p: UserDto) => p.isActive).length;
-  const inactiveCount = partners.filter((p: UserDto) => !p.isActive).length;
+  // Filter out pending and rejected from main list view if needed, but currently list shows all
+  const listPartners = partners.filter((p: UserDto) => p.status === 1); // Only active status
+  
+  const activeCount = listPartners.filter((p: UserDto) => p.isActive).length;
+  const inactiveCount = listPartners.filter((p: UserDto) => !p.isActive).length;
 
   return (
     <div className="p-admin-xl space-y-admin-lg max-w-admin-container-max mx-auto w-full">
@@ -134,8 +173,11 @@ export function AdminPartners() {
         {activeTab === 'pending' && (
           <PartnerPendingTab
             applications={applications}
-            onApprove={(id) => handleTogglePartner(Number(id), false)}
-            onReject={(id) => alert(`Chức năng từ chối đối tác ${id} đang được phát triển.`)}
+            onApprove={(id) => handleApprovePartner(Number(id))}
+            onReject={(id) => {
+              const reason = prompt('Nhập lý do từ chối:');
+              if (reason) handleRejectPartner(Number(id), reason);
+            }}
           />
         )}
 
@@ -154,7 +196,7 @@ export function AdminPartners() {
               onStatusChange={handleStatusChange}
             />
             <PartnerListTable
-              partners={partners}
+              partners={listPartners}
               isLoading={isLoading}
               error={error}
               pageSize={pageSize}

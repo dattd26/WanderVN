@@ -466,6 +466,9 @@ CREATE TABLE [dbo].[Users](
     [PhoneNumber] [varchar](20) NULL,
     [AvatarUrl] [nvarchar](500) NULL,
     [IsActive] [bit] NULL,
+    [Status] [int] NOT NULL CONSTRAINT [DF_Users_Status] DEFAULT ((1)),
+    [RejectReason] [nvarchar](500) NULL,
+    [ApprovedAt] [datetimeoffset](7) NULL,
     [CreatedAt] [datetimeoffset](7) NULL,
     [UpdatedAt] [datetimeoffset](7) NULL,
 PRIMARY KEY CLUSTERED 
