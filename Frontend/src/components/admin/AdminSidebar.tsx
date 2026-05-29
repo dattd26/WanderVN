@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 export function AdminSidebar() {
   const activeClass = "flex items-center gap-admin-md px-admin-md py-admin-sm bg-admin-secondary-container text-admin-on-secondary-container font-bold rounded-lg transition-transform active:scale-95";
@@ -9,6 +9,17 @@ export function AdminSidebar() {
   const isSubmenuActive = location.pathname === "/admin/customers" || location.pathname === "/admin/partners";
 
   const [isUsersOpen, setIsUsersOpen] = useState(isSubmenuActive);
+  const navigate = useNavigate();
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   useEffect(() => {
     if (isSubmenuActive) {
@@ -95,20 +106,21 @@ export function AdminSidebar() {
       </nav>
 
       <div className="pt-admin-lg border-t border-admin-outline-variant space-y-admin-xs">
-        <a
-          href="#settings"
-          className="flex items-center gap-admin-md px-admin-md py-admin-sm text-admin-on-surface-variant hover:bg-admin-surface-container-high rounded-lg transition-all duration-200"
-        >
-          <span className="material-symbols-outlined">settings</span>
-          <span className="font-admin-sans text-admin-body-md">Settings</span>
-        </a>
         <NavLink
-          to="/"
+          to="/admin/change-password"
+          className={({ isActive }) => isActive ? activeClass : inactiveClass}
+        >
+          <span className="material-symbols-outlined">lock</span>
+          <span className="font-admin-sans text-admin-body-md">Đổi mật khẩu</span>
+        </NavLink>
+        <a
+          href="#"
+          onClick={handleLogout}
           className="flex items-center gap-admin-md px-admin-md py-admin-sm text-admin-on-surface-variant hover:bg-admin-surface-container-high rounded-lg transition-all duration-200"
         >
           <span className="material-symbols-outlined">logout</span>
-          <span className="font-admin-sans text-admin-body-md">Exit Console</span>
-        </NavLink>
+          <span className="font-admin-sans text-admin-body-md font-semibold">Exit Console</span>
+        </a>
       </div>
     </aside>
   );

@@ -15,6 +15,11 @@ export function AdminHeader() {
     return 'WanderVN Admin Console';
   };
 
+  // Lấy thông tin đăng nhập từ localStorage
+  const userEmail = localStorage.getItem('userEmail') || 'admin@wandervn.com';
+  const role = localStorage.getItem('role') || 'SUPERADMIN';
+  const shortName = userEmail.split('@')[0];
+
   return (
     /* ĐÃ SỬA: Thay đổi z-40 thành z-20 để không đè lên lớp backdrop đen mờ của Modal */
     <header className="flex justify-between items-center h-16 px-admin-xl w-full sticky top-0 z-20 bg-white shadow-sm border-b border-admin-outline-variant select-none">
@@ -45,8 +50,8 @@ export function AdminHeader() {
 
         <div className="flex items-center gap-admin-sm pl-admin-md border-l border-admin-outline-variant">
           <div className="text-right hidden sm:block">
-            <p className="font-admin-sans text-admin-label-caps text-admin-on-surface font-bold">Admin User</p>
-            <p className="text-[10px] text-admin-on-surface-variant">SUPERADMIN</p>
+            <p className="font-admin-sans text-admin-label-caps text-admin-on-surface font-bold max-w-[150px] truncate">{shortName}</p>
+            <p className="text-[10px] text-admin-on-surface-variant uppercase">{role}</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-admin-primary-container flex items-center justify-center overflow-hidden border border-admin-outline-variant text-admin-on-primary font-bold relative">
             <img
@@ -57,7 +62,7 @@ export function AdminHeader() {
                 e.currentTarget.style.display = 'none';
               }}
             />
-            <span className="absolute font-admin-sans text-sm">AD</span>
+            <span className="absolute font-admin-sans text-sm">{shortName.substring(0, 2).toUpperCase()}</span>
           </div>
         </div>
       </div>
