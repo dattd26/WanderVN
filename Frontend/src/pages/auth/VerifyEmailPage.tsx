@@ -6,14 +6,12 @@ type VerifyStatus = 'loading' | 'success' | 'expired' | 'invalid' | 'already_ver
 
 export const VerifyEmailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState<VerifyStatus>('loading');
-  const [errorMessage, setErrorMessage] = useState('');
+  const token = searchParams.get('token');
+  const [status, setStatus] = useState<VerifyStatus>(!token ? 'invalid' : 'loading');
+  const [errorMessage, setErrorMessage] = useState<string>(!token ? 'Không tìm thấy mã xác nhận (token) trong đường dẫn.' : '');
 
   useEffect(() => {
-    const token = searchParams.get('token');
-
     if (!token) {
-      setStatus('invalid');
       return;
     }
 
@@ -36,7 +34,7 @@ export const VerifyEmailPage: React.FC = () => {
     };
 
     verify();
-  }, [searchParams]);
+  }, [searchParams, token]);
 
   const statusConfig = {
     loading: {
@@ -116,7 +114,7 @@ export const VerifyEmailPage: React.FC = () => {
       {/* Content */}
       <main className="relative z-10 w-full flex items-center justify-center px-4 py-16">
         <div className="relative w-full max-w-[460px] shadow-[0_20px_50px_rgba(26,26,26,0.3)] border border-outline-variant/30 overflow-hidden animate-fade-scale p-10 md:p-14 bg-surface-container-low paper-grain">
-          
+
           {/* Top golden accent line */}
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-secondary-container via-secondary to-secondary-container" />
 
@@ -146,8 +144,8 @@ export const VerifyEmailPage: React.FC = () => {
           {/* Progress bar for loading */}
           {status === 'loading' && (
             <div className="mt-8 h-[2px] bg-outline-variant/20 overflow-hidden rounded-full">
-              <div className="h-full bg-gradient-to-r from-secondary-container via-secondary to-secondary-container animate-shimmer" 
-                   style={{ width: '60%', animation: 'shimmer 2s infinite' }} />
+              <div className="h-full bg-gradient-to-r from-secondary-container via-secondary to-secondary-container animate-shimmer"
+                style={{ width: '60%', animation: 'shimmer 2s infinite' }} />
             </div>
           )}
 

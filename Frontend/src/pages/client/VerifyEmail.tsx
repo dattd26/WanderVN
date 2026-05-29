@@ -7,13 +7,11 @@ export const VerifyEmail: React.FC = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>(!token ? 'error' : 'loading');
+  const [errorMessage, setErrorMessage] = useState(!token ? 'Không tìm thấy mã xác nhận (token) trong đường dẫn.' : '');
 
   useEffect(() => {
     if (!token) {
-      setStatus('error');
-      setErrorMessage('Không tìm thấy mã xác nhận (token) trong đường dẫn.');
       return;
     }
 
@@ -21,9 +19,9 @@ export const VerifyEmail: React.FC = () => {
       try {
         await authService.verifyEmail(token);
         setStatus('success');
-      } catch (err: any) {
+      } catch (err) {
         setStatus('error');
-        setErrorMessage(err.message || 'Xác nhận email thất bại. Mã xác nhận có thể đã hết hạn hoặc không hợp lệ.');
+        setErrorMessage((err as Error).message || 'Xác nhận email thất bại. Mã xác nhận có thể đã hết hạn hoặc không hợp lệ.');
       }
     };
 
@@ -33,7 +31,7 @@ export const VerifyEmail: React.FC = () => {
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-20 px-margin-mobile md:px-margin-desktop bg-background text-on-surface relative">
       <div className="max-w-xl w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg p-8 md:p-12 shadow-2xl limestone-shadow animate-scale-in text-center">
-        
+
         {status === 'loading' && (
           <div className="flex flex-col items-center justify-center space-y-6 animate-fade-in">
             <div className="p-4 bg-surface-variant rounded-full text-primary">
