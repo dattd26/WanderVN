@@ -13,6 +13,7 @@ export function PartnerRejectModal({ isOpen, onClose, onSubmit }: PartnerRejectM
   // Reset reason when modal opens
   useEffect(() => {
     if (isOpen) {
+      //eslint-disable-next-line react-hooks/set-state-in-effect
       setReason('');
     }
   }, [isOpen]);
@@ -37,14 +38,14 @@ export function PartnerRejectModal({ isOpen, onClose, onSubmit }: PartnerRejectM
             <div className="w-1 h-8 bg-admin-error rounded-full"></div>
             <h2 className="font-admin-sans text-admin-headline-md text-admin-on-surface font-semibold">Từ chối hồ sơ</h2>
           </div>
-          <button 
-            className="p-1 hover:bg-admin-surface-container rounded transition-colors" 
+          <button
+            className="p-1 hover:bg-admin-surface-container rounded transition-colors"
             onClick={onClose}
           >
             <span className="material-symbols-outlined text-admin-on-surface-variant">close</span>
           </button>
         </div>
-        
+
         {/* Modal Body */}
         <div className="px-admin-lg pb-admin-xl space-y-admin-md">
           <p className="font-admin-sans text-admin-body-md text-admin-on-surface-variant">
@@ -54,12 +55,12 @@ export function PartnerRejectModal({ isOpen, onClose, onSubmit }: PartnerRejectM
             <label className={`font-admin-sans text-admin-body-sm font-bold transition-colors ${isFocused ? 'text-admin-secondary' : 'text-admin-on-surface'}`}>
               Lý do từ chối
             </label>
-            <textarea 
+            <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              className="w-full min-h-[160px] p-admin-md bg-admin-surface border border-admin-outline-variant rounded-lg font-admin-sans text-admin-body-md text-admin-on-surface placeholder:text-admin-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-admin-secondary/20 focus:border-admin-secondary transition-all resize-none" 
+              className="w-full min-h-[160px] p-admin-md bg-admin-surface border border-admin-outline-variant rounded-lg font-admin-sans text-admin-body-md text-admin-on-surface placeholder:text-admin-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-admin-secondary/20 focus:border-admin-secondary transition-all resize-none"
               placeholder="Ví dụ: Giấy phép kinh doanh không hợp lệ hoặc đã hết hạn. Vui lòng cập nhật bản mới nhất để được xét duyệt lại."
             />
           </div>
@@ -68,16 +69,16 @@ export function PartnerRejectModal({ isOpen, onClose, onSubmit }: PartnerRejectM
             <span className="font-admin-sans text-admin-body-sm text-admin-error">Hành động này không thể hoàn tác sau khi xác nhận.</span>
           </div>
         </div>
-        
+
         {/* Modal Footer */}
         <div className="px-admin-lg py-admin-md bg-admin-surface-container-low flex justify-end items-center gap-admin-md border-t border-admin-outline-variant">
-          <button 
-            className="px-admin-lg py-admin-md font-admin-sans text-admin-body-md font-bold text-admin-on-surface-variant hover:bg-admin-surface-container-highest rounded-lg transition-all active:scale-95" 
+          <button
+            className="px-admin-lg py-admin-md font-admin-sans text-admin-body-md font-bold text-admin-on-surface-variant hover:bg-admin-surface-container-highest rounded-lg transition-all active:scale-95"
             onClick={onClose}
           >
             Hủy
           </button>
-          <button 
+          <button
             className="px-admin-xl py-admin-md bg-admin-primary text-white font-admin-sans text-admin-body-md font-bold rounded-lg shadow-lg hover:shadow-xl hover:bg-opacity-90 transition-all active:scale-95 flex items-center gap-admin-sm"
             onClick={handleSubmit}
           >

@@ -66,21 +66,33 @@ export function AdminUsers() {
     return () => clearTimeout(timer);
   }, [fetchCustomers]);
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (ignore?: () => boolean) => {
     try {
       const [activeRes, lockedRes] = await Promise.all([
         userService.getCustomers({ isActive: true, pageNumber: 1, pageSize: 1 }),
-        userService.getCustomers({ isActive: false, pageNumber: 1, pageSize: 1 })
+        userService.getCustomers({ isActive: false, pageNumber: 1, pageSize: 1 }),
       ]);
+
+      if (ignore?.()) return;
+
       setTotalActiveCount(activeRes.totalItems);
       setTotalLockedCount(lockedRes.totalItems);
     } catch (err) {
-      console.error('Lỗi tải thống kê:', err);
+      if (!ignore?.()) {
+        console.error('Lỗi tải thống kê:', err);
+      }
     }
   }, []);
 
+
   useEffect(() => {
-    fetchStats();
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchStats(() => cancelled);
+
+    return () => {
+      cancelled = true;
+    };
   }, [fetchStats]);
 
   // --- Handlers ---
