@@ -42,6 +42,11 @@ export const Footer: React.FC = () => {
             <span className="font-label-md text-label-md uppercase tracking-wider text-secondary-fixed">Hỗ trợ & Pháp lý</span>
             <ul className="space-y-3">
               <li>
+                <a href="/booking-lookup" className="font-body-md text-body-md text-surface-variant/70 hover:text-secondary-fixed-dim transition-colors duration-200">
+                  Tra cứu Booking
+                </a>
+              </li>
+              <li>
                 <a href="#" className="font-body-md text-body-md text-surface-variant/70 hover:text-secondary-fixed-dim transition-colors duration-200">
                   Chính sách bảo mật
                 </a>

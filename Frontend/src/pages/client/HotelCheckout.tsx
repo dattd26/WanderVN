@@ -105,17 +105,20 @@ export const HotelCheckout: React.FC = () => {
     setBookingLoading(true);
     setErrorMessage(null);
 
-    // 1. Lấy UserId của người dùng đang đăng nhập từ localStorage ra (ép kiểu về số)
+    // 1. Xác định UserId (null nếu chưa đăng nhập)
 const storedUserId = localStorage.getItem('userId') || localStorage.getItem('user_id');
-const currentUserId = storedUserId ? parseInt(storedUserId, 10) : 4005; // Dự phòng nếu lỗi thì dùng 4005
+const currentUserId = storedUserId ? parseInt(storedUserId, 10) : null;
 
-// 2. Thay số 1 thành biến currentUserId vừa lấy
+// 2. Tạo booking request hỗ trợ cả Guest và User đã đăng nhập
 const bookingRequest: CreateHotelBookingRequest = {
-  userId: currentUserId, // 👈 Đã đổi thành ID động xịn mịn!
+  userId: currentUserId,
   roomTypeId: room.id,
   checkInDate: checkInDate,
   checkOutDate: checkOutDate,
-  totalPrice: totalAmount
+  totalPrice: totalAmount,
+  email: guestForm.email,
+  customerName: guestForm.fullName,
+  customerPhone: guestForm.phoneNumber
 };
 
     try {
