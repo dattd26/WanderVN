@@ -36,6 +36,11 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
     public virtual DbSet<Wishlists> Wishlists { get; set; }
     public virtual DbSet<PropertyTypes> PropertyTypes { get; set; }
     public virtual DbSet<PartnerPayouts> PartnerPayouts { get; set; }
+    public virtual DbSet<HomeTravelMoods> HomeTravelMoods { get; set; }
+    public virtual DbSet<HomeEditorialDestinations> HomeEditorialDestinations { get; set; }
+    public virtual DbSet<HomeWeekendEscapes> HomeWeekendEscapes { get; set; }
+    public virtual DbSet<HomeStayCollections> HomeStayCollections { get; set; }
+    public virtual DbSet<HotelTravelMoods> HotelTravelMoods { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -173,6 +178,76 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .WithMany(b => b.PartnerPayouts)
                 .HasForeignKey(p => p.BookingId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<HomeTravelMoods>(entity =>
+        {
+            entity.ToTable("HomeTravelMoods");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasMaxLength(50).IsUnicode(false);
+            entity.Property(e => e.Title).HasMaxLength(255);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.IconName).HasMaxLength(50).IsUnicode(false);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500).IsUnicode(false);
+            entity.Property(e => e.QueryString).HasMaxLength(255).IsUnicode(false);
+        });
+
+        modelBuilder.Entity<HomeEditorialDestinations>(entity =>
+        {
+            entity.ToTable("HomeEditorialDestinations");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasMaxLength(50).IsUnicode(false);
+            entity.Property(e => e.Tags).HasMaxLength(255);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500).IsUnicode(false);
+            entity.Property(e => e.BestTime).HasMaxLength(100);
+            entity.Property(e => e.Experience).HasMaxLength(255);
+
+            entity.HasOne(d => d.Location)
+                .WithMany()
+                .HasForeignKey(d => d.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<HomeWeekendEscapes>(entity =>
+        {
+            entity.ToTable("HomeWeekendEscapes");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Origin).HasMaxLength(50).IsUnicode(false);
+            entity.Property(e => e.Duration).HasMaxLength(50);
+            entity.Property(e => e.Description).HasMaxLength(255);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500).IsUnicode(false);
+
+            entity.HasOne(e => e.Location)
+                .WithMany()
+                .HasForeignKey(e => e.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<HomeStayCollections>(entity =>
+        {
+            entity.ToTable("HomeStayCollections");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasMaxLength(50).IsUnicode(false);
+            entity.Property(e => e.Title).HasMaxLength(255);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500).IsUnicode(false);
+            entity.Property(e => e.QueryString).HasMaxLength(255).IsUnicode(false);
+        });
+
+        modelBuilder.Entity<HotelTravelMoods>(entity =>
+        {
+            entity.ToTable("HotelTravelMoods");
+            entity.HasKey(e => new { e.HotelId, e.TravelMoodId });
+
+            entity.HasOne(e => e.Hotel)
+                .WithMany(h => h.HotelTravelMoods)
+                .HasForeignKey(e => e.HotelId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.TravelMood)
+                .WithMany(m => m.HotelTravelMoods)
+                .HasForeignKey(e => e.TravelMoodId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);

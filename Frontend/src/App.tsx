@@ -21,6 +21,7 @@ import { AccessDenied } from './pages/auth/AccessDenied';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import { BookingHistory } from './pages/client/BookingHistory';
 import BookingDetail from './pages/client/BookingDetail';
+import MoodCollection from './pages/client/MoodCollection';
 
 /** Component điều hướng thông minh cho luồng đối tác (Partner Redirect).
  * Nếu người dùng đã đăng nhập (có token JWT trong localStorage), chuyển hướng thẳng tới Dashboard.
@@ -63,6 +64,7 @@ function AppLayout() {
           <Route path="/access-denied" element={<AccessDenied />} />
           <Route path="/booking-history" element={<BookingHistory />} />
           <Route path="/booking-history/:bookingId" element={<BookingDetail />} />
+          <Route path="/collections/mood/:id" element={<MoodCollection />} />
 
           {/* Partner portal */}
           <Route path="/partner" element={<PartnerRedirect />} />
