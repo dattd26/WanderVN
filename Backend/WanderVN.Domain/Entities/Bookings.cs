@@ -21,6 +21,12 @@ public partial class Bookings
 
     public DateTimeOffset? CreatedAt { get; set; }
 
+    public string? Email { get; set; }
+
+    public string? CustomerName { get; set; }
+
+    public string? CustomerPhone { get; set; }
+
     public virtual ICollection<BookingFlights> BookingFlights { get; set; } = new List<BookingFlights>();
 
     public virtual ICollection<BookingHotels> BookingHotels { get; set; } = new List<BookingHotels>();
