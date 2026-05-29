@@ -39,7 +39,16 @@ public class AuthController : ControllerBase
             throw new ArgumentException("Vui lòng điền đầy đủ thông tin.");
 
         await _mediator.Send(command);
-        var response = new ApiResponse<object>(true, "Đăng ký thành công!", 200, null);
+        var response = new ApiResponse<object>(true, "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.", 200, null);
+        return Ok(response);
+    }
+
+    /// POST: api/v1/auth/verify-email
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailCommand command)
+    {
+        await _mediator.Send(command);
+        var response = new ApiResponse<object>(true, "Xác nhận email và kích hoạt tài khoản thành công!", 200, null);
         return Ok(response);
     }
 

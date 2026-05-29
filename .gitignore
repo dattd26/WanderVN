@@ -472,7 +472,7 @@ ehthumbs_vista.db
 
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
-
+CHANGELOG.md
 # Windows Installer files
 *.cab
 *.msi
@@ -489,3 +489,4 @@ node_modules/\ndist/\n.env\n
 DESIGN.md
 response_1779263368811.json
 /Backend/WanderVN.API/appsettings.Development.json
+Backend/WanderVN.API/appsettings.Production.json

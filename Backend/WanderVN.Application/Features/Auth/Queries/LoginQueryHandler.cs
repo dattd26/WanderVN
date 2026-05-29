@@ -37,7 +37,7 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, AuthResponse>
             throw new UnauthorizedAccessException("Hồ sơ đăng ký của bạn đã bị từ chối.");
 
         if (user.IsActive == false)
-            throw new UnauthorizedAccessException("Tài khoản đã bị khóa.");
+            throw new UnauthorizedAccessException("Tài khoản chưa được kích hoạt hoặc đã bị khóa. Vui lòng kiểm tra email để xác thực.");
 
         var token = GenerateJwtToken(user);
 

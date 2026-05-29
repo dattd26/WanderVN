@@ -8,4 +8,5 @@ public class EmailSettings
     public string SenderEmail { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public bool EnableSsl { get; set; } = true;
+    public string VerificationLink { get; set; } = string.Empty;
 }

@@ -42,6 +42,9 @@ public class VNPayService : IVNPayService
         // VNPay yêu cầu số tiền nhân với 100 và chuyển thành chuỗi số nguyên
         long paymentAmount = (long)(vndAmount * 100);
 
+        // Lấy thời gian chuẩn của VNPay (GMT+7) để tránh lỗi timeout do khác biệt múi giờ trên server production
+        var vnpayTime = DateTime.UtcNow.AddHours(7);
+
         // Tạo danh sách tham số gửi sang VNPay
         var vnpayData = new SortedDictionary<string, string>(StringComparer.Ordinal)
         {
@@ -49,15 +52,16 @@ public class VNPayService : IVNPayService
             { "vnp_Command", "pay" },
             { "vnp_TmnCode", vnp_TmnCode },
             { "vnp_Amount", paymentAmount.ToString() },
-            { "vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss") },
+            { "vnp_CreateDate", vnpayTime.ToString("yyyyMMddHHmmss") },
             { "vnp_CurrCode", "VND" },
             { "vnp_IpAddr", ipAddress },
             { "vnp_Locale", "vn" },
             { "vnp_OrderInfo", $"Thanh toan don hang #{bookingId}" },
             { "vnp_OrderType", "other" },
             { "vnp_ReturnUrl", vnp_ReturnUrl ?? "" },
+            { "vnp_ExpireDate", vnpayTime.AddMinutes(15).ToString("yyyyMMddHHmmss") },
             // Tránh lỗi trùng mã giao dịch khi thanh toán lại: dùng format "BookingId_Ticks"
-            { "vnp_TxnRef", $"{bookingId}_{DateTime.UtcNow.Ticks}" }
+            { "vnp_TxnRef", $"{bookingId}_{vnpayTime.Ticks}" }
         };
 
         // Tạo chuỗi truy vấn (query string) để băm dữ liệu

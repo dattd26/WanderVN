@@ -12,6 +12,7 @@ using WanderVN.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
 builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -52,12 +53,16 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 
+// Cấu hình CORS động từ appsettings.json để hỗ trợ URL Frontend khi deploy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.AllowAnyOrigin()
-               .AllowAnyMethod()
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                             ?? new[] { "http://localhost:5173", "http://localhost:5174", "https://wander-vn-silk.vercel.app" };
+
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyMethod()
               .AllowAnyHeader();
     });
 });
@@ -65,7 +70,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,

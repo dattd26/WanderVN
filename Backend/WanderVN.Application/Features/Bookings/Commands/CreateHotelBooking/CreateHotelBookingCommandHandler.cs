@@ -14,10 +14,12 @@ namespace WanderVN.Application.Features.Bookings.Commands.CreateHotelBooking;
 public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBookingCommand, HotelBookingResponse>
 {
     private readonly IApplicationDbContext _dbContext;
+    private readonly IEmailService _emailService;
 
-    public CreateHotelBookingCommandHandler(IApplicationDbContext dbContext)
+    public CreateHotelBookingCommandHandler(IApplicationDbContext dbContext, IEmailService emailService)
     {
         _dbContext = dbContext;
+        _emailService = emailService;
     }
 
     public async Task<HotelBookingResponse> Handle(CreateHotelBookingCommand request, CancellationToken cancellationToken)
@@ -34,9 +36,8 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
 
         // Tìm loại phòng trong cơ sở dữ liệu
         var roomType = await _dbContext.RoomTypes
-            .Where(rt => rt.Id == request.Request.RoomTypeId)
-            .Select(rt => new WanderVN.Domain.Entities.RoomTypes { Id = rt.Id, BasePrice = rt.BasePrice })
-            .FirstOrDefaultAsync(cancellationToken);
+            .Include(rt => rt.Hotel)
+            .FirstOrDefaultAsync(rt => rt.Id == request.Request.RoomTypeId, cancellationToken);
 
         if (roomType == null)
             throw new KeyNotFoundException("Không tìm thấy loại phòng yêu cầu");
@@ -84,6 +85,63 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
 
         // Thực hiện lưu toàn bộ thay đổi xuống DB trong một transaction duy nhất
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // Lấy thông tin user để gửi email xác nhận
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == request.Request.UserId, cancellationToken);
+        if (user != null && !string.IsNullOrEmpty(user.Email))
+        {
+            var userEmail = user.Email;
+            var userFullName = user.FullName ?? "Quý khách";
+            var bookingCode = booking.BookingCode;
+            var hotelName = roomType.Hotel?.Name ?? "Đối tác WanderVN";
+            var roomTypeName = roomType.Name;
+            var checkInStr = request.Request.CheckInDate;
+            var checkOutStr = request.Request.CheckOutDate;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var emailSubject = $"[WanderVN] Xác nhận yêu cầu đặt phòng khách sạn #{bookingCode}";
+                    var emailBody = $@"
+                        <p>Kính gửi quý khách <strong>{userFullName}</strong>,</p>
+                        <p>Cảm ơn bạn đã lựa chọn <strong>WanderVN</strong> làm bạn đồng hành. Yêu cầu đặt phòng khách sạn của bạn đã được tiếp nhận thành công và đang chờ thanh toán.</p>
+                        <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
+                            <tr>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 150px;'>Mã đặt phòng:</td>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #735c00;'>{bookingCode}</td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Khách sạn:</td>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee;'>{hotelName}</td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Loại phòng:</td>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee;'>{roomTypeName}</td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Thời gian lưu trú:</td>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee;'>Từ {checkInStr} đến {checkOutStr}</td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Tổng tiền:</td>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #d32f2f;'>${totalPrice:N2} USD</td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Trạng thái đơn:</td>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee;'><span style='background-color: #ffe0b2; color: #e65100; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>Chờ thanh toán</span></td>
+                            </tr>
+                        </table>
+                        <p>Vui lòng tiến hành thanh toán trong thời gian sớm nhất để hoàn tất việc đặt phòng của bạn.</p>";
+
+                    await _emailService.SendEmailAsync(userEmail, emailSubject, emailBody, isHtml: true);
+                }
+                catch (Exception)
+                {
+                    // Bỏ qua lỗi gửi mail để tránh làm gián đoạn luồng chính
+                }
+            });
+        }
 
         return new HotelBookingResponse
         {

@@ -20,6 +20,9 @@ export const FlightCheckout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const WANDER_SELECTED_OFFER = 'wander_selected_offer';
+  const storedUserId = localStorage.getItem('userId') || localStorage.getItem('user_id');
+  const currentUserId = storedUserId ? parseInt(storedUserId, 10) : 4005;
+
   // Trạng thái vé máy bay đang được thanh toán - khôi phục đồng bộ trực tiếp từ state hoặc sessionStorage để tránh trễ render và vi phạm eslint
   const [offer] = useState<FlightOfferDto | null>(() => {
     const stateOffer = location.state?.offer as FlightOfferDto | undefined;
@@ -82,7 +85,7 @@ export const FlightCheckout: React.FC = () => {
       const finalPassengerId = offer.duffelAirwaysPassengerId || offer.passengerId || 'pas_default';
 
       const bookingRequest = {
-        userId: 1, // Mock User ID đã đăng nhập
+        userId: currentUserId,
         offerId: finalOfferId,
         totalPrice: offer.totalAmount,
         passengers: [

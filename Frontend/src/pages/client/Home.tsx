@@ -1,120 +1,87 @@
 import React from 'react';
 import { JourneyRevealHero } from '../../components/client/hero/JourneyRevealHero';
+import { TravelMoodSelector } from '../../components/client/home/TravelMoodSelector';
+import { EditorialDestinations } from '../../components/client/home/EditorialDestinations';
+import { VietnamJourneyMap } from '../../components/client/home/VietnamJourneyMap';
+import { WeekendEscape } from '../../components/client/home/WeekendEscape';
+import { StayCollections } from '../../components/client/home/StayCollections';
+import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { Compass, ShieldCheck, HeartHandshake } from 'lucide-react';
+import './home.css';
 
+const BRAND_VALUES = [
+  {
+    icon: Compass,
+    title: 'Tuyển chọn có gu',
+    desc: 'Mỗi nơi lưu trú đều được kiểm định nghiêm ngặt về tính bản địa, kiến trúc và dịch vụ.',
+  },
+  {
+    icon: HeartHandshake,
+    title: 'Trải nghiệm bản địa',
+    desc: 'Kết nối lữ khách với văn hóa sâu sắc, không chỉ lướt qua bề nổi của điểm đến.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Đặt chỗ an tâm',
+    desc: 'Hỗ trợ 24/7, chính sách hủy linh hoạt, cam kết giá tốt nhất.',
+  },
+];
 
 export const Home: React.FC = () => {
-  const featuredDestinations = [
-    {
-      id: 1,
-      name: 'Hà Giang',
-      tag: 'Kỳ quan Đá vôi & Cao nguyên mờ sương',
-      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: 102,
-      name: 'Hội An',
-      tag: 'Di sản Đèn lồng & Kiến trúc Thuộc địa',
-      image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: 101,
-      name: 'Phú Quốc',
-      tag: 'Đại dương Tây cực & Hoàng hôn Đảo ngọc',
-      image: 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: 3,
-      name: 'Đà Nẵng',
-      tag: 'Cầu Rồng Di sản & Bãi biển Mỹ Khê',
-      image: 'https://images.unsplash.com/photo-1559592443-7f87aae4f4ed?auto=format&fit=crop&w=600&q=80',
-    }
-  ];
+  const brandRef = useScrollReveal<HTMLDivElement>('fade-up', {
+    threshold: 0.15,
+    staggerChildren: true,
+    staggerDelay: 200,
+  });
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Cinematic Hero Section */}
+    <div className="flex flex-col min-h-screen" style={{ scrollBehavior: 'smooth' }}>
+      {/* 1. Cinematic Hero — giữ nguyên */}
       <JourneyRevealHero />
 
-      {/* Featured Destinations Showcase */}
-      <section className="pt-24 md:pt-36 pb-section-gap bg-background px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="font-label-md text-label-md text-secondary uppercase tracking-widest block mb-3">
-            Những Điểm Đến Tinh Hoa
-          </span>
-          <h2 className="font-display-lg text-headline-lg text-primary mb-4 leading-snug">
-            Khởi đầu cho hành trình di sản
-          </h2>
-          <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-            Từ cao nguyên đá Hà Giang mờ sương đến biển Phú Quốc rì rào sóng vỗ, mỗi vùng đất là một trang nhật ký du ký đầy chất thơ đang chờ lữ khách chắp bút.
-          </p>
-        </div>
+      {/* 2. Travel Mood Selector */}
+      <TravelMoodSelector />
 
-        {/* Destination Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-          {featuredDestinations.map((dest) => (
-            <div
-              key={dest.id}
-              className="group cursor-pointer overflow-hidden rounded-lg relative aspect-[3/4] limestone-shadow border border-outline-variant/20 hover:border-outline/40 transition-all duration-500"
-              onClick={() => {
-                // Nhấn vào điểm đến sẽ chuyển sang tìm kiếm khách sạn vùng đó
-                window.location.href = `/stays?locationId=${dest.id}`;
-              }}
-            >
-              <img
-                alt={dest.name}
-                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
-                src={dest.image}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-              <div className="absolute bottom-6 left-6 right-6 text-on-primary">
-                <h3 className="font-display-lg text-headline-md font-semibold mb-1 group-hover:text-secondary-fixed transition-colors duration-300">
-                  {dest.name}
-                </h3>
-                <p className="font-caption text-caption text-surface-container-low opacity-90 line-clamp-2">
-                  {dest.tag}
-                </p>
+      {/* 3. Editorial Featured Destinations */}
+      <EditorialDestinations />
+
+      {/* 4. Vietnam Journey Map */}
+      <VietnamJourneyMap />
+
+      {/* 5. Weekend Escape */}
+      <WeekendEscape />
+
+      {/* 6. Stay Collections */}
+      <StayCollections />
+
+      {/* 7. Brand Values — gọn hơn, gần cuối trang */}
+      <section className="py-20 md:py-28 px-margin-mobile md:px-margin-desktop paper-texture-bg border-y border-surface-variant/20">
+        <div
+          ref={brandRef}
+          className="max-w-container-max mx-auto flex flex-col md:flex-row items-start md:items-center gap-10 md:gap-16"
+        >
+          {BRAND_VALUES.map((value) => {
+            const Icon = value.icon;
+            return (
+              <div key={value.title} className="flex-1 flex items-start gap-5">
+                <div className="brand-value-icon flex-shrink-0 w-12 h-12 rounded-full border border-outline-variant/40 flex items-center justify-center text-secondary">
+                  <Icon className="w-5 h-5" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h4 className="font-display-lg text-lg text-primary font-medium mb-1.5">
+                    {value.title}
+                  </h4>
+                  <p className="text-sm text-on-surface-variant leading-relaxed">
+                    {value.desc}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Brand Values / Philosophy */}
-      <section className="py-20 bg-surface-container-low border-y border-surface-variant/30 px-margin-mobile md:px-margin-desktop">
-        <div className="max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-          <div className="flex flex-col items-center text-center p-6 bg-surface rounded-lg limestone-shadow">
-            <div className="p-4 bg-tertiary-fixed/30 rounded-full mb-6 text-secondary">
-              <Compass className="h-8 w-8" />
-            </div>
-            <h4 className="font-display-lg text-headline-md text-primary mb-3">Tuyển chọn Tỉ mỉ</h4>
-            <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-              Mỗi căn biệt thự, mỗi phòng khách sạn đều được chúng tôi kiểm định nghiêm ngặt về tính bản địa, kiến trúc di sản và dịch vụ độc bản.
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center text-center p-6 bg-surface rounded-lg limestone-shadow">
-            <div className="p-4 bg-tertiary-fixed/30 rounded-full mb-6 text-secondary">
-              <HeartHandshake className="h-8 w-8" />
-            </div>
-            <h4 className="font-display-lg text-headline-md text-primary mb-3">Tâm hồn Bản địa</h4>
-            <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-              Chúng tôi kết nối lữ khách với những nghệ nhân bản địa, đưa bạn chạm vào văn hóa sâu sắc thay vì chỉ lướt qua bề nổi của điểm đến.
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center text-center p-6 bg-surface rounded-lg limestone-shadow">
-            <div className="p-4 bg-tertiary-fixed/30 rounded-full mb-6 text-secondary">
-              <ShieldCheck className="h-8 w-8" />
-            </div>
-            <h4 className="font-display-lg text-headline-md text-primary mb-3">Đặc quyền Thượng lưu</h4>
-            <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-              Hỗ trợ cá nhân hóa lịch trình 24/7, quyền lợi nhận phòng sớm, trả phòng muộn và xe đưa đón riêng tư sang trọng suốt chuyến đi.
-            </p>
-          </div>
+            );
+          })}
         </div>
       </section>
     </div>
   );
 };
+
 export default Home;

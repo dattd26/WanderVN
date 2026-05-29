@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -16,11 +17,13 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IVNPayService _vnpayService;
+    private readonly IEmailService _emailService;
 
-    public ProcessVNPayIpnCommandHandler(IUnitOfWork unitOfWork, IVNPayService vnpayService)
+    public ProcessVNPayIpnCommandHandler(IUnitOfWork unitOfWork, IVNPayService vnpayService, IEmailService emailService)
     {
         _unitOfWork = unitOfWork;
         _vnpayService = vnpayService;
+        _emailService = emailService;
     }
 
     /// <summary>
@@ -62,6 +65,7 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
             // 3. Tìm kiếm đơn đặt hàng trong Database thông qua repository
             var booking = await _unitOfWork.Bookings.FindFirstOrDefaultAsync(
                 b => b.Id == bookingId,
+                includeProperties: "User,BookingHotels.Room.RoomType.Hotel,BookingFlights.Flight.Airline,BookingFlights.Flight.DepAirport,BookingFlights.Flight.ArrAirport",
                 cancellationToken: cancellationToken);
 
             if (booking == null)
@@ -112,6 +116,27 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
 
             // Lưu thay đổi vào cơ sở dữ liệu qua Unit of Work
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Gửi email thông báo trạng thái thanh toán và đơn hàng bất đồng bộ
+            if (booking.User != null && !string.IsNullOrEmpty(booking.User.Email))
+            {
+                var userEmail = booking.User.Email;
+                var transNo = transactionNo?.ToString() ?? "N/A";
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var (emailSubject, emailBody) = WanderVN.Application.Common.Utils.PaymentEmailTemplateBuilder.BuildPaymentEmail(booking, transNo);
+
+                        await _emailService.SendEmailAsync(userEmail, emailSubject, emailBody, isHtml: true);
+                    }
+                    catch (Exception)
+                    {
+                        // Bỏ qua lỗi gửi mail để tránh làm gián đoạn luồng chính
+                    }
+                });
+            }
 
             return new VNPayIpnResponse { Success = true, RspCode = "00", Message = "Confirm Success" };
         }

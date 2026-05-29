@@ -1,0 +1,594 @@
+/* =============================================
+   HOMEPAGE — Scroll Animation & Section Styles
+   ============================================= */
+
+/* --- Scroll Reveal Base States --- */
+.scroll-reveal-fade-up {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-reveal-fade-up.scroll-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-reveal-fade-left {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-reveal-fade-left.scroll-revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.scroll-reveal-fade-right {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-reveal-fade-right.scroll-revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.scroll-reveal-scale-up {
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-reveal-scale-up.scroll-revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.scroll-reveal-fade-in {
+  opacity: 0;
+  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-reveal-fade-in.scroll-revealed {
+  opacity: 1;
+}
+
+/* Stagger children: ban đầu ẩn, reveal lần lượt */
+.scroll-reveal-stagger-child {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-reveal-stagger-child.scroll-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- Section Typography --- */
+.home-section-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-secondary, #735c00);
+}
+
+.home-section-title {
+  font-family: 'EB Garamond', serif;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #1c1c19;
+}
+
+.home-section-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #444748;
+}
+
+/* =============================================
+   TRAVEL MOOD SELECTOR
+   ============================================= */
+
+.mood-card {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  border-radius: 6px;
+  aspect-ratio: 4 / 5;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mood-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 48px rgba(28, 28, 25, 0.12);
+}
+
+.mood-card-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mood-card:hover .mood-card-image {
+  transform: scale(1.08);
+}
+
+.mood-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    rgba(28, 28, 25, 0.85) 0%,
+    rgba(28, 28, 25, 0.3) 50%,
+    rgba(28, 28, 25, 0.1) 100%);
+  transition: background 0.5s ease;
+}
+
+.mood-card:hover .mood-card-overlay {
+  background: linear-gradient(to top,
+    rgba(28, 28, 25, 0.92) 0%,
+    rgba(28, 28, 25, 0.45) 50%,
+    rgba(28, 28, 25, 0.15) 100%);
+}
+
+.mood-card-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 28px 24px;
+  z-index: 2;
+}
+
+.mood-card-desc {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.4s ease,
+              margin-top 0.4s ease;
+  margin-top: 0;
+}
+
+.mood-card:hover .mood-card-desc {
+  max-height: 100px;
+  opacity: 1;
+  margin-top: 10px;
+}
+
+.mood-card-cta {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease 0.15s,
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+}
+
+.mood-card:hover .mood-card-cta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Siblings giảm opacity khi hover */
+.mood-grid:hover .mood-card:not(:hover) {
+  opacity: 0.6;
+  transition: opacity 0.4s ease;
+}
+
+/* =============================================
+   EDITORIAL DESTINATIONS
+   ============================================= */
+
+.editorial-dest-large {
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+}
+
+.editorial-dest-large img {
+  transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editorial-dest-large:hover img {
+  transform: scale(1.05);
+}
+
+.editorial-dest-small {
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+}
+
+.editorial-dest-small img {
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editorial-dest-small:hover img {
+  transform: scale(1.06);
+}
+
+/* Hover info reveal */
+.editorial-hover-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: linear-gradient(to top, rgba(28, 28, 25, 0.95) 0%, transparent 100%);
+  transform: translateY(20px);
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.4s ease;
+  z-index: 3;
+}
+
+.editorial-dest-large:hover .editorial-hover-info,
+.editorial-dest-small:hover .editorial-hover-info {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Desktop sticky: ảnh lớn giữ position */
+@media (min-width: 1024px) {
+  .editorial-sticky-container {
+    position: sticky;
+    top: 100px;
+    align-self: start;
+  }
+}
+
+/* =============================================
+   VIETNAM JOURNEY MAP
+   ============================================= */
+
+.map-region {
+  fill: #e6e2dd;
+  stroke: #c4c7c7;
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill 0.4s ease, stroke 0.4s ease;
+}
+
+.map-region.active,
+.map-region:hover {
+  fill: #f5e6c8;
+  stroke: #735c00;
+  stroke-width: 1.5;
+}
+
+.map-pin {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0.5;
+}
+
+.map-pin.active {
+  opacity: 1;
+  transform: scale(1.3);
+}
+
+/* Route animation khi scroll */
+.map-route-line {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  transition: stroke-dashoffset 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.map-route-line.animate {
+  stroke-dashoffset: 0;
+}
+
+/* Destination preview cards */
+.map-dest-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.map-dest-card:hover {
+  background-color: #f7f3ee;
+  transform: translateX(4px);
+  border-color: rgba(116, 120, 120, 0.15);
+}
+
+.map-dest-card.active {
+  background-color: #f5e6c8;
+  border-color: #735c00;
+}
+
+/* Tab chọn miền */
+.map-tab {
+  padding: 10px 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #444748;
+  cursor: pointer;
+  border: none;
+  background: none;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.map-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 60%;
+  height: 2px;
+  background: #735c00;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.map-tab:hover {
+  color: #1c1c19;
+}
+
+.map-tab.active {
+  color: #735c00;
+}
+
+.map-tab.active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+/* =============================================
+   WEEKEND ESCAPE
+   ============================================= */
+
+.escape-tab {
+  padding: 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #444748;
+  background: transparent;
+  border: 1px solid #c4c7c7;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.escape-tab:hover {
+  border-color: #735c00;
+  color: #1c1c19;
+}
+
+.escape-tab.active {
+  background: #1c1c19;
+  color: #fdf9f4;
+  border-color: #1c1c19;
+}
+
+.escape-card {
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(196, 199, 199, 0.3);
+  cursor: pointer;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 420px;
+  flex-shrink: 0;
+}
+
+.escape-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(28, 28, 25, 0.08);
+}
+
+.escape-card img {
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.escape-card:hover img {
+  transform: scale(1.06);
+}
+
+/* Horizontal scroll container */
+.escape-scroll-track {
+  display: flex;
+  gap: 24px;
+  will-change: transform;
+  transition: transform 0.1s linear;
+}
+
+@media (max-width: 768px) {
+  .escape-card {
+    min-width: 320px;
+  }
+  .escape-scroll-track {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding-bottom: 12px;
+  }
+  .escape-card {
+    scroll-snap-align: start;
+  }
+}
+
+/* =============================================
+   STAY COLLECTIONS
+   ============================================= */
+
+.stay-collection-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.stay-collection-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stay-collection-card:hover img {
+  transform: scale(1.06);
+}
+
+.stay-collection-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    rgba(28, 28, 25, 0.8) 0%,
+    rgba(28, 28, 25, 0.15) 60%,
+    transparent 100%);
+  transition: background 0.5s ease;
+}
+
+.stay-collection-card:hover .stay-collection-overlay {
+  background: linear-gradient(to top,
+    rgba(28, 28, 25, 0.9) 0%,
+    rgba(28, 28, 25, 0.25) 60%,
+    rgba(28, 28, 25, 0.05) 100%);
+}
+
+.stay-count-reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease 0.1s,
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
+}
+
+.stay-collection-card:hover .stay-count-reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Mosaic layout: 2 lớn + 4 nhỏ */
+.stay-mosaic {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 360px 280px 280px;
+  gap: 20px;
+}
+
+.stay-mosaic > :nth-child(1) {
+  grid-row: 1 / 3;
+}
+
+.stay-mosaic > :nth-child(2) {
+  grid-row: 1 / 2;
+}
+
+.stay-mosaic > :nth-child(3) {
+  grid-row: 2 / 3;
+}
+
+.stay-mosaic > :nth-child(4) {
+  grid-column: 1 / 2;
+  grid-row: 3 / 4;
+}
+
+.stay-mosaic > :nth-child(5) {
+  grid-column: 2 / 2;
+  grid-row: 3 / 4;
+}
+
+@media (max-width: 768px) {
+  .stay-mosaic {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(auto-fill, 260px);
+  }
+  .stay-mosaic > :nth-child(1) {
+    grid-row: auto;
+  }
+}
+
+/* =============================================
+   BRAND VALUES
+   ============================================= */
+
+.brand-value-icon svg {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-revealed .brand-value-icon svg {
+  stroke-dashoffset: 0;
+}
+
+/* Paper texture cho Brand Values section */
+.paper-texture-bg {
+  background-color: #f7f3ee;
+  background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"%3E%3C/rect%3E%3C/svg%3E');
+  background-blend-mode: overlay;
+  background-size: 200px 200px;
+}
+
+/* =============================================
+   SHARED — Divider, Tags
+   ============================================= */
+
+.home-divider {
+  width: 48px;
+  height: 1px;
+  background: #c4c7c7;
+  margin: 0 auto;
+}
+
+.dest-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(253, 249, 244, 0.9);
+  color: #444748;
+  border-radius: 3px;
+  backdrop-filter: blur(4px);
+}
+
+/* =============================================
+   RESPONSIVE & REDUCED MOTION
+   ============================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal-fade-up,
+  .scroll-reveal-fade-left,
+  .scroll-reveal-fade-right,
+  .scroll-reveal-scale-up,
+  .scroll-reveal-fade-in,
+  .scroll-reveal-stagger-child {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .mood-card,
+  .mood-card-image,
+  .editorial-dest-large img,
+  .editorial-dest-small img,
+  .escape-card,
+  .escape-card img,
+  .stay-collection-card img {
+    transition: none !important;
+  }
+}

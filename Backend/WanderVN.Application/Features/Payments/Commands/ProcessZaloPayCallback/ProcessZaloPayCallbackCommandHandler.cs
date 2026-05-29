@@ -18,11 +18,13 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IZaloPayService _zalopayService;
+    private readonly IEmailService _emailService;
 
-    public ProcessZaloPayCallbackCommandHandler(IUnitOfWork unitOfWork, IZaloPayService zalopayService)
+    public ProcessZaloPayCallbackCommandHandler(IUnitOfWork unitOfWork, IZaloPayService zalopayService, IEmailService emailService)
     {
         _unitOfWork = unitOfWork;
         _zalopayService = zalopayService;
+        _emailService = emailService;
     }
 
     /// <summary>
@@ -67,6 +69,7 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
             // 4. Tìm kiếm đơn đặt hàng trong cơ sở dữ liệu qua Unit Of Work
             var booking = await _unitOfWork.Bookings.FindFirstOrDefaultAsync(
                 b => b.Id == bookingId,
+                includeProperties: "User,BookingHotels.Room.RoomType.Hotel,BookingFlights.Flight.Airline,BookingFlights.Flight.DepAirport,BookingFlights.Flight.ArrAirport",
                 cancellationToken: cancellationToken);
 
             if (booking == null)
@@ -106,6 +109,26 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
 
             // 9. Cam kết lưu các thay đổi vào cơ sở dữ liệu
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // 10. Gửi email thông báo trạng thái thanh toán và đơn hàng bất đồng bộ
+            if (booking.User != null && !string.IsNullOrEmpty(booking.User.Email))
+            {
+                var userEmail = booking.User.Email;
+                var transNo = zpTransId ?? "N/A";
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var (emailSubject, emailBody) = PaymentEmailTemplateBuilder.BuildPaymentEmail(booking, transNo);
+                        await _emailService.SendEmailAsync(userEmail, emailSubject, emailBody, isHtml: true);
+                    }
+                    catch (Exception)
+                    {
+                        // Bỏ qua lỗi gửi mail để tránh làm gián đoạn luồng chính
+                    }
+                });
+            }
 
             return new ZaloPayCallbackResponse { ReturnCode = 1, ReturnMessage = "success" };
         }
