@@ -25,12 +25,11 @@ public class EmailService : IEmailService
         try
         {
             // Thiết lập máy chủ SMTP ẩn hoặc SMTP mô phỏng
-            using var smtpClient = new SmtpClient(_emailSettings.SmtpServer)
-            {
-                Port = _emailSettings.Port,
-                Credentials = new NetworkCredential(_emailSettings.SenderEmail, _emailSettings.Password),
-                EnableSsl = _emailSettings.EnableSsl
-            };
+            using var smtpClient = new SmtpClient(_emailSettings.SmtpServer);
+            smtpClient.Port = _emailSettings.Port;
+            smtpClient.EnableSsl = _emailSettings.EnableSsl;
+            smtpClient.UseDefaultCredentials = false;
+            smtpClient.Credentials = new NetworkCredential(_emailSettings.SenderEmail, _emailSettings.Password);
 
             var mailMessage = new MailMessage
             {

@@ -39,7 +39,7 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Uni
 
         try
         {
-            tokenHandler.ValidateToken(request.Token, new TokenValidationParameters
+            var principal = tokenHandler.ValidateToken(request.Token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
@@ -50,15 +50,36 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Uni
 
             var jwtToken = (JwtSecurityToken)validatedToken;
 
-            // Kiểm tra purpose của token
-            var purposeClaim = jwtToken.Claims.FirstOrDefault(x => x.Type == "purpose")?.Value;
-            if (purposeClaim != "email_verification")
+            // Đọc trực tiếp payload gốc từ raw token để vượt qua lỗi mất custom claim của thư viện
+            var tokenParts = request.Token.Split('.');
+            if (tokenParts.Length == 3)
             {
-                throw new SecurityTokenException("Token không đúng mục đích sử dụng.");
+                var payloadStr = tokenParts[1].Replace('-', '+').Replace('_', '/');
+                switch (payloadStr.Length % 4)
+                {
+                    case 2: payloadStr += "=="; break;
+                    case 3: payloadStr += "="; break;
+                }
+                var jsonBytes = Convert.FromBase64String(payloadStr);
+                var json = Encoding.UTF8.GetString(jsonBytes);
+                
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (!doc.RootElement.TryGetProperty("purpose", out var purposeElement) || purposeElement.GetString() != "email_verification")
+                {
+                    throw new SecurityTokenException("Token không đúng mục đích sử dụng (Invalid purpose).");
+                }
+            }
+            else
+            {
+                throw new SecurityTokenException("Cấu trúc token không hợp lệ.");
             }
 
-            // Lấy email từ token
-            var email = jwtToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
+            // Lấy email từ token (có thể lưu dạng ClaimTypes hoặc trường 'email' thông thường)
+            var email = jwtToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value 
+                        ?? (jwtToken.Payload.TryGetValue(ClaimTypes.Email, out var e1) ? e1?.ToString() : null)
+                        ?? (jwtToken.Payload.TryGetValue("emailaddress", out var e2) ? e2?.ToString() : null)
+                        ?? (jwtToken.Payload.TryGetValue("email", out var e3) ? e3?.ToString() : null);
+
             if (string.IsNullOrEmpty(email))
             {
                 throw new SecurityTokenException("Không tìm thấy thông tin email trong token.");
@@ -110,8 +131,9 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Uni
         {
             throw new ArgumentException("Link xác nhận đã hết hạn. Vui lòng đăng ký lại hoặc yêu cầu gửi lại email xác nhận.");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             throw new ArgumentException("Token xác nhận không hợp lệ hoặc đã bị lỗi.");
         }
     }
