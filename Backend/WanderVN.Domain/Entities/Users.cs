@@ -21,6 +21,15 @@ public partial class Users
 
     public bool? IsActive { get; set; }
 
+    // ── Partner Onboarding ──
+    // Trạng thái xét duyệt hồ sơ: 0 = Pending (chờ duyệt) / 1 = Active (đã duyệt) / 2 = Rejected (bị từ chối).
+    // Độc lập với IsActive: IsActive là cờ khóa/mở tài khoản, Status là vòng đời xét duyệt.
+    public int Status { get; set; }
+
+    public string? RejectReason { get; set; }
+
+    public DateTimeOffset? ApprovedAt { get; set; }
+
     public DateTimeOffset? CreatedAt { get; set; }
 
     public DateTimeOffset? UpdatedAt { get; set; }

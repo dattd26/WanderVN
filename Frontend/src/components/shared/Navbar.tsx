@@ -37,10 +37,10 @@ export const Navbar: React.FC = () => {
   };
 
   const navLinks = [
-    // { name: 'Khách sạn', path: '/stays' },
+    { name: 'Khách sạn', path: '/stays' },
     { name: 'Vé máy bay', path: '/flights' },
     { name: 'Trải nghiệm', path: '#' },
-    { name: 'Nhật ký hành trình', path: '#' },
+    { name: 'Lịch Sử Booking', path: '/booking-history' },
     { name: 'Trở thành Partner', path: '/partner/onboarding' },
   ];
 

@@ -75,5 +75,18 @@ export interface HotelBookingResponse {
   totalPrice: number;
   status: string;
 }
-
+export interface HotelBookingHistoryDto {
+  bookingId: number;
+  bookingCode: string;
+  hotelId: number;
+  hotelName: string;
+  hotelAddress: string;
+  hotelImage: string;
+  roomTypeName: string;
+  checkInDate: string; // yyyy-MM-dd
+  checkOutDate: string; // yyyy-MM-dd
+  totalPrice: number;
+  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
+  createdAt: string;
+}
 

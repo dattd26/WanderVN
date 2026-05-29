@@ -5,7 +5,7 @@ import ChatWidget from './components/ChatWidget';
 import { Home } from './pages/client/Home';
 import { SearchStays } from './pages/client/SearchStays';
 import { HotelDetail } from './pages/client/HotelDetail';
-import { SearchFlights } from './pages/client/SearchFlights';
+import { SearchFlights, SearchFlights as FlightDetail } from './pages/client/SearchFlights';
 import { FlightCheckout } from './pages/client/FlightCheckout';
 import { HotelCheckout } from './pages/client/HotelCheckout';
 import { VNPayReturn } from './pages/client/VNPayReturn';
@@ -18,6 +18,8 @@ import { PartnerProperties } from './pages/partner/PartnerProperties';
 import { PartnerFinance } from './pages/partner/PartnerFinance';
 import { AccessDenied } from './pages/auth/AccessDenied';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import { BookingHistory } from './pages/client/BookingHistory'; 
+import BookingDetail from './pages/client/BookingDetail';
 
 /** Component điều hướng thông minh cho luồng đối tác (Partner Redirect).
  * Nếu người dùng đã đăng nhập (có token JWT trong localStorage), chuyển hướng thẳng tới Dashboard.
@@ -49,6 +51,7 @@ function AppLayout() {
           <Route path="/stays" element={<SearchStays />} />
           <Route path="/hotel/:id" element={<HotelDetail />} />
           <Route path="/flights" element={<SearchFlights />} />
+          <Route path="/flights/:offerId" element={<FlightDetail />} />
           <Route path="/flights/checkout" element={<FlightCheckout />} />
           <Route path="/booking" element={<HotelCheckout />} />
           <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
@@ -56,6 +59,8 @@ function AppLayout() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/access-denied" element={<AccessDenied />} />
+          <Route path="/booking-history" element={<BookingHistory />} />
+          <Route path="/booking-history/:bookingId" element={<BookingDetail />} />
 
           {/* Partner portal */}
           <Route path="/partner" element={<PartnerRedirect />} />

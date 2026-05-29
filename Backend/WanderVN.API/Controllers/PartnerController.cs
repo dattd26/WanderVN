@@ -11,6 +11,7 @@ using WanderVN.Application.Features.Partner.Commands.AddRoomType;
 using WanderVN.Application.Features.Partner.Commands.DeleteRoomType;
 using WanderVN.Application.Features.Partner.Commands.UpdateRoomType;
 using WanderVN.Application.Features.Partner.Commands.ToggleRoomBlock;
+using WanderVN.Application.Features.Partner.Commands.UpdateRatePlans;
 using WanderVN.Application.Features.Partner.Queries.GetHotelBookings;
 
 namespace WanderVN.API.Controllers;
@@ -184,14 +185,14 @@ public class PartnerController : ControllerBase
     public async Task<IActionResult> UpdateRatePlans(
         [FromRoute] int hotelId,
         [FromRoute] int roomTypeId,
-        [FromBody] WanderVN.Application.Features.Partner.Commands.UpdateRatePlans.UpdateRatePlansCommand command)
+        [FromBody] UpdateRatePlansCommand command)
     {
         command.HotelId = hotelId;
         command.RoomTypeId = roomTypeId;
         var result = await _mediator.Send(command);
         if (!result.Success)
             return BadRequest(new ErrorResponse(result.Message, 400));
-        return Ok(new ApiResponse<WanderVN.Application.Features.Partner.Commands.UpdateRatePlans.UpdateRatePlansResponse>(true, result.Message, 200, result));
+        return Ok(new ApiResponse<UpdateRatePlansResponse>(true, result.Message, 200, result));
     }
 
     /// <summary>

@@ -12,10 +12,10 @@ export function PartnerStatsCards({
     inactiveCount,
 }: PartnerStatsCardsProps) {
     const cards = [
-        { label: 'TOTAL PARTNERS', value: totalPartners, borderTop: 'border-t-admin-secondary' },
-        { label: 'PENDING APPROVAL', value: pendingCount, borderTop: 'border-t-admin-tertiary-fixed-dim' },
-        { label: 'ACTIVE PARTNERS', value: activeCount, borderTop: 'border-t-admin-secondary-container' },
-        { label: 'INACTIVE PARTNERS', value: inactiveCount, borderTop: 'border-t-admin-primary' },
+        { label: 'TỔNG ĐỐI TÁC', value: totalPartners, borderTop: 'border-t-admin-secondary' },
+        { label: 'CHỜ DUYỆT', value: pendingCount, borderTop: 'border-t-admin-tertiary-fixed-dim' },
+        { label: 'ĐANG HOẠT ĐỘNG', value: activeCount, borderTop: 'border-t-admin-secondary-container' },
+        { label: 'ĐÃ KHÓA', value: inactiveCount, borderTop: 'border-t-admin-primary' },
     ];
 
     return (

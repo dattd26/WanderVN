@@ -6,7 +6,19 @@ import { AuthCardWrapper } from '../../components/auth/AuthCardWrapper';
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const explicitRedirect = searchParams.get('redirect');
+
+  // Trang đích mặc định sau khi đăng nhập, dựa trên vai trò của tài khoản.
+  const getDefaultLandingByRole = (role: string): string => {
+    switch (role) {
+      case 'Admin':
+        return '/admin/dashboard';
+      case 'Partner':
+        return '/partner/dashboard';
+      default:
+        return '/';
+    }
+  };
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,15 +67,30 @@ export const LoginPage: React.FC = () => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.role);
       localStorage.setItem('userEmail', email);
-      localStorage.setItem('userId', data.userId.toString());
+      try {
+  // Giải mã phần thân (payload) của JWT Token dạng chuỗi Base64
+  const tokenPayload = JSON.parse(atob(data.token.split('.')[1]));
+  
+  // Lấy ID ra (C# thường lưu trong trường 'nameid' hoặc 'sub' hoặc 'id')
+  const actualUserId = tokenPayload.nameid || tokenPayload.sub || tokenPayload.id;
+  
+  if (actualUserId) {
+    localStorage.setItem('userId', actualUserId.toString());
+  }
+} catch (error) {
+  console.error("Lỗi giải mã token để lấy userId:", error);
+}
 
       setToastMessage('Chào mừng quay trở lại! Đang tải hành trình của bạn...');
-      
+
+      // Ưu tiên redirect URL nếu user bị bounce sang /login từ trang protected,
+      // ngược lại đưa về trang mặc định theo vai trò (Admin → /admin, Partner → /partner).
+      const target = explicitRedirect || getDefaultLandingByRole(data.role);
+
       setTimeout(() => {
         setIsLoading(false);
-        // Chuyển hướng về trang đích hoặc trang chủ
-        navigate(redirect);
-        // Reload nhẹ để Navbar cập nhật trạng thái đăng nhập
+        navigate(target);
+        // Reload nhẹ để Navbar/Layout cập nhật trạng thái đăng nhập
         window.location.reload();
       }, 1500);
 

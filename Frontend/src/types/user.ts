@@ -8,6 +8,9 @@ export interface UserDto {
   avatarUrl?: string;
   roleName?: string;
   isActive?: boolean;
+  status?: number;
+  rejectReason?: string;
+  approvedAt?: string;
   createdAt?: string; // ISO 8601 string từ DateTimeOffset
   totalRevenue?: number;
 }
@@ -49,6 +52,7 @@ export interface GetUsersQuery {
   pageNumber?: number;
   pageSize?: number;
   isActive?: boolean;
+  status?: number;
   roleName?: string;
 }
 

@@ -18,7 +18,6 @@ export const SearchFlights: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Lấy dữ liệu trực tiếp từ searchParams trên URL để tránh đồng bộ state trùng lặp không cần thiết
   const origin = searchParams.get('origin') || 'HAN';
   const destination = searchParams.get('destination') || 'SGN';
   const departureDate = (() => {
@@ -27,6 +26,9 @@ export const SearchFlights: React.FC = () => {
     futureDate.setDate(futureDate.getDate() + 7);
     return futureDate.toISOString().split('T')[0];
   })();
+  const tripType = (searchParams.get('tripType') as 'round-trip' | 'one-way') || 'one-way';
+  const cabinClass = (searchParams.get('cabinClass') as 'business' | 'economy') || 'business';
+  const returnDate = searchParams.get('returnDate') || '';
 
   const hasSearched = !!(searchParams.get('origin') && searchParams.get('destination') && searchParams.get('departureDate'));
 
@@ -74,8 +76,7 @@ export const SearchFlights: React.FC = () => {
     navigate('/flights/checkout', { state: { offer } });
   };
 
-  // Thực hiện tìm kiếm chuyến bay từ C# API (khai báo trước useEffect để tránh lỗi truy cập trước khi khai báo)
-  const executeSearch = async (o: string, d: string, date: string) => {
+  const executeSearch = async (o: string, d: string, date: string, cabin: string, retDate?: string) => {
     setLoading(true);
     setError(null);
     setSelectedOffer(null);
@@ -85,7 +86,9 @@ export const SearchFlights: React.FC = () => {
         destination: d,
         departureDate: date,
         passengerType: 'adult',
-        returnOffers: true
+        returnOffers: true,
+        cabinClass: cabin,
+        returnDate: retDate || undefined
       });
 
       setOffers(response);
@@ -103,29 +106,41 @@ export const SearchFlights: React.FC = () => {
     }
   };
 
-  // Tự động kích hoạt tìm kiếm khi có tham số trên URL
   useEffect(() => {
     const o = searchParams.get('origin');
     const d = searchParams.get('destination');
     const dt = searchParams.get('departureDate');
+    const cabin = searchParams.get('cabinClass') || 'business';
+    const retDate = searchParams.get('returnDate') || undefined;
 
     if (o && d && dt) {
-      // Chạy tìm kiếm bất đồng bộ ngoài luồng render đồng bộ để tránh cảnh báo cascading render
       const timer = setTimeout(() => {
-        executeSearch(o, d, dt);
+        executeSearch(o, d, dt, cabin, retDate);
       }, 0);
       return () => clearTimeout(timer);
     }
   }, [searchParams]);
 
 
-  // Đồng bộ hóa URL khi thực hiện lượt tìm kiếm mới
-  const handleSearchSubmit = (newOrigin: string, newDest: string, newDate: string) => {
-    setSearchParams({
+  const handleSearchSubmit = (
+    newOrigin: string,
+    newDest: string,
+    newDate: string,
+    newTripType: 'round-trip' | 'one-way',
+    newCabinClass: 'business' | 'economy',
+    newReturnDate?: string
+  ) => {
+    const params: Record<string, string> = {
       origin: newOrigin,
       destination: newDest,
-      departureDate: newDate
-    });
+      departureDate: newDate,
+      tripType: newTripType,
+      cabinClass: newCabinClass,
+    };
+    if (newTripType === 'round-trip' && newReturnDate) {
+      params.returnDate = newReturnDate;
+    }
+    setSearchParams(params);
   };
 
   // Định dạng thời gian hiển thị (HH:MM)
@@ -187,6 +202,9 @@ export const SearchFlights: React.FC = () => {
             initialOrigin={origin}
             initialDestination={destination}
             initialDepartureDate={departureDate}
+            initialReturnDate={returnDate}
+            initialTripType={tripType}
+            initialCabinClass={cabinClass}
             onSearch={handleSearchSubmit}
           />
         </div>
@@ -232,7 +250,7 @@ export const SearchFlights: React.FC = () => {
                 ].map((route) => (
                   <button
                     key={`${route.from}-${route.to}`}
-                    onClick={() => handleSearchSubmit(route.from, route.to, departureDate)}
+                    onClick={() => handleSearchSubmit(route.from, route.to, departureDate, 'one-way', 'business')}
                     className="p-5 border border-outline/15 hover:border-primary/40 rounded-lg text-left bg-surface-container-low hover:bg-surface-container-high transition-all flex flex-col gap-1 limestone-shadow-sm hover:scale-[1.02]"
                   >
                     <span className="font-label-md text-primary">{route.title}</span>
@@ -326,7 +344,9 @@ export const SearchFlights: React.FC = () => {
                             <h3 className="font-label-md text-label-md uppercase tracking-wider text-primary">
                               {offer.carrierName}
                             </h3>
-                            <p className="text-caption text-on-surface-variant font-medium">Hạng Thượng gia</p>
+                            <p className="text-caption text-on-surface-variant font-medium">
+                              {cabinClass === 'economy' ? 'Hạng Phổ thông' : 'Hạng Thương gia'}
+                            </p>
                           </div>
                         </div>
 
