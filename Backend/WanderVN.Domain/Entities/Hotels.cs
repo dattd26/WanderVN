@@ -57,4 +57,6 @@ public partial class Hotels
     public virtual ICollection<Rooms> Rooms { get; set; } = new List<Rooms>();
 
     public virtual ICollection<Amenities> Amenity { get; set; } = new List<Amenities>();
+
+    public virtual ICollection<HotelTravelMoods> HotelTravelMoods { get; set; } = new List<HotelTravelMoods>();
 }

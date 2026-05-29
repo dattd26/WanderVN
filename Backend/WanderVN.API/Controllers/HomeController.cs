@@ -65,4 +65,20 @@ public class HomeController : ControllerBase
         var response = new ApiResponse<List<HomeStayCollectionDto>>(true, "Lấy danh sách bộ sưu tập thành công!", 200, data);
         return Ok(response);
     }
+
+    /// <summary>
+    /// GET: api/v1/home/moods/{id}
+    /// Lấy chi tiết cảm hứng du lịch kèm danh sách khách sạn được tuyển chọn.
+    /// </summary>
+    [HttpGet("moods/{id}")]
+    public async Task<IActionResult> GetTravelMoodById(string id)
+    {
+        var data = await _mediator.Send(new WanderVN.Application.Features.Home.Queries.GetTravelMoodById.GetTravelMoodByIdQuery(id));
+        if (data == null)
+        {
+            return NotFound(new ApiResponse<object>(false, "Không tìm thấy cảm hứng du lịch này.", 404, null));
+        }
+        var response = new ApiResponse<WanderVN.Application.Features.Home.Queries.GetTravelMoodById.TravelMoodDetailDto>(true, "Lấy chi tiết cảm hứng thành công!", 200, data);
+        return Ok(response);
+    }
 }

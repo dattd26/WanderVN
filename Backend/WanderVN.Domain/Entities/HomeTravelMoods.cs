@@ -11,4 +11,6 @@ public partial class HomeTravelMoods
     public string ImageUrl { get; set; } = null!;
     public string QueryString { get; set; } = null!;
     public int SortOrder { get; set; }
+
+    public virtual ICollection<HotelTravelMoods> HotelTravelMoods { get; set; } = new List<HotelTravelMoods>();
 }

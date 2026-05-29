@@ -40,6 +40,7 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
     public virtual DbSet<HomeEditorialDestinations> HomeEditorialDestinations { get; set; }
     public virtual DbSet<HomeWeekendEscapes> HomeWeekendEscapes { get; set; }
     public virtual DbSet<HomeStayCollections> HomeStayCollections { get; set; }
+    public virtual DbSet<HotelTravelMoods> HotelTravelMoods { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -231,6 +232,22 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.ImageUrl).HasMaxLength(500).IsUnicode(false);
             entity.Property(e => e.QueryString).HasMaxLength(255).IsUnicode(false);
+        });
+
+        modelBuilder.Entity<HotelTravelMoods>(entity =>
+        {
+            entity.ToTable("HotelTravelMoods");
+            entity.HasKey(e => new { e.HotelId, e.TravelMoodId });
+
+            entity.HasOne(e => e.Hotel)
+                .WithMany(h => h.HotelTravelMoods)
+                .HasForeignKey(e => e.HotelId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.TravelMood)
+                .WithMany(m => m.HotelTravelMoods)
+                .HasForeignKey(e => e.TravelMoodId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);
