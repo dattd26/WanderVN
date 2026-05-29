@@ -472,7 +472,7 @@ ehthumbs_vista.db
 
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
-
+CHANGELOG.md
 # Windows Installer files
 *.cab
 *.msi

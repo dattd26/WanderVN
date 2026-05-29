@@ -12,13 +12,14 @@ import { VNPayReturn } from './pages/client/VNPayReturn';
 import { ZaloPayReturn } from './pages/client/ZaloPayReturn';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 import { PartnerOnboarding } from './pages/partner/PartnerOnboarding';
 import { PartnerDashboard } from './pages/partner/PartnerDashboard';
 import { PartnerProperties } from './pages/partner/PartnerProperties';
 import { PartnerFinance } from './pages/partner/PartnerFinance';
 import { AccessDenied } from './pages/auth/AccessDenied';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
-import { BookingHistory } from './pages/client/BookingHistory'; 
+import { BookingHistory } from './pages/client/BookingHistory';
 import BookingDetail from './pages/client/BookingDetail';
 
 /** Component điều hướng thông minh cho luồng đối tác (Partner Redirect).
@@ -58,6 +59,7 @@ function AppLayout() {
           <Route path="/payment/zalopay-return" element={<ZaloPayReturn />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/access-denied" element={<AccessDenied />} />
           <Route path="/booking-history" element={<BookingHistory />} />
           <Route path="/booking-history/:bookingId" element={<BookingDetail />} />
