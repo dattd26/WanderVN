@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using WanderVN.API.Common.Responses;
@@ -8,6 +8,7 @@ using WanderVN.Application.Features.Bookings.Commands.CreateFlightBooking;
 using WanderVN.Application.Features.Bookings.Commands.CreateHotelBooking;
 using WanderVN.Application.Features.Bookings.Queries.GetHotelBookingHistory;
 using WanderVN.Application.Features.Bookings.Queries.GetHotelBookingDetail;
+using WanderVN.Application.Features.Bookings.Queries.LookupBooking;
 
 namespace WanderVN.API.Controllers;
 
@@ -143,5 +144,29 @@ public class BookingsController : ControllerBase
             ));
         }
     }
-}
 
+    [HttpPost("lookup")]
+    public async Task<IActionResult> LookupBooking([FromBody] LookupBookingQuery request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.BookingCode) || string.IsNullOrWhiteSpace(request.Email))
+            {
+                return BadRequest(new ApiResponse<object>(false, "Vui lòng nhập đầy đủ mã đặt chỗ và email liên hệ.", 400, null));
+            }
+
+            var result = await _mediator.Send(request);
+
+            if (result == null)
+            {
+                return NotFound(new ApiResponse<object>(false, "Không tìm thấy đơn đặt chỗ khớp với mã và email đã nhập.", 404, null));
+            }
+
+            return Ok(new ApiResponse<object>(true, "Tra cứu thành công.", 200, result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<object>(false, ex.Message, 500, null));
+        }
+    }
+}
