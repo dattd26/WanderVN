@@ -20,6 +20,8 @@ export const authService = {
     return request<boolean>('/auth/change-password', {
       method: 'PUT',
       body: JSON.stringify(payload),
+    });
+  },
   verifyEmail: async (token: string): Promise<void> => {
     return request<void>('/auth/verify-email', {
       method: 'POST',
