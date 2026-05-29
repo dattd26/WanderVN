@@ -17,7 +17,7 @@ export const UserSummaryCards = React.memo(function UserSummaryCards({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-admin-lg select-none">
             <div className="bg-white border-l-4 border-[#002B5B] p-admin-lg border-t border-r border-b border-admin-outline-variant shadow-sm rounded-r-lg">
                 <p className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant mb-admin-base uppercase">
-                    TOTAL USERS
+                    TỔNG NGƯỜI DÙNG
                 </p>
                 <div className="flex items-end gap-admin-sm">
                     <h4 className="font-admin-sans text-admin-headline-md font-bold text-admin-primary">
@@ -27,7 +27,7 @@ export const UserSummaryCards = React.memo(function UserSummaryCards({
             </div>
             <div className="bg-white border-l-4 border-[#10B981] p-admin-lg border-t border-r border-b border-admin-outline-variant shadow-sm rounded-r-lg">
                 <p className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant mb-admin-base uppercase">
-                    ACTIVE (TRANG NÀY)
+                    ACTIVE (ĐANG HOẠT ĐỘNG)
                 </p>
                 <div className="flex items-end gap-admin-sm">
                     <h4 className="font-admin-sans text-admin-headline-md font-bold text-admin-primary">
@@ -38,7 +38,7 @@ export const UserSummaryCards = React.memo(function UserSummaryCards({
             </div>
             <div className="bg-white border-l-4 border-[#F59E0B] p-admin-lg border-t border-r border-b border-admin-outline-variant shadow-sm rounded-r-lg">
                 <p className="font-admin-sans text-admin-label-caps text-admin-on-surface-variant mb-admin-base uppercase">
-                    LOCKED (TRANG NÀY)
+                    LOCKED (ĐÃ KHOÁ)
                 </p>
                 <div className="flex items-end gap-admin-sm">
                     <h4 className="font-admin-sans text-admin-headline-md font-bold text-admin-primary">
