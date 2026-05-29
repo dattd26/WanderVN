@@ -10,6 +10,7 @@ public class GetUsersQuery : IRequest<PagedResult<UserDto>>
     public string? PhoneNumber { get; set; }
     public string? RoleName { get; set; }
     public bool? IsActive { get; set; }
+    public int? Status { get; set; }
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 10;
 }

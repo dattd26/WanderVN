@@ -69,6 +69,15 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
             new Roles { Id = 2, Name = "User" }
         );
 
+        modelBuilder.Entity<Users>(entity =>
+        {
+            // KHÔNG cấu hình HasDefaultValue/HasDefaultValueSql cho Status.
+            // Lý do: EF Core dùng CLR default (0) làm sentinel — nếu set Status=0 (Pending),
+            // nó sẽ bỏ qua và để DB dùng DEFAULT(1). Bỏ cấu hình này để EF Core
+            // luôn gửi giá trị Status được gán trong code xuống DB.
+            entity.Property(u => u.Status).HasColumnType("int");
+        });
+
         modelBuilder.Entity<Hotels>(entity =>
         {
             // Thiết lập mối quan hệ 1-N giữa Users (Chủ sở hữu) và Hotels (Khách sạn)

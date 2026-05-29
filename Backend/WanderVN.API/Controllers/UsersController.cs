@@ -9,6 +9,8 @@ using WanderVN.Application.Features.Users.Commands.CreateCustomer;
 using WanderVN.Application.Features.Users.Commands.DeleteCustomer;
 using WanderVN.Application.Features.Users.Commands.UpdateCustomer;
 using WanderVN.Application.Features.Users.Commands.ChangePartnerPassword;
+using WanderVN.Application.Features.Users.Commands.ApprovePartner;
+using WanderVN.Application.Features.Users.Commands.RejectPartner;
 using System.Threading;
 
 namespace WanderVN.API.Controllers;
@@ -85,6 +87,25 @@ public class UsersController : ControllerBase
         command.Id = id;
         var result = await _mediator.Send(command, cancellationToken);
         var response = new ApiResponse<bool>(true, "Đổi mật khẩu đối tác thành công.", 200, result);
+        return Ok(response);
+    }
+
+    /// POST api/v1/users/partners/{id}/approve
+    [HttpPost("partners/{id:int}/approve")]
+    public async Task<IActionResult> ApprovePartner(int id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ApprovePartnerCommand { Id = id }, cancellationToken);
+        var response = new ApiResponse<bool>(true, "Duyệt hồ sơ đối tác thành công.", 200, result);
+        return Ok(response);
+    }
+
+    /// POST api/v1/users/partners/{id}/reject   body: { "rejectReason": "..." }
+    [HttpPost("partners/{id:int}/reject")]
+    public async Task<IActionResult> RejectPartner(int id, [FromBody] RejectPartnerCommand command, CancellationToken cancellationToken)
+    {
+        command.Id = id;
+        var result = await _mediator.Send(command, cancellationToken);
+        var response = new ApiResponse<bool>(true, "Từ chối hồ sơ đối tác thành công.", 200, result);
         return Ok(response);
     }
 

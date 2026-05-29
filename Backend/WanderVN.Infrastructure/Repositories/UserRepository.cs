@@ -17,6 +17,7 @@ public class UserRepository : GenericRepository<Users>, IUserRepository
         string? phoneNumber,
         string? roleName,
         bool? isActive,
+        int? status,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default)
@@ -35,6 +36,12 @@ public class UserRepository : GenericRepository<Users>, IUserRepository
         if (isActive.HasValue)
         {
             query = query.Where(u => u.IsActive == isActive.Value);
+        }
+
+        // 2.5 Lọc theo Status (Duyệt hồ sơ)
+        if (status.HasValue)
+        {
+            query = query.Where(u => u.Status == status.Value);
         }
 
         // 3. TÌM KIẾM CHUNG (Gõ 1 ô tìm ra Tên OR Email OR SĐT)

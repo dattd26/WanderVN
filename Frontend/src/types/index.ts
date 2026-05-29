@@ -12,4 +12,5 @@ export * from './partner/dashboard';
 export * from './user';
 export * from './payout';
 export * from './role';
+export * from './adminHotelReview';
 

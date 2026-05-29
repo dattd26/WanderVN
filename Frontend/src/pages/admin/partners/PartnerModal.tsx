@@ -36,17 +36,17 @@ export function PartnerModal({ isOpen, partner, onClose }: PartnerModalProps) {
                                     {partner.fullName || '(Chưa có tên)'}
                                 </h2>
                                 <span className="px-2 py-0.5 bg-admin-surface-variant text-[10px] font-bold rounded uppercase tracking-wider font-admin-sans">
-                                    Partner
+                                    Đối tác
                                 </span>
                                 <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider font-admin-sans ${partner.isActive
                                     ? 'bg-green-100 text-green-800'
                                     : 'bg-error-container text-error'
                                     }`}>
-                                    {partner.isActive ? 'Active' : 'Locked'}
+                                    {partner.isActive ? 'Đang hoạt động' : 'Đã khóa'}
                                 </span>
                             </div>
                             <p className="text-admin-body-sm text-admin-on-surface-variant font-admin-sans">
-                                Partner ID: <span className="font-admin-mono">PRT-{partner.id}</span>
+                                Mã đối tác: <span className="font-admin-mono">PRT-{partner.id}</span>
                             </p>
                         </div>
                     </div>
@@ -65,7 +65,7 @@ export function PartnerModal({ isOpen, partner, onClose }: PartnerModalProps) {
                         {/* General Information */}
                         <section className="space-y-admin-md">
                             <h3 className="font-admin-sans text-admin-label-caps text-admin-secondary border-b border-admin-outline-variant pb-admin-xs uppercase">
-                                General Information
+                                Thông tin chung
                             </h3>
                             <div className="space-y-admin-sm">
                                 <div>
@@ -110,7 +110,7 @@ export function PartnerModal({ isOpen, partner, onClose }: PartnerModalProps) {
                         {/* Service Details */}
                         <section className="space-y-admin-md">
                             <h3 className="font-admin-sans text-admin-label-caps text-admin-secondary border-b border-admin-outline-variant pb-admin-xs uppercase">
-                                Service Details
+                                Chi tiết dịch vụ
                             </h3>
                             <div className="space-y-admin-sm">
                                 <div>
@@ -118,7 +118,7 @@ export function PartnerModal({ isOpen, partner, onClose }: PartnerModalProps) {
                                         Vai trò
                                     </p>
                                     <p className="font-admin-sans text-admin-body-md text-admin-primary">
-                                        {partner.roleName || 'Partner'}
+                                        {partner.roleName === 'Partner' ? 'Đối tác' : (partner.roleName || 'Đối tác')}
                                     </p>
                                 </div>
                                 <div>
@@ -130,12 +130,12 @@ export function PartnerModal({ isOpen, partner, onClose }: PartnerModalProps) {
                                         : 'bg-error-container text-error border-error/20'
                                         }`}>
                                         <span className={`w-1.5 h-1.5 rounded-full ${partner.isActive ? 'bg-green-500' : 'bg-error'}`} />
-                                        {partner.isActive ? 'Active' : 'Locked'}
+                                        {partner.isActive ? 'Đang hoạt động' : 'Đã khóa'}
                                     </span>
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-admin-on-surface-variant font-bold uppercase tracking-tighter font-admin-sans">
-                                        Avatar URL
+                                        Ảnh đại diện
                                     </p>
                                     {partner.avatarUrl ? (
                                         <img
@@ -156,7 +156,7 @@ export function PartnerModal({ isOpen, partner, onClose }: PartnerModalProps) {
                         {/* Documents */}
                         <section className="space-y-admin-md md:col-span-2">
                             <h3 className="font-admin-sans text-admin-label-caps text-admin-secondary border-b border-admin-outline-variant pb-admin-xs uppercase">
-                                Documents
+                                Tài liệu
                             </h3>
                             <div className="space-y-admin-xs">
                                 {[
