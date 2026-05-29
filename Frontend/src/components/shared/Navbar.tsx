@@ -16,6 +16,9 @@ export const Navbar: React.FC = () => {
   const isLoggedIn = !!(token && email);
   const userEmail = email || '';
 
+  // thanh điều hướng có trong suốt
+  const isTransparent = !isScrolled && location.pathname === '/';
+
   // Khi cuộn trang qua 50px, thanh navbar sẽ đổi sang màu nền mờ nhòe kính mờ sang trọng
   useEffect(() => {
     const handleScroll = () => {
@@ -60,7 +63,7 @@ export const Navbar: React.FC = () => {
         {/* Brand Logo - Logo thương hiệu kết hợp biểu tượng khách sạn cổ điển */}
         <Link to="/" className="flex items-center gap-2.5 group">
           <img src={logo} alt="WanderVN Logo" className="h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
-          <span className="font-display-lg text-headline-lg text-primary tracking-tighter transition-all duration-300 group-hover:opacity-80">
+          <span className={`font-display-lg text-headline-lg tracking-tighter transition-all duration-300 group-hover:opacity-80 ${isTransparent ? 'text-white' : 'text-primary'}`}>
             WanderVN
           </span>
         </Link>
@@ -75,7 +78,9 @@ export const Navbar: React.FC = () => {
                   to={link.path}
                   className={`block px-5 xl:px-6 py-2 font-medium text-[15px] xl:text-[16px] tracking-wide transition-all duration-300 ${isActive
                     ? 'text-secondary'
-                    : 'text-primary hover:text-secondary'
+                    : isTransparent
+                      ? 'text-white hover:text-white/80'
+                      : 'text-primary hover:text-secondary'
                     }`}
                 >
                   {link.name}
@@ -95,7 +100,7 @@ export const Navbar: React.FC = () => {
           {isLoggedIn ? (
             <div className="relative group/user">
               {/* Thẻ thông tin người dùng được thiết kế tối giản, sang trọng */}
-              <div className="flex items-center gap-2 text-primary font-medium text-[14px] xl:text-[15px] cursor-pointer hover:text-secondary transition-colors py-2">
+              <div className={`flex items-center gap-2 font-medium text-[14px] xl:text-[15px] cursor-pointer transition-colors py-2 ${isTransparent ? 'text-white hover:text-white/80' : 'text-primary hover:text-secondary'}`}>
                 <User className="h-4 w-4" />
                 <span className="max-w-[120px] truncate">{userEmail.split('@')[0]}</span>
                 <ChevronDown className="h-4 w-4 opacity-70 group-hover/user:rotate-180 transition-transform duration-300" />
@@ -128,14 +133,17 @@ export const Navbar: React.FC = () => {
             <div className="flex items-center gap-6 xl:gap-8">
               <Link
                 to="/login"
-                className="font-medium text-[14px] xl:text-[15px] tracking-wide text-primary hover:text-secondary transition-all duration-300 flex items-center gap-2"
+                className={`font-medium text-[14px] xl:text-[15px] tracking-wide transition-all duration-300 flex items-center gap-2 ${isTransparent ? 'text-white hover:text-white/80' : 'text-primary hover:text-secondary'}`}
               >
                 <User className="h-4 w-4" />
                 Đăng nhập
               </Link>
               <button
                 onClick={() => navigate('/stays')}
-                className="font-medium text-[13px] xl:text-[14px] tracking-widest text-secondary border border-secondary px-6 py-2.5 rounded hover:bg-secondary hover:text-white transition-all duration-300 uppercase"
+                className={`font-medium text-[13px] xl:text-[14px] tracking-widest px-6 py-2.5 rounded transition-all duration-300 uppercase border ${isTransparent
+                    ? 'bg-white text-secondary border-white hover:bg-gray-100 shadow-md'
+                    : 'text-secondary border-secondary hover:bg-secondary hover:text-white'
+                  }`}
               >
                 Đặt phòng ngay
               </button>
@@ -145,7 +153,7 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Toggle Button - Nút bật tắt Menu dạng ngăn kéo trên thiết bị di động */}
         <button
-          className="lg:hidden text-primary focus:outline-none p-1 hover:text-secondary transition-colors duration-300"
+          className={`lg:hidden focus:outline-none p-1 transition-colors duration-300 ${isTransparent ? 'text-white hover:text-white/80' : 'text-primary hover:text-secondary'}`}
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
