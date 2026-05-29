@@ -8,9 +8,11 @@ export interface RegisterData {
   password?: string;
   fullName: string;
   phoneNumber?: string;
+  role?: string;
 }
 
 export interface AuthResponse {
+  userId: number;
   token: string;
   role: string;
 }

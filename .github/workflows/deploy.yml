@@ -1,0 +1,43 @@
+name: WanderVN CD Pipeline (Auto Deploy to Somee & Vercel)
+
+on:
+  push:
+    branches:
+      - main # Tự động chạy deploy khi push hoặc merge PR vào nhánh main
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend to Somee
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # tạo appsettings.Production.json động từ GitHub Secrets trước khi build/publish
+    - name: Create appsettings.Production.json from Secrets
+      run: |
+        cat << 'EOF' > Backend/WanderVN.API/appsettings.Production.json
+        ${{ secrets.APPSETTINGS_PRODUCTION_JSON }}
+        EOF
+
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Publish ASP.NET Core Web API
+      run: |
+        dotnet publish Backend/WanderVN.API/WanderVN.API.csproj -c Release -o ./publish
+
+    # Tự động đồng bộ hóa thư mục compiled lên FTP Server của Somee
+    - name: FTP Deploy to Somee
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ secrets.SOMEE_FTP_SERVER }}
+        username: ${{ secrets.SOMEE_FTP_USERNAME }}
+        password: ${{ secrets.SOMEE_FTP_PASSWORD }}
+        local-dir: ./publish/
+        server-dir: www.wandervn.somee.com/ # đường dẫn thư mục root trên Somee
+        dangerous-clean-slate: false

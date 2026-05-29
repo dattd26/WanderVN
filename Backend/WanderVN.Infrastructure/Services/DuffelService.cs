@@ -22,27 +22,43 @@ public class DuffelService : IDuffelService
 
     public async Task<string> SearchOffersAsync(DuffelOfferRequestDto request)
     {
-        // Xây dựng payload động dựa trên tham số truyền vào
-        var payload = new
+        var isRoundTrip = !string.IsNullOrEmpty(request.ReturnDate);
+        var cabinClass = string.IsNullOrEmpty(request.CabinClass) ? "business" : request.CabinClass;
+
+        object payload;
+        if (isRoundTrip)
         {
-            data = new
+            payload = new
             {
-                slices = new[]
+                data = new
                 {
-                    new
+                    slices = new[]
                     {
-                        origin = request.Origin,
-                        destination = request.Destination,
-                        departure_date = request.DepartureDate
-                    }
-                },
-                passengers = new[]
+                        new { origin = request.Origin, destination = request.Destination, departure_date = request.DepartureDate },
+                        new { origin = request.Destination, destination = request.Origin, departure_date = request.ReturnDate }
+                    },
+                    passengers = new[] { new { type = request.PassengerType } },
+                    cabin_class = cabinClass,
+                    return_offers = request.ReturnOffers
+                }
+            };
+        }
+        else
+        {
+            payload = new
+            {
+                data = new
                 {
-                    new { type = request.PassengerType }
-                },
-                return_offers = request.ReturnOffers
-            }
-        };
+                    slices = new[]
+                    {
+                        new { origin = request.Origin, destination = request.Destination, departure_date = request.DepartureDate }
+                    },
+                    passengers = new[] { new { type = request.PassengerType } },
+                    cabin_class = cabinClass,
+                    return_offers = request.ReturnOffers
+                }
+            };
+        }
 
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 

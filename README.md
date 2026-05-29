@@ -2,6 +2,14 @@
 
 WanderVN là một ứng dụng web B2C, cung cấp các giải pháp tìm kiếm, đặt chỗ và thanh toán trực tuyến cho Khách sạn, Chuyến bay và Tour du lịch.
 
+### Tài khoản mẫu
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@wandervn.com | az0777541112@ |
+| Partner | partner-test@gmail.com | az0777541112@ |
+| Customer | dattd0511@gmail.com | 123456 |
+
 ## Kiến trúc (Architecture)
 
 Kho lưu trữ (repository) này được chia thành hai phần chính:

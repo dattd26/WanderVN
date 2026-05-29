@@ -428,7 +428,25 @@ CREATE TABLE [dbo].[RoomTypes](
     [Capacity] [int] NOT NULL,
     [TotalRooms] [int] NOT NULL,
     [Description] [nvarchar](500) NULL,
-PRIMARY KEY CLUSTERED
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+
+/****** Object:  Table [dbo].[RatePlans] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[RatePlans](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [RoomTypeId] [int] NOT NULL,
+    [Name] [nvarchar](100) NOT NULL,
+    [PriceMultiplier] [decimal](18, 2) NOT NULL,
+    [HasBreakfast] [bit] NOT NULL,
+    [IsRefundable] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
 (
     [Id] ASC
 )) ON [PRIMARY]
@@ -448,6 +466,9 @@ CREATE TABLE [dbo].[Users](
     [PhoneNumber] [varchar](20) NULL,
     [AvatarUrl] [nvarchar](500) NULL,
     [IsActive] [bit] NULL,
+    [Status] [int] NOT NULL CONSTRAINT [DF_Users_Status] DEFAULT ((1)),
+    [RejectReason] [nvarchar](500) NULL,
+    [ApprovedAt] [datetimeoffset](7) NULL,
     [CreatedAt] [datetimeoffset](7) NULL,
     [UpdatedAt] [datetimeoffset](7) NULL,
 PRIMARY KEY CLUSTERED 
@@ -939,7 +960,41 @@ BEGIN
     OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
 END;
 GO
+
+/****** Object:  Table [dbo].[PartnerPayouts]    Script Date: 25-May-26 10:00:00 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PartnerPayouts](
+    [Id] [int] IDENTITY(1,1) NOT NULL,
+    [PartnerId] [int] NOT NULL,
+    [BookingId] [int] NOT NULL,
+    [GrossAmount] [decimal](18, 2) NOT NULL,
+    [CommissionAmount] [decimal](18, 2) NOT NULL,
+    [NetAmount] [decimal](18, 2) NOT NULL,
+    [Status] [nvarchar](50) NOT NULL DEFAULT ('Pending'),
+    [PayoutMethod] [nvarchar](50) NOT NULL DEFAULT ('Manual'),
+    [PaidAt] [datetimeoffset](7) NULL,
+    [TransactionReference] [nvarchar](100) NULL,
+    [CreatedAt] [datetimeoffset](7) NOT NULL DEFAULT (sysdatetimeoffset()),
+PRIMARY KEY CLUSTERED 
+(
+    [Id] ASC
+)) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[PartnerPayouts]  WITH CHECK ADD FOREIGN KEY([PartnerId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+
+ALTER TABLE [dbo].[PartnerPayouts]  WITH CHECK ADD FOREIGN KEY([BookingId])
+REFERENCES [dbo].[Bookings] ([Id])
+GO
+
 USE [master]
 GO
 ALTER DATABASE [WanderVN] SET  READ_WRITE 
+GOALTER TABLE [dbo].[RatePlans]  WITH CHECK ADD FOREIGN KEY([RoomTypeId])
+REFERENCES [dbo].[RoomTypes] ([Id])
 GO

@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { FlightSearchForm } from '../../components/client/FlightSearchForm';
+import { FlightDetailModal } from '../../components/client/flight/FlightDetailModal';
+import { FlightPagination } from '../../components/client/flight/FlightPagination';
 import { flightService } from '../../services';
 import type { FlightOfferDto } from '../../types';
 import {
@@ -16,7 +18,6 @@ export const SearchFlights: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Lấy dữ liệu trực tiếp từ searchParams trên URL để tránh đồng bộ state trùng lặp không cần thiết
   const origin = searchParams.get('origin') || 'HAN';
   const destination = searchParams.get('destination') || 'SGN';
   const departureDate = (() => {
@@ -25,6 +26,9 @@ export const SearchFlights: React.FC = () => {
     futureDate.setDate(futureDate.getDate() + 7);
     return futureDate.toISOString().split('T')[0];
   })();
+  const tripType = (searchParams.get('tripType') as 'round-trip' | 'one-way') || 'one-way';
+  const cabinClass = (searchParams.get('cabinClass') as 'business' | 'economy') || 'business';
+  const returnDate = searchParams.get('returnDate') || '';
 
   const hasSearched = !!(searchParams.get('origin') && searchParams.get('destination') && searchParams.get('departureDate'));
 
@@ -32,11 +36,47 @@ export const SearchFlights: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Trạng thái vé máy bay đang được chọn
-  const [selectedOffer, setSelectedOffer] = useState<FlightOfferDto | null>(null);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Thực hiện tìm kiếm chuyến bay từ C# API (khai báo trước useEffect để tránh lỗi truy cập trước khi khai báo)
-  const executeSearch = async (o: string, d: string, date: string) => {
+  // Trạng thái vé máy bay đang được chọn (booking bar cũ)
+  const [selectedOffer, setSelectedOffer] = useState<FlightOfferDto | null>(null);
+  const { offerId } = useParams<{ offerId?: string }>();
+  const location = useLocation();
+
+  // Trạng thái modal chi tiết chuyến bay
+  // const [modalOffer, setModalOffer] = useState<FlightOfferDto | null>(null);
+
+  // const modalOffer = useMemo(() => {
+  //   if (!offerId || offers.length === 0) return null;
+  //   return offers.find((offer) => offer.id === offerId) ?? null;
+  // }, [offerId, offers]);
+  // Mở modal chi tiết
+  const modalOffer = useMemo(() => {
+    if (!offerId || offers.length === 0) return null;
+    return offers.find((offer) => offer.id === offerId) ?? null;
+  }, [offerId, offers]);
+  const openModal = (offer: FlightOfferDto) => {
+    console.log('[SearchFlights] Opening detail modal for offerId:', offer.id);
+    navigate(`/flights/${offer.id}${location.search}`);
+  };
+
+  // Đóng modal
+  const closeModal = () => {
+    if (offerId) {
+      navigate(`/flights${location.search}`, { replace: true });
+    }
+  };
+
+  // Điều hướng sang checkout — reuse flow hiện có, truyền offer qua location.state
+  const handleProceedToCheckout = (offer: FlightOfferDto) => {
+    console.log('[SearchFlights] navigating to checkout with offer:', offer);
+    navigate('/flights/checkout', { state: { offer } });
+  };
+
+  const executeSearch = async (o: string, d: string, date: string, cabin: string, retDate?: string) => {
     setLoading(true);
     setError(null);
     setSelectedOffer(null);
@@ -46,10 +86,13 @@ export const SearchFlights: React.FC = () => {
         destination: d,
         departureDate: date,
         passengerType: 'adult',
-        returnOffers: true
+        returnOffers: true,
+        cabinClass: cabin,
+        returnDate: retDate || undefined
       });
 
       setOffers(response);
+      setCurrentPage(1);
 
       if (response.length === 0) {
         setError('Không tìm thấy chuyến bay khả dụng cho chặng bay này trong ngày đã chọn.');
@@ -63,28 +106,41 @@ export const SearchFlights: React.FC = () => {
     }
   };
 
-  // Tự động kích hoạt tìm kiếm khi có tham số trên URL
   useEffect(() => {
     const o = searchParams.get('origin');
     const d = searchParams.get('destination');
     const dt = searchParams.get('departureDate');
+    const cabin = searchParams.get('cabinClass') || 'business';
+    const retDate = searchParams.get('returnDate') || undefined;
 
     if (o && d && dt) {
-      // Chạy tìm kiếm bất đồng bộ ngoài luồng render đồng bộ để tránh cảnh báo cascading render
       const timer = setTimeout(() => {
-        executeSearch(o, d, dt);
+        executeSearch(o, d, dt, cabin, retDate);
       }, 0);
       return () => clearTimeout(timer);
     }
   }, [searchParams]);
 
-  // Đồng bộ hóa URL khi thực hiện lượt tìm kiếm mới
-  const handleSearchSubmit = (newOrigin: string, newDest: string, newDate: string) => {
-    setSearchParams({
+
+  const handleSearchSubmit = (
+    newOrigin: string,
+    newDest: string,
+    newDate: string,
+    newTripType: 'round-trip' | 'one-way',
+    newCabinClass: 'business' | 'economy',
+    newReturnDate?: string
+  ) => {
+    const params: Record<string, string> = {
       origin: newOrigin,
       destination: newDest,
-      departureDate: newDate
-    });
+      departureDate: newDate,
+      tripType: newTripType,
+      cabinClass: newCabinClass,
+    };
+    if (newTripType === 'round-trip' && newReturnDate) {
+      params.returnDate = newReturnDate;
+    }
+    setSearchParams(params);
   };
 
   // Định dạng thời gian hiển thị (HH:MM)
@@ -107,6 +163,18 @@ export const SearchFlights: React.FC = () => {
     return `${hours} ${minutes}`.trim() || '1h 20m';
   };
 
+  const totalPages = Math.ceil(offers.length / itemsPerPage);
+  const currentFlights = offers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    if (resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -134,6 +202,9 @@ export const SearchFlights: React.FC = () => {
             initialOrigin={origin}
             initialDestination={destination}
             initialDepartureDate={departureDate}
+            initialReturnDate={returnDate}
+            initialTripType={tripType}
+            initialCabinClass={cabinClass}
             onSearch={handleSearchSubmit}
           />
         </div>
@@ -160,7 +231,7 @@ export const SearchFlights: React.FC = () => {
               Khám Phá Các Chặng Bay Thượng Lưu
             </h3>
             <p className="text-body-md text-on-surface-variant max-w-xl leading-relaxed">
-              WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam. 
+              WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam.
               Hãy điền thông tin chặng bay và ngày khởi hành ở thanh tìm kiếm phía trên để chúng tôi tìm kiếm các ưu đãi chuyến bay tốt nhất dành cho hành trình tinh hoa của bạn.
             </p>
             <div className="w-full border-t border-outline/10 my-4" />
@@ -179,7 +250,7 @@ export const SearchFlights: React.FC = () => {
                 ].map((route) => (
                   <button
                     key={`${route.from}-${route.to}`}
-                    onClick={() => handleSearchSubmit(route.from, route.to, departureDate)}
+                    onClick={() => handleSearchSubmit(route.from, route.to, departureDate, 'one-way', 'business')}
                     className="p-5 border border-outline/15 hover:border-primary/40 rounded-lg text-left bg-surface-container-low hover:bg-surface-container-high transition-all flex flex-col gap-1 limestone-shadow-sm hover:scale-[1.02]"
                   >
                     <span className="font-label-md text-primary">{route.title}</span>
@@ -234,7 +305,7 @@ export const SearchFlights: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-6" ref={resultsRef}>
                 <div className="flex justify-between items-center pb-4 border-b border-outline-variant/20 mb-6">
                   <div>
                     <h2 className="font-display-md text-headline-md text-primary">Các Chuyến Bay Khả Dụng</h2>
@@ -244,7 +315,7 @@ export const SearchFlights: React.FC = () => {
                   </div>
                 </div>
 
-                {offers.map((offer) => {
+                {currentFlights.map((offer) => {
                   const isSelected = selectedOffer?.id === offer.id;
 
                   return (
@@ -273,7 +344,9 @@ export const SearchFlights: React.FC = () => {
                             <h3 className="font-label-md text-label-md uppercase tracking-wider text-primary">
                               {offer.carrierName}
                             </h3>
-                            <p className="text-caption text-on-surface-variant font-medium">Hạng Thượng gia</p>
+                            <p className="text-caption text-on-surface-variant font-medium">
+                              {cabinClass === 'economy' ? 'Hạng Phổ thông' : 'Hạng Thương gia'}
+                            </p>
                           </div>
                         </div>
 
@@ -322,15 +395,27 @@ export const SearchFlights: React.FC = () => {
                               ${offer.totalAmount.toFixed(2)} <span className="text-caption font-normal text-on-surface-variant">USD /khách</span>
                             </div>
                           </div>
-                          <button
-                            onClick={() => setSelectedOffer(isSelected ? null : offer)}
-                            className={`px-8 py-3 border font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none ${isSelected
-                              ? 'bg-primary text-on-primary border-primary'
-                              : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
-                              }`}
-                          >
-                            {isSelected ? 'ĐÃ CHỌN' : 'CHỌN CHUYẾN BAY'}
-                          </button>
+                          <div className="flex flex-col gap-2">
+                            {/* Nút mở modal chi tiết */}
+                            <button
+                              id={`btn-detail-${offer.id}`}
+                              onClick={() => openModal(offer)}
+                              className="px-8 py-3 border border-secondary text-secondary hover:bg-secondary hover:text-on-primary font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none"
+                            >
+                              XEM CHI TIẾT
+                            </button>
+                            {/* Nút chọn nhanh (giữ booking bar cũ) */}
+                            <button
+                              id={`btn-select-${offer.id}`}
+                              onClick={() => setSelectedOffer(isSelected ? null : offer)}
+                              className={`px-8 py-3 border font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none ${isSelected
+                                ? 'bg-primary text-on-primary border-primary'
+                                : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
+                                }`}
+                            >
+                              {isSelected ? 'ĐÃ CHỌN' : 'CHỌN CHUYẾN BAY'}
+                            </button>
+                          </div>
                         </div>
                       </div>
 
@@ -349,6 +434,12 @@ export const SearchFlights: React.FC = () => {
                     </div>
                   );
                 })}
+
+                <FlightPagination 
+                  currentPage={currentPage} 
+                  totalPages={totalPages} 
+                  onPageChange={handlePageChange} 
+                />
               </div>
             )}
           </>
@@ -380,6 +471,12 @@ export const SearchFlights: React.FC = () => {
           </button>
         </div>
       )}
+      {/* Modal chi tiết chuyến bay */}
+      <FlightDetailModal
+        offer={modalOffer}
+        onClose={closeModal}
+        onProceedToCheckout={handleProceedToCheckout}
+      />
     </div>
   );
 };

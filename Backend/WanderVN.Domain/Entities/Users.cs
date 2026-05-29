@@ -21,6 +21,15 @@ public partial class Users
 
     public bool? IsActive { get; set; }
 
+    // ── Partner Onboarding ──
+    // Trạng thái xét duyệt hồ sơ: 0 = Pending (chờ duyệt) / 1 = Active (đã duyệt) / 2 = Rejected (bị từ chối).
+    // Độc lập với IsActive: IsActive là cờ khóa/mở tài khoản, Status là vòng đời xét duyệt.
+    public int Status { get; set; }
+
+    public string? RejectReason { get; set; }
+
+    public DateTimeOffset? ApprovedAt { get; set; }
+
     public DateTimeOffset? CreatedAt { get; set; }
 
     public DateTimeOffset? UpdatedAt { get; set; }
@@ -34,4 +43,6 @@ public partial class Users
     public virtual ICollection<Wishlists> Wishlists { get; set; } = new List<Wishlists>();
 
     public virtual ICollection<Hotels> Hotels { get; set; } = new List<Hotels>(); // Danh sách khách sạn do người dùng này sở hữu (Partner)
+
+    public virtual ICollection<PartnerPayouts> PartnerPayouts { get; set; } = new List<PartnerPayouts>();
 }

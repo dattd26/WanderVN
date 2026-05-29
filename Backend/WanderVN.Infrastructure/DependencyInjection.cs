@@ -61,9 +61,21 @@ public static class DependencyInjection
         services.AddHttpClient<IZaloPayService, ZaloPayService>();
 
         services.AddScoped<IHotelRepository, HotelRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPropertyTypeRepository, PropertyTypeRepository>();
         services.AddScoped<ISearchAutocompleteRepository, SearchAutocompleteRepository>();
         services.AddScoped<IPartnerRepository, PartnerRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
+
+        // Register ChatBot Service
+        services.AddScoped<IChatLogsRepository, ChatLogsRepository>();
+        services.AddScoped<ISearchRepository, SearchRepository>();
+        services.AddScoped<IHotelsRepository, HotelsRepository>();
+        services.AddHttpClient<IChatbotService, ChatbotService>(c =>
+        {
+            c.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
+            c.Timeout = TimeSpan.FromSeconds(30);
+        });
 
         return services;
     }

@@ -10,7 +10,9 @@ using Microsoft.IdentityModel.Tokens;
 using WanderVN.Application.Common;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Domain.Entities;
+using WanderVN.Domain.Enums;
 using WanderVN.Domain.Repositories;
+using WanderVN.Application.Common.Models;
 
 namespace WanderVN.Application.Features.Auth.Commands;
 
@@ -20,13 +22,15 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
     private readonly JwtSettings _jwtSettings;
+    private readonly EmailSettings _emailSettings;
 
-    public RegisterCommandHandler(IAuthRepository authRepository, IUnitOfWork unitOfWork, IEmailService emailService, IOptions<JwtSettings> jwtOptions)
+    public RegisterCommandHandler(IAuthRepository authRepository, IUnitOfWork unitOfWork, IEmailService emailService, IOptions<JwtSettings> jwtOptions, IOptions<EmailSettings> emailSettings)
     {
         _authRepository = authRepository;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
         _jwtSettings = jwtOptions.Value;
+        _emailSettings = emailSettings.Value;
     }
 
     public async Task<Unit> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -45,14 +49,19 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-        var user = new Users
+        var isPartnerRole = request.Role == "Partner";
+
+        var user = new WanderVN.Domain.Entities.Users
         {
             Email = request.Email,
             PasswordHash = passwordHash,
             FullName = request.FullName,
             PhoneNumber = request.PhoneNumber,
             RoleId = role.Id,
-            IsActive = false, // Yêu cầu xác nhận email trước khi đăng nhập
+            // Partner: chờ duyệt (Status=Pending) và chưa được đăng nhập (IsActive=false).
+            // Customer: chưa kích hoạt (Status=Active, IsActive=false).
+            Status = isPartnerRole ? (int)UserStatus.Pending : (int)UserStatus.Active,
+            IsActive = false,
             CreatedAt = DateTimeOffset.UtcNow
         };
 
@@ -61,7 +70,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
 
         // Tạo JWT Token phục vụ mục đích xác nhận Email (hết hạn sau 24 giờ)
         var token = GenerateEmailVerificationToken(user.Email);
-        var verificationLink = $"http://localhost:5173/verify-email?token={token}";
+        var verificationLink = $"{_emailSettings.VerificationLink}?token={token}";
 
         // Gửi email xác nhận tự động dạng HTML chạy nền (Fire-and-Forget) để không chặn luồng HTTP Response của khách
         _ = Task.Run(async () =>
@@ -71,7 +80,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
                 var emailSubject = "[WanderVN] Xác thực tài khoản của bạn";
                 var emailBody = $@"
                     <p>Kính gửi quý khách <strong>{request.FullName}</strong>,</p>
-                    <p>Chào mừng bạn đã chính thức tham gia vào cộng đồng lữ khách tinh hoa của <strong>WanderVN</strong>.</p>
+                    <p>Chào mừng bạn đã đến với <strong>WanderVN</strong>.</p>
                     <p>Để hoàn tất quá trình đăng ký và kích hoạt tài khoản của bạn, vui lòng nhấn vào nút bên dưới:</p>
                     <div style='text-align: center; margin: 30px 0;'>
                         <a href='{verificationLink}' style='background-color: #735c00; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;'>Xác Nhận Email</a>
@@ -81,9 +90,10 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Unit>
 
                 await _emailService.SendEmailAsync(request.Email, emailSubject, emailBody, isHtml: true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Bỏ qua lỗi gửi mail để tránh sập luồng chính đăng ký
+                // log error in console file
+                Console.WriteLine($"Lỗi gửi email xác nhận tài khoản {request.Email}: {ex.Message}");
             }
         }, cancellationToken);
 

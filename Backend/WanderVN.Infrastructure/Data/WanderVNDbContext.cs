@@ -30,10 +30,12 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
     public virtual DbSet<Roles> Roles { get; set; }
     public virtual DbSet<RoomTypeImages> RoomTypeImages { get; set; }
     public virtual DbSet<RoomTypes> RoomTypes { get; set; }
+    public virtual DbSet<RatePlans> RatePlans { get; set; }
     public virtual DbSet<Rooms> Rooms { get; set; }
     public virtual DbSet<Users> Users { get; set; }
     public virtual DbSet<Wishlists> Wishlists { get; set; }
     public virtual DbSet<PropertyTypes> PropertyTypes { get; set; }
+    public virtual DbSet<PartnerPayouts> PartnerPayouts { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -57,12 +59,24 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .WithMany(a => a.FlightsDepAirport)
                 .HasForeignKey(f => f.DepAirportId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
+
+            // Cấu hình kiểu decimal cho Price của chuyến bay
+            entity.Property(f => f.Price).HasColumnType("decimal(18, 2)");
         });
 
         modelBuilder.Entity<Roles>().HasData(
             new Roles { Id = 1, Name = "Admin" },
             new Roles { Id = 2, Name = "User" }
         );
+
+        modelBuilder.Entity<Users>(entity =>
+        {
+            // KHÔNG cấu hình HasDefaultValue/HasDefaultValueSql cho Status.
+            // Lý do: EF Core dùng CLR default (0) làm sentinel — nếu set Status=0 (Pending),
+            // nó sẽ bỏ qua và để DB dùng DEFAULT(1). Bỏ cấu hình này để EF Core
+            // luôn gửi giá trị Status được gán trong code xuống DB.
+            entity.Property(u => u.Status).HasColumnType("int");
+        });
 
         modelBuilder.Entity<Hotels>(entity =>
         {
@@ -77,6 +91,10 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .WithMany(p => p.Hotels)
                 .HasForeignKey(h => h.PropertyTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Cấu hình kiểu decimal cho Latitude và Longitude của khách sạn
+            entity.Property(h => h.Latitude).HasColumnType("decimal(9, 6)");
+            entity.Property(h => h.Longitude).HasColumnType("decimal(9, 6)");
         });
 
         modelBuilder.Entity<Rooms>(entity =>
@@ -108,6 +126,52 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
             entity.HasOne(l => l.Parent)
                 .WithMany(p => p.InverseParent)
                 .HasForeignKey(l => l.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Cấu hình kiểu decimal cho Latitude và Longitude của địa điểm
+            entity.Property(l => l.Latitude).HasColumnType("decimal(9, 6)");
+            entity.Property(l => l.Longitude).HasColumnType("decimal(9, 6)");
+        });
+
+        // Cấu hình kiểu decimal cho các thuộc tính tiền tệ của các thực thể khác
+        modelBuilder.Entity<Bookings>(entity =>
+        {
+            entity.Property(b => b.TotalPrice).HasColumnType("decimal(18, 2)");
+        });
+
+        modelBuilder.Entity<Payments>(entity =>
+        {
+            entity.Property(p => p.Amount).HasColumnType("decimal(18, 2)");
+        });
+
+        modelBuilder.Entity<RoomTypes>(entity =>
+        {
+            entity.Property(r => r.BasePrice).HasColumnType("decimal(18, 2)");
+        });
+
+        modelBuilder.Entity<RatePlans>(entity =>
+        {
+            entity.HasOne(rp => rp.RoomType)
+                .WithMany(rt => rt.RatePlans)
+                .HasForeignKey(rp => rp.RoomTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(rp => rp.PriceMultiplier).HasColumnType("decimal(18, 2)");
+        });
+
+        modelBuilder.Entity<PartnerPayouts>(entity =>
+        {
+            entity.ToTable("PartnerPayouts");
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(p => p.Partner)
+                .WithMany(u => u.PartnerPayouts)
+                .HasForeignKey(p => p.PartnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(p => p.Booking)
+                .WithMany(b => b.PartnerPayouts)
+                .HasForeignKey(p => p.BookingId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using WanderVN.Application.Common;
 using WanderVN.Application.DTOs.Response;
+using WanderVN.Domain.Enums;
 using WanderVN.Domain.Repositories;
 
 namespace WanderVN.Application.Features.Auth.Queries;
@@ -28,6 +29,13 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, AuthResponse>
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Email hoặc mật khẩu không đúng.");
 
+        // Chặn theo trạng thái xét duyệt hồ sơ (Status) trước, sau đó mới tới cờ khóa (IsActive).
+        if (user.Status == (int)UserStatus.Pending)
+            throw new UnauthorizedAccessException("Tài khoản của bạn đang chờ phê duyệt.");
+
+        if (user.Status == (int)UserStatus.Rejected)
+            throw new UnauthorizedAccessException("Hồ sơ đăng ký của bạn đã bị từ chối.");
+
         if (user.IsActive == false)
             throw new UnauthorizedAccessException("Tài khoản đã bị khóa.");
 
@@ -35,6 +43,7 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, AuthResponse>
 
         return new AuthResponse
         {
+            UserId = user.Id,
             Token = token,
             Role = user.Role?.Name ?? "Customer"
         };

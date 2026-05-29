@@ -6,6 +6,8 @@ export interface FlightSearchQuery {
   departureDate: string;
   passengerType?: string;
   returnOffers?: boolean;
+  cabinClass?: string;
+  returnDate?: string;
 }
 
 export interface FlightOfferDto {
@@ -52,4 +54,79 @@ export interface FlightBookingResponse {
   bookingCode: string;
   totalPrice: number;
   status: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Flight Offer Detail — dùng cho modal chi tiết chuyến bay
+// GET /api/v1/flights/validate-offer/{offerId}
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface FlightSegmentDetail {
+  flightNumber: string;
+  aircraft: string;
+  carrierCode: string;
+  carrierName: string;
+  carrierLogo: string;
+  departureAirportCode: string;
+  departureAirportName: string;
+  departureTerminal: string;
+  arrivalAirportCode: string;
+  arrivalAirportName: string;
+  arrivalTerminal: string;
+  departingAt: string; // ISO string
+  arrivingAt: string;  // ISO string
+  duration: string;    // PT1H20M
+  cabinClass: string;
+}
+
+export interface FlightSliceDetail {
+  origin: string;
+  originCode: string;
+  destination: string;
+  destinationCode: string;
+  duration: string;
+  segments: FlightSegmentDetail[];
+}
+
+export interface FlightOfferDetailDto {
+  offerId: string;
+  // Airline
+  airline: string;
+  airlineLogo: string;
+  flightNumber: string;
+  aircraft: string;
+  // Route
+  departureAirport: string;
+  departureAirportCode: string;
+  departureTerminal: string;
+  arrivalAirport: string;
+  arrivalAirportCode: string;
+  arrivalTerminal: string;
+  // Schedule
+  departureTime: string; // ISO string
+  arrivalTime: string;   // ISO string
+  duration: string;      // PT1H20M
+  stops: number;
+  // Cabin
+  cabinClass: string;
+  availableSeats: number;
+  // Validity
+  isValid: boolean;
+  isExpired: boolean;
+  expiresAt: string | null;
+  // Pricing
+  totalAmount: number;
+  baseAmount: number;
+  taxAmount: number;
+  currency: string;
+  // Benefits
+  baggageInfo: string;
+  cabinBaggageInfo: string;
+  mealInfo: string;
+  wifiAvailable: boolean;
+  seatInfo: string;
+  // Nested
+  slices: FlightSliceDetail[];
+  // Passthrough for booking
+  passengerId: string;
 }
