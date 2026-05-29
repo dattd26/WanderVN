@@ -15,4 +15,11 @@ export const authService = {
       body: JSON.stringify(data),
     });
   },
+
+  changePassword: async (payload: { oldPassword: string; newPassword: string }): Promise<boolean> => {
+    return request<boolean>('/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
 };

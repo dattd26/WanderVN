@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../../../services/auth/authService';
 
 export function ChangePasswordAdmin() {
   const navigate = useNavigate();
@@ -11,15 +12,20 @@ export function ChangePasswordAdmin() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
       alert('Mật khẩu xác nhận không khớp!');
       return;
     }
-    // TODO: Connect to backend API to change password
-    alert('Cập nhật mật khẩu thành công! (Chức năng đang phát triển)');
-    navigate('/admin/dashboard');
+    
+    try {
+      await authService.changePassword({ oldPassword, newPassword });
+      alert('Cập nhật mật khẩu thành công!');
+      navigate('/admin/dashboard');
+    } catch (error: any) {
+      alert(error.message || 'Có lỗi xảy ra khi đổi mật khẩu.');
+    }
   };
 
   return (
