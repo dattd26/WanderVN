@@ -23,6 +23,10 @@ export function AdminUsers() {
   // ✅ State lọc trạng thái
   const [filterStatus, setFilterStatus] = useState<boolean | undefined>(undefined);
 
+  // --- Thống kê tổng quan ---
+  const [totalActiveCount, setTotalActiveCount] = useState(0);
+  const [totalLockedCount, setTotalLockedCount] = useState(0);
+
   // --- State modal ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -62,6 +66,23 @@ export function AdminUsers() {
     return () => clearTimeout(timer);
   }, [fetchCustomers]);
 
+  const fetchStats = useCallback(async () => {
+    try {
+      const [activeRes, lockedRes] = await Promise.all([
+        userService.getCustomers({ isActive: true, pageNumber: 1, pageSize: 1 }),
+        userService.getCustomers({ isActive: false, pageNumber: 1, pageSize: 1 })
+      ]);
+      setTotalActiveCount(activeRes.totalItems);
+      setTotalLockedCount(lockedRes.totalItems);
+    } catch (err) {
+      console.error('Lỗi tải thống kê:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
   // --- Handlers ---
   const handleCreateUser = () => {
     setSelectedUserId(null);
@@ -85,6 +106,7 @@ export function AdminUsers() {
     try {
       await userService.updateCustomer(userId, { isActive: !currentActive });
       fetchCustomers();
+      fetchStats();
     } catch (err) {
       const error = err as Error;
       console.error('Lỗi khi thay đổi trạng thái:', error);
@@ -98,6 +120,7 @@ export function AdminUsers() {
       await userService.deleteCustomer(userId);
       alert('Xóa khách hàng thành công!');
       fetchCustomers();
+      fetchStats();
     } catch (err) {
       const error = err as Error;
       console.error('Lỗi khi xóa người dùng:', error);
@@ -110,8 +133,6 @@ export function AdminUsers() {
   const totalItems = pagedResult?.totalItems ?? 0;
   const totalPages = pagedResult?.totalPages ?? 0;
   const currentPage = pagedResult?.pageNumber ?? 1;
-  const totalActive = users.filter((u: UserDto) => u.isActive === true).length;
-  const totalLocked = users.filter((u: UserDto) => u.isActive === false).length;
 
   return (
     <div className="p-admin-xl space-y-admin-xl max-w-admin-container-max mx-auto w-full">
@@ -120,10 +141,10 @@ export function AdminUsers() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-admin-lg">
         <div>
           <h3 className="font-admin-sans text-admin-display-lg text-admin-primary mb-admin-xs">
-            Customer Directory
+            Quản lý Khách hàng
           </h3>
           <p className="text-admin-on-surface-variant font-admin-sans text-admin-body-md">
-            Manage and monitor verified traveler accounts across the platform.
+            Quản lý và theo dõi các tài khoản khách hàng trên toàn hệ thống.
           </p>
         </div>
         <div className="flex items-center gap-admin-md select-none">
@@ -132,11 +153,11 @@ export function AdminUsers() {
             className="flex items-center gap-admin-sm px-admin-md py-admin-sm bg-admin-primary text-white hover:bg-admin-primary/90 transition-all duration-200 rounded-lg shadow-sm"
           >
             <span className="material-symbols-outlined text-[20px]">person_add</span>
-            <span className="font-admin-sans text-admin-body-md font-bold">Create User</span>
+            <span className="font-admin-sans text-admin-body-md font-bold">Thêm khách hàng</span>
           </button>
           <button className="flex items-center gap-admin-sm px-admin-md py-admin-sm bg-admin-surface-container-lowest text-admin-on-surface border border-admin-outline-variant hover:border-admin-primary transition-all duration-200 rounded-lg shadow-sm">
             <span className="material-symbols-outlined text-[20px]">file_download</span>
-            <span className="font-admin-sans text-admin-body-md font-bold">Export CSV</span>
+            <span className="font-admin-sans text-admin-body-md font-bold">Xuất CSV</span>
           </button>
         </div>
       </div>
@@ -144,8 +165,8 @@ export function AdminUsers() {
       {/* Bento Cards — React.memo, không re-render khi gõ search */}
       <UserSummaryCards
         totalItems={totalItems}
-        totalActive={totalActive}
-        totalLocked={totalLocked}
+        totalActive={totalActiveCount}
+        totalLocked={totalLockedCount}
         totalPages={totalPages}
       />
 
@@ -190,7 +211,10 @@ export function AdminUsers() {
         isOpen={isModalOpen}
         userId={selectedUserId}
         onClose={() => { setIsModalOpen(false); setSelectedUserId(null); }}
-        onSaveSuccess={fetchCustomers}
+        onSaveSuccess={() => {
+          fetchCustomers();
+          fetchStats();
+        }}
       />
     </div>
   );
