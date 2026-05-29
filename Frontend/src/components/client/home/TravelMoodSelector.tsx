@@ -80,7 +80,7 @@ export const TravelMoodSelector: React.FC = () => {
                 <div
                   key={mood.id}
                   className="mood-card"
-                  onClick={() => navigate(`/stays?${mood.queryString}`)}
+                  onClick={() => navigate(`/collections/mood/${mood.id}`)}
                   role="button"
                   tabIndex={0}
                   aria-label={`Xem gợi ý cho ${mood.title}`}

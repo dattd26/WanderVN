@@ -22,6 +22,7 @@ export const WeekendEscape: React.FC = () => {
   const { containerRef, scrollContentRef } = useHorizontalScroll<HTMLDivElement>(200);
 
   useEffect(() => {
+    //eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     let isMounted = true;
 

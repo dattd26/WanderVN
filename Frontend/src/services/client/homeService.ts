@@ -1,4 +1,5 @@
 import { request } from '../shared/apiClient';
+import type { SearchHotelsDto } from '../../types/client/hotel';
 
 export interface HomeTravelMood {
   id: string;
@@ -7,6 +8,11 @@ export interface HomeTravelMood {
   iconName: string;
   imageUrl: string;
   queryString: string;
+}
+
+export interface TravelMoodDetailResponse {
+  mood: HomeTravelMood;
+  hotels: SearchHotelsDto[];
 }
 
 export interface HomeEditorialDestination {
@@ -55,5 +61,9 @@ export const homeService = {
 
   getStayCollections: (): Promise<HomeStayCollection[]> => {
     return request<HomeStayCollection[]>('/home/stay-collections');
+  },
+
+  getTravelMoodById: (id: string): Promise<TravelMoodDetailResponse> => {
+    return request<TravelMoodDetailResponse>(`/home/moods/${id}`);
   },
 };
