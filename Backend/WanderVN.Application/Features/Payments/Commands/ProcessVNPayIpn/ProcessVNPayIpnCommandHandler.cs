@@ -65,7 +65,7 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
             // 3. Tìm kiếm đơn đặt hàng trong Database thông qua repository
             var booking = await _unitOfWork.Bookings.FindFirstOrDefaultAsync(
                 b => b.Id == bookingId,
-                includeProperties: "User,BookingHotels.Room.RoomType.Hotel,BookingFlights",
+                includeProperties: "User,BookingHotels.Room.RoomType.Hotel,BookingFlights.Flight.Airline,BookingFlights.Flight.DepAirport,BookingFlights.Flight.ArrAirport",
                 cancellationToken: cancellationToken);
 
             if (booking == null)
@@ -121,112 +121,13 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
             if (booking.User != null && !string.IsNullOrEmpty(booking.User.Email))
             {
                 var userEmail = booking.User.Email;
-                var userFullName = booking.User.FullName ?? "Quý khách";
-                var bookingCode = booking.BookingCode;
-                var serviceType = booking.ServiceType;
-                var totalPrice = booking.TotalPrice;
-                var status = booking.Status;
-                var paymentStatus = booking.PaymentStatus;
                 var transNo = transactionNo?.ToString() ?? "N/A";
-
-                // Chuẩn bị thông tin chi tiết dịch vụ để hiển thị trong email
-                var detailsHtml = "";
-                if (serviceType == "Flight" && booking.BookingFlights != null && booking.BookingFlights.Any())
-                {
-                    var flightListHtml = string.Join("<br/>", booking.BookingFlights.Select(f => $"• {f.PassengerName}"));
-                    detailsHtml = $@"
-                        <tr>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Danh sách hành khách:</td>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee;'>{flightListHtml}</td>
-                        </tr>";
-                }
-                else if (serviceType == "Hotel" && booking.BookingHotels != null && booking.BookingHotels.Any())
-                {
-                    var bh = booking.BookingHotels.First();
-                    var hotelName = bh.Room?.Hotel?.Name ?? "Đối tác WanderVN";
-                    var roomTypeName = bh.Room?.RoomType?.Name ?? "Phòng tiêu chuẩn";
-                    detailsHtml = $@"
-                        <tr>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Khách sạn:</td>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee;'>{hotelName}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Loại phòng:</td>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee;'>{roomTypeName}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Thời gian lưu trú:</td>
-                            <td style='padding: 8px; border-bottom: 1px solid #eee;'>Từ {bh.CheckInDate:dd/MM/yyyy} đến {bh.CheckOutDate:dd/MM/yyyy}</td>
-                        </tr>";
-                }
 
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        string emailSubject = "";
-                        string emailBody = "";
-
-                        if (status == "Confirmed")
-                        {
-                            emailSubject = $"[WanderVN] Xác nhận thanh toán thành công #{bookingCode}";
-                            emailBody = $@"
-                                <p>Kính gửi quý khách <strong>{userFullName}</strong>,</p>
-                                <p>Chúng tôi xin trân trọng thông báo giao dịch thanh toán cho đơn hàng của quý khách tại <strong>WanderVN</strong> đã được hoàn tất thành công.</p>
-                                <p>Thông tin đặt chỗ di sản của quý khách đã được xác nhận chính thức trên hệ thống:</p>
-                                <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
-                                    <tr>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 150px;'>Mã đặt chỗ:</td>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #735c00;'>{bookingCode}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Loại dịch vụ:</td>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee;'>{serviceType} Booking</td>
-                                    </tr>
-                                    {detailsHtml}
-                                    <tr>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Tổng tiền đã trả:</td>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #2e7d32;'>${totalPrice:N2} USD</td>
-                                    </tr>
-                                    <tr>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Mã giao dịch VNPay:</td>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee;'>{transNo}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Trạng thái đặt chỗ:</td>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee;'><span style='background-color: #c8e6c9; color: #256029; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>Đã xác nhận (Thành công)</span></td>
-                                    </tr>
-                                </table>
-                                <p>Hành trình di sản của bạn đã sẵn sàng. Chúc quý khách có những trải nghiệm tinh tế, bình yên và giàu cảm xúc.</p>";
-                        }
-                        else
-                        {
-                            emailSubject = $"[WanderVN] Thông báo hủy đơn đặt chỗ #{bookingCode}";
-                            emailBody = $@"
-                                <p>Kính gửi quý khách <strong>{userFullName}</strong>,</p>
-                                <p>Chúng tôi rất tiếc phải thông báo rằng giao dịch thanh toán cho đơn hàng #{bookingCode} tại <strong>WanderVN</strong> không thành công hoặc đã bị hủy bỏ.</p>
-                                <p>Chi tiết đơn hàng bị hủy như sau:</p>
-                                <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
-                                    <tr>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 150px;'>Mã đơn hàng:</td>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #735c00;'>{bookingCode}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Loại dịch vụ:</td>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee;'>{serviceType} Booking</td>
-                                    </tr>
-                                    {detailsHtml}
-                                    <tr>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Tổng tiền:</td>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #c62828;'>${totalPrice:N2} USD</td>
-                                    </tr>
-                                    <tr>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Trạng thái đơn:</td>
-                                        <td style='padding: 8px; border-bottom: 1px solid #eee;'><span style='background-color: #ffcdd2; color: #c62828; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>Đã hủy (Thanh toán thất bại)</span></td>
-                                    </tr>
-                                </table>
-                                <p>Nếu có bất kỳ thắc mắc hoặc cần hỗ trợ kiểm tra lại giao dịch, quý khách vui lòng liên hệ với bộ phận hỗ trợ khách hàng của WanderVN.</p>";
-                        }
+                        var (emailSubject, emailBody) = WanderVN.Application.Common.Utils.PaymentEmailTemplateBuilder.BuildPaymentEmail(booking, transNo);
 
                         await _emailService.SendEmailAsync(userEmail, emailSubject, emailBody, isHtml: true);
                     }
