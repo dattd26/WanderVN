@@ -61,11 +61,14 @@ export interface HotelDetailDto {
 
 // Yêu cầu đặt phòng khách sạn gửi lên API backend
 export interface CreateHotelBookingRequest {
-  userId: number;
+  userId: number | null;
   roomTypeId: number;
-  checkInDate: string; // Định dạng yyyy-MM-dd
-  checkOutDate: string; // Định dạng yyyy-MM-dd
+  checkInDate: string;
+  checkOutDate: string;
   totalPrice?: number;
+  email?: string;
+  customerName?: string;
+  customerPhone?: string;
 }
 
 // Kết quả phản hồi từ API đặt phòng khách sạn
@@ -88,5 +91,27 @@ export interface HotelBookingHistoryDto {
   totalPrice: number;
   status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
   createdAt: string;
+}
+
+export interface BookingLookupDetailDto {
+  bookingId: number;
+  bookingCode: string;
+  serviceType: string;
+  totalPrice: number;
+  status: string;
+  paymentStatus: string;
+  createdAt: string;
+  customerName: string;
+  email: string;
+  customerPhone: string;
+
+  hotelName?: string;
+  hotelAddress?: string;
+  hotelImage?: string;
+  roomTypeName?: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+
+  passengerNames?: string;
 }
 

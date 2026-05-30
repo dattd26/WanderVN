@@ -111,9 +111,9 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // 10. Gửi email thông báo trạng thái thanh toán và đơn hàng bất đồng bộ
-            if (booking.User != null && !string.IsNullOrEmpty(booking.User.Email))
+            if (!string.IsNullOrEmpty(booking.Email) || (booking.User != null && !string.IsNullOrEmpty(booking.User.Email)))
             {
-                var userEmail = booking.User.Email;
+                var userEmail = booking.Email ?? booking.User!.Email;
                 var transNo = zpTransId ?? "N/A";
 
                 _ = Task.Run(async () =>
@@ -123,9 +123,10 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
                         var (emailSubject, emailBody) = PaymentEmailTemplateBuilder.BuildPaymentEmail(booking, transNo);
                         await _emailService.SendEmailAsync(userEmail, emailSubject, emailBody, isHtml: true);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
                         // Bỏ qua lỗi gửi mail để tránh làm gián đoạn luồng chính
+                        Console.WriteLine($"⚠️ Lỗi khi gửi email: {ex.Message}");
                     }
                 });
             }

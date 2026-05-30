@@ -43,7 +43,7 @@ export interface PassengerDto {
 }
 
 export interface CreateFlightBookingRequest {
-  userId: number;
+  userId: number | null;
   offerId: string;
   totalPrice: number;
   passengers: PassengerDto[];

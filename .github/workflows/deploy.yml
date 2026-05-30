@@ -31,6 +31,22 @@ jobs:
       run: |
         dotnet publish Backend/WanderVN.API/WanderVN.API.csproj -c Release -o ./publish
 
+    # Đưa ứng dụng vào trạng thái offline để giải phóng khóa file DLL
+    - name: Put App Offline (Create app_offline.htm)
+      shell: python
+      run: |
+        import ftplib
+        import io
+        import time
+        ftp = ftplib.FTP('${{ secrets.SOMEE_FTP_SERVER }}')
+        ftp.login('${{ secrets.SOMEE_FTP_USERNAME }}', '${{ secrets.SOMEE_FTP_PASSWORD }}')
+        ftp.cwd('www.wandervn.somee.com/')
+        
+        offline_html = "<html><head><meta charset='utf-8'></head><body><div style='text-align:center;margin-top:10%;font-family:sans-serif;'><h1>Hệ thống đang được cập nhật</h1><p>WanderVN đang nâng cấp phiên bản mới. Vui lòng quay lại sau vài phút.</p></div></body></html>"
+        ftp.storbinary('STOR app_offline.htm', io.BytesIO(offline_html.encode('utf-8')))
+        ftp.quit()
+        print("Đã đưa ứng dụng vào trạng thái offline.")
+        time.sleep(10)
     # Tự động đồng bộ hóa thư mục compiled lên FTP Server của Somee
     - name: FTP Deploy to Somee
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -41,3 +57,19 @@ jobs:
         local-dir: ./publish/
         server-dir: www.wandervn.somee.com/ # đường dẫn thư mục root trên Somee
         dangerous-clean-slate: false
+
+    # Đưa ứng dụng online trở lại (Xóa app_offline.htm)
+    - name: Bring App Online (Delete app_offline.htm)
+      if: always()
+      shell: python
+      run: |
+        import ftplib
+        ftp = ftplib.FTP('${{ secrets.SOMEE_FTP_SERVER }}')
+        ftp.login('${{ secrets.SOMEE_FTP_USERNAME }}', '${{ secrets.SOMEE_FTP_PASSWORD }}')
+        ftp.cwd('www.wandervn.somee.com/')
+        try:
+            ftp.delete('app_offline.htm')
+            print("Đã đưa ứng dụng hoạt động online trở lại.")
+        except Exception as e:
+            print("Không tìm thấy app_offline.htm hoặc có lỗi xảy ra:", e)
+        ftp.quit()

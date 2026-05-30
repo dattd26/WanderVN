@@ -55,6 +55,12 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
         // Tính toán tổng chi phí đặt phòng
         decimal totalPrice = request.Request.TotalPrice ?? roomType.BasePrice;
 
+        // Xác thực: Guest bắt buộc phải có email
+        if (request.Request.UserId == null && string.IsNullOrWhiteSpace(request.Request.Email))
+        {
+            throw new ArgumentException("Vui lòng cung cấp email liên hệ để đặt phòng.");
+        }
+
         // Khởi tạo thông tin đơn đặt hàng
         var booking = new WanderVN.Domain.Entities.Bookings
         {
@@ -64,7 +70,10 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
             TotalPrice = totalPrice,
             Status = "Pending",
             PaymentStatus = "Unpaid",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            Email = request.Request.Email,
+            CustomerName = request.Request.CustomerName,
+            CustomerPhone = request.Request.CustomerPhone
         };
 
         // Khởi tạo chi tiết đặt phòng khách sạn và liên kết với đơn hàng thông qua navigation property
@@ -86,12 +95,24 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
         // Thực hiện lưu toàn bộ thay đổi xuống DB trong một transaction duy nhất
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // Lấy thông tin user để gửi email xác nhận
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == request.Request.UserId, cancellationToken);
-        if (user != null && !string.IsNullOrEmpty(user.Email))
+        // Xác định email và tên người nhận xác nhận (ưu tiên thông tin guest, fallback sang user đã đăng nhập)
+        string? recipientEmail = request.Request.Email;
+        string recipientName = request.Request.CustomerName ?? "Quý khách";
+
+        if (string.IsNullOrEmpty(recipientEmail) && request.Request.UserId.HasValue)
         {
-            var userEmail = user.Email;
-            var userFullName = user.FullName ?? "Quý khách";
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == request.Request.UserId.Value, cancellationToken);
+            if (user != null)
+            {
+                recipientEmail = user.Email;
+                recipientName = user.FullName ?? recipientName;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(recipientEmail))
+        {
+            var emailTo = recipientEmail;
+            var nameForEmail = recipientName;
             var bookingCode = booking.BookingCode;
             var hotelName = roomType.Hotel?.Name ?? "Đối tác WanderVN";
             var roomTypeName = roomType.Name;
@@ -104,7 +125,7 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
                 {
                     var emailSubject = $"[WanderVN] Xác nhận yêu cầu đặt phòng khách sạn #{bookingCode}";
                     var emailBody = $@"
-                        <p>Kính gửi quý khách <strong>{userFullName}</strong>,</p>
+                        <p>Kính gửi quý khách <strong>{nameForEmail}</strong>,</p>
                         <p>Cảm ơn bạn đã lựa chọn <strong>WanderVN</strong> làm bạn đồng hành. Yêu cầu đặt phòng khách sạn của bạn đã được tiếp nhận thành công và đang chờ thanh toán.</p>
                         <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
                             <tr>
@@ -134,11 +155,10 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
                         </table>
                         <p>Vui lòng tiến hành thanh toán trong thời gian sớm nhất để hoàn tất việc đặt phòng của bạn.</p>";
 
-                    await _emailService.SendEmailAsync(userEmail, emailSubject, emailBody, isHtml: true);
+                    await _emailService.SendEmailAsync(emailTo, emailSubject, emailBody, isHtml: true);
                 }
                 catch (Exception)
                 {
-                    // Bỏ qua lỗi gửi mail để tránh làm gián đoạn luồng chính
                 }
             });
         }
