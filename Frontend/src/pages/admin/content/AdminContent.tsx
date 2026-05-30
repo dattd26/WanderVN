@@ -20,9 +20,6 @@ interface Banner {
 }
 
 export function AdminContent() {
-  const [commissionFee, setCommissionFee] = useState<number>(12.5);
-  const [lastUpdated, setLastUpdated] = useState<string>('14 Oct 2023');
-
   // Local state for Announcements
   const [announcements, setAnnouncements] = useState<Announcement[]>([
     {
@@ -76,12 +73,6 @@ export function AdminContent() {
     },
   ]);
 
-  const handleUpdateFee = () => {
-    const today = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-    setLastUpdated(today);
-    alert(`Commission fee globally updated to ${commissionFee}%`);
-  };
-
   const handleToggleAnnouncement = (id: string) => {
     setAnnouncements(prev =>
       prev.map(ann => (ann.id === id ? { ...ann, visible: !ann.visible } : ann))
@@ -100,45 +91,10 @@ export function AdminContent() {
     <div className="p-admin-xl space-y-admin-xl max-w-admin-container-max mx-auto w-full">
       {/* Commission Fee & Announcements (Asymmetric Grid) */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-admin-lg items-start">
-        {/* Left Column: Commission Fee Settings */}
-        <div className="lg:col-span-4 bg-admin-surface-container-lowest border border-admin-outline-variant rounded-xl p-admin-lg shadow-sm hover:shadow-md transition-all duration-200 border-t-4 border-t-admin-secondary">
-          <div className="flex items-center justify-between mb-admin-lg">
-            <h3 className="font-admin-sans text-admin-headline-sm text-admin-primary">Commission Fee</h3>
-            <span className="material-symbols-outlined text-admin-secondary">analytics</span>
-          </div>
-          <p className="font-admin-sans text-admin-body-sm text-admin-on-surface-variant mb-admin-xl leading-relaxed">
-            Define the global service fee percentage for all platform transactions and bookings.
-          </p>
-          <div className="space-y-admin-md">
-            <div>
-              <label className="font-admin-sans text-admin-body-sm font-bold block mb-admin-sm">
-                Percentage Fee (%)
-              </label>
-              <div className="relative">
-                <input 
-                  type="number" 
-                  step="0.1" 
-                  value={commissionFee} 
-                  onChange={(e) => setCommissionFee(parseFloat(e.target.value) || 0)}
-                  className="w-full px-admin-md py-admin-md border border-admin-outline-variant rounded-lg focus:border-admin-secondary focus:ring-2 focus:ring-admin-secondary/20 transition-all font-admin-mono text-admin-display-lg font-bold text-admin-primary outline-none"
-                />
-                <span className="absolute right-admin-md top-1/2 -translate-y-1/2 font-bold text-admin-outline">%</span>
-              </div>
-            </div>
-            <button 
-              onClick={handleUpdateFee}
-              className="w-full py-admin-md bg-admin-primary-container text-white rounded-lg font-bold hover:bg-admin-primary transition-colors flex items-center justify-center gap-admin-sm select-none"
-            >
-              <span className="material-symbols-outlined text-sm">save</span>
-              Update Fee Structure
-            </button>
-            <p className="text-center font-admin-sans text-admin-label-caps text-admin-outline mt-admin-sm select-none">
-              Last updated: {lastUpdated} by Admin
-            </p>
-          </div>
-        </div>
-
-        {/* Right Column: System Notifications Table */}
+        {/* Left Column: Announcements Settings (Now spans 4 cols instead of Commission Fee) */}
+        <div className="lg:col-span-4 space-y-admin-lg">
+            {/* Announcements placeholder, or we can just let Announcements and Banners span full width */}
+        </div>        {/* Right Column: System Notifications Table */}
         <div className="lg:col-span-8 bg-admin-surface-container-lowest border border-admin-outline-variant rounded-xl overflow-hidden shadow-sm">
           <div className="px-admin-lg py-admin-md border-b border-admin-outline-variant bg-admin-surface-container flex justify-between items-center select-none">
             <h3 className="font-admin-sans text-admin-headline-sm text-admin-primary">System Notifications</h3>
