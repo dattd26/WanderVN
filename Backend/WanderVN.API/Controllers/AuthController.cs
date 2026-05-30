@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WanderVN.API.Common.Responses; // Nhớ using cái này
 using WanderVN.Application.DTOs.Response;
@@ -48,6 +49,27 @@ public class AuthController : ControllerBase
     {
         await _mediator.Send(command);
         var response = new ApiResponse<object>(true, "Xác nhận email và kích hoạt tài khoản thành công!", 200, null);
+        return Ok(response);
+    }
+
+    /// PUT: api/v1/auth/change-password
+    [Authorize]
+    [HttpPut("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
+    {
+        if (string.IsNullOrWhiteSpace(command.OldPassword) || string.IsNullOrWhiteSpace(command.NewPassword))
+            throw new ArgumentException("Vui lòng điền đầy đủ mật khẩu cũ và mới.");
+
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+        {
+            return Unauthorized(new ApiResponse<object>(false, "Không thể xác định người dùng.", 401, null));
+        }
+
+        command.UserId = userId;
+        await _mediator.Send(command);
+
+        var response = new ApiResponse<bool>(true, "Cập nhật mật khẩu thành công!", 200, true);
         return Ok(response);
     }
 }

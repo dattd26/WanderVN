@@ -119,7 +119,7 @@ export function AdminSidebar() {
           className="flex items-center gap-admin-md px-admin-md py-admin-sm text-admin-on-surface-variant hover:bg-admin-surface-container-high rounded-lg transition-all duration-200"
         >
           <span className="material-symbols-outlined">logout</span>
-          <span className="font-admin-sans text-admin-body-md font-semibold">Exit Console</span>
+          <span className="font-admin-sans text-admin-body-md font-semibold">Đăng xuất</span>
         </a>
       </div>
     </aside>

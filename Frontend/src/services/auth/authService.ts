@@ -16,6 +16,12 @@ export const authService = {
     });
   },
 
+  changePassword: async (payload: { oldPassword: string; newPassword: string }): Promise<boolean> => {
+    return request<boolean>('/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
   verifyEmail: async (token: string): Promise<void> => {
     return request<void>('/auth/verify-email', {
       method: 'POST',
