@@ -84,8 +84,9 @@ export function AdminFinance() {
             const today = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
             setLastUpdated(today);
             alert(`Commission fee globally updated to ${commissionFee}%`);
-        } catch (err) {
-            alert('Lỗi cập nhật Commission Fee.');
+        } catch (err: unknown) {
+            console.log(err);
+            alert('Lỗi cập nhật Commission Fee.' + (err instanceof Error ? err.message : ''));
         }
     };
 
@@ -147,17 +148,17 @@ export function AdminFinance() {
                             Percentage Fee (%)
                         </label>
                         <div className="relative">
-                            <input 
-                                type="number" 
-                                step="0.1" 
-                                value={commissionFee} 
+                            <input
+                                type="number"
+                                step="0.1"
+                                value={commissionFee}
                                 onChange={(e) => setCommissionFee(parseFloat(e.target.value) || 0)}
                                 className="w-full px-admin-md py-admin-md border border-admin-outline-variant rounded-lg focus:border-admin-secondary focus:ring-2 focus:ring-admin-secondary/20 transition-all font-admin-mono text-admin-display-lg font-bold text-admin-primary outline-none"
                             />
                             <span className="absolute right-admin-md top-1/2 -translate-y-1/2 font-bold text-admin-outline">%</span>
                         </div>
                     </div>
-                    <button 
+                    <button
                         onClick={handleUpdateFee}
                         className="py-admin-md px-admin-xl h-[64px] bg-admin-primary-container text-white rounded-lg font-bold hover:bg-admin-primary transition-colors flex items-center justify-center gap-admin-sm select-none"
                     >
