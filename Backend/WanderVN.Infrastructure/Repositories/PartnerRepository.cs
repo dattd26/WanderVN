@@ -249,32 +249,18 @@ public class PartnerRepository : IPartnerRepository
         if (connection.State == ConnectionState.Closed)
             await connection.OpenAsync(cancellationToken);
 
-        var sql = @"
-            SELECT 
-                b.BookingCode AS Id,
-                COALESCE(u.FullName, N'Khách Vãng Lai') AS GuestName,
-                COALESCE(u.Email, 'blocked@wandervn.com') AS Email,
-                COALESCE(rt.Name, N'Hạng phòng ẩn') AS RoomTypeName,
-                CONVERT(varchar(10), bh.CheckInDate, 120) AS CheckIn,
-                CONVERT(varchar(10), bh.CheckOutDate, 120) AS CheckOut,
-                b.TotalPrice AS TotalPrice,
-                b.Status AS Status,
-                NULL AS SpecialRequests
-            FROM BookingHotels bh
-            INNER JOIN Bookings b ON bh.BookingId = b.Id
-            LEFT JOIN Users u ON b.UserId = u.Id
-            INNER JOIN Rooms r ON bh.RoomId = r.Id
-            LEFT JOIN RoomTypes rt ON r.RoomTypeId = rt.Id
-            WHERE r.HotelId = @HotelId
-            ORDER BY b.BookingCode DESC";
+        var parameters = new DynamicParameters();
+        parameters.Add("HotelId", hotelId);
 
         var result = await connection.QueryAsync<PartnerHotelBookingModel>(
-            sql,
-            new { HotelId = hotelId }
+            "sp_Partner_GetHotelBookings",
+            parameters,
+            commandType: CommandType.StoredProcedure
         );
 
         return result.ToList();
     }
+
 
     public async Task<bool> IsRoomTypeOwnedByPartnerAsync(
         int roomTypeId,

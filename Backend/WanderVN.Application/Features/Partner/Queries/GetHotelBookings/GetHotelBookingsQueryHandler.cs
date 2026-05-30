@@ -23,6 +23,7 @@ public class GetHotelBookingsQueryHandler : IRequestHandler<GetHotelBookingsQuer
 
         return bookings.Select(b => new HotelBookingDto
         {
+            BookingId = b.BookingId,
             Id = b.Id,
             GuestName = b.GuestName,
             Email = b.Email,

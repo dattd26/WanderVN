@@ -10,6 +10,7 @@ public class GetHotelBookingsQuery : IRequest<List<HotelBookingDto>>
 
 public class HotelBookingDto
 {
+    public int BookingId { get; set; }
     public string Id { get; set; } = string.Empty;
     public string GuestName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

@@ -205,4 +205,48 @@ public class PartnerController : ControllerBase
         var result = await _mediator.Send(query);
         return Ok(new ApiResponse<object>(true, "Lấy danh sách đặt phòng thành công.", 200, result));
     }
+
+    /// <summary>
+    /// PUT: api/v1/partner/hotels/{hotelId}/bookings/{bookingId}/check-in — Xác nhận check-in.
+    /// </summary>
+    [HttpPut("hotels/{hotelId:int}/bookings/{bookingId:int}/check-in")]
+    public async Task<IActionResult> CheckInBooking([FromRoute] int hotelId, [FromRoute] int bookingId)
+    {
+        var command = new WanderVN.Application.Features.Partner.Commands.CheckInBooking.CheckInBookingCommand { HotelId = hotelId, BookingId = bookingId };
+        await _mediator.Send(command);
+        return Ok(new ApiResponse<object>(true, "Check-in thành công.", 200, null));
+    }
+
+    /// <summary>
+    /// PUT: api/v1/partner/hotels/{hotelId}/bookings/{bookingId}/check-out — Xác nhận check-out.
+    /// </summary>
+    [HttpPut("hotels/{hotelId:int}/bookings/{bookingId:int}/check-out")]
+    public async Task<IActionResult> CheckOutBooking([FromRoute] int hotelId, [FromRoute] int bookingId)
+    {
+        var command = new WanderVN.Application.Features.Partner.Commands.CheckOutBooking.CheckOutBookingCommand { HotelId = hotelId, BookingId = bookingId };
+        await _mediator.Send(command);
+        return Ok(new ApiResponse<object>(true, "Check-out thành công.", 200, null));
+    }
+
+    /// <summary>
+    /// PUT: api/v1/partner/hotels/{hotelId}/bookings/{bookingId}/complete — Hoàn tất lưu trú.
+    /// </summary>
+    [HttpPut("hotels/{hotelId:int}/bookings/{bookingId:int}/complete")]
+    public async Task<IActionResult> CompleteBooking([FromRoute] int hotelId, [FromRoute] int bookingId)
+    {
+        var command = new WanderVN.Application.Features.Partner.Commands.CompleteBooking.CompleteBookingCommand { HotelId = hotelId, BookingId = bookingId };
+        await _mediator.Send(command);
+        return Ok(new ApiResponse<object>(true, "Hoàn tất lưu trú thành công.", 200, null));
+    }
+
+    /// <summary>
+    /// PUT: api/v1/partner/hotels/{hotelId}/bookings/{bookingId}/no-show — Đánh dấu khách không đến.
+    /// </summary>
+    [HttpPut("hotels/{hotelId:int}/bookings/{bookingId:int}/no-show")]
+    public async Task<IActionResult> NoShowBooking([FromRoute] int hotelId, [FromRoute] int bookingId)
+    {
+        var command = new WanderVN.Application.Features.Partner.Commands.NoShowBooking.NoShowBookingCommand { HotelId = hotelId, BookingId = bookingId };
+        await _mediator.Send(command);
+        return Ok(new ApiResponse<object>(true, "Đã đánh dấu khách không đến.", 200, null));
+    }
 }

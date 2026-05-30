@@ -65,15 +65,7 @@ export const PartnerProperties: React.FC = () => {
   const [roomToEdit, setRoomToEdit] = useState<RoomConfig | undefined>(undefined);
 
   // ── State quản lý Đơn đặt phòng (Bookings) ──
-  const [bookingsData, setBookingsData] = useState<Record<number, HotelBooking[]>>({
-    1: [
-      { id: 'BK-9482', guestName: 'Nguyễn Văn Anh', email: 'vananh.nguyen@gmail.com', roomTypeName: 'Deluxe Double Room', checkIn: '2026-06-01', checkOut: '2026-06-04', totalPrice: 3600000, status: 'Confirmed', specialRequests: 'Phòng tầng cao, yên tĩnh' },
-      { id: 'BK-1029', guestName: 'Trần Thị Mai', email: 'maitt@yahoo.com', roomTypeName: 'Executive Suite', checkIn: '2026-06-05', checkOut: '2026-06-07', totalPrice: 5600000, status: 'CheckedIn', specialRequests: 'Yêu cầu set up trăng mật' },
-    ],
-    2: [
-      { id: 'BK-2039', guestName: 'David Harrison', email: 'david.harri@outlook.com', roomTypeName: 'Mountain View Bungalow', checkIn: '2026-06-10', checkOut: '2026-06-15', totalPrice: 7500000, status: 'Confirmed' }
-    ]
-  });
+  const [bookingsData, setBookingsData] = useState<Record<number, HotelBooking[]>>({});
 
   // Tab phụ bên trong form chỉnh sửa (info, rooms, availability, bookings)
   const [formSubTab, setFormSubTab] = useState<'info' | 'rooms' | 'availability' | 'bookings'>('info');
@@ -344,6 +336,7 @@ export const PartnerProperties: React.FC = () => {
           const nextDayStr = date.toISOString().split('T')[0];
 
           const newBlock: HotelBooking = {
+            bookingId: -Math.floor(1000 + Math.random() * 9000), // Mã âm để không bị trùng lặp với đặt phòng thật
             id: `BLK-${Math.floor(1000 + Math.random() * 9000)}`,
             guestName: 'Phòng khóa / Bảo trì',
             email: 'blocked@wandervn.com',
@@ -651,7 +644,9 @@ export const PartnerProperties: React.FC = () => {
 
                   {formSubTab === 'bookings' && (
                     <BookingsTab
+                      hotelId={selectedHotelId || 0}
                       bookings={currentBookings}
+                      onRefresh={() => selectedHotelId && fetchHotelDetails(selectedHotelId)}
                     />
                   )}
                 </div>

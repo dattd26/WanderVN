@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WanderVN.API.Common.Responses;
 using WanderVN.Application.Features.Payouts.Commands.ConfirmPayout;
@@ -11,6 +12,7 @@ namespace WanderVN.API.Controllers;
 
 [Route("api/v1/payouts")]
 [ApiController]
+[Authorize(Roles = "Admin")]
 public class PayoutsController : ControllerBase
 {
     private readonly IMediator _mediator;
