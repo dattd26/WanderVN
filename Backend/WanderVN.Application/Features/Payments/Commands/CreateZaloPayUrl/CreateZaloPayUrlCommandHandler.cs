@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MediatR;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Domain.Repositories;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Application.Features.Payments.Commands.CreateZaloPayUrl;
 
@@ -36,13 +37,13 @@ public class CreateZaloPayUrlCommandHandler : IRequestHandler<CreateZaloPayUrlCo
             throw new Exception($"Không tìm thấy đơn đặt hàng nào có ID là {command.BookingId}");
         }
 
-        if (booking.PaymentStatus == "Paid")
+        if (booking.PaymentStatus == BookingPaymentStatus.Paid)
         {
             throw new Exception("Đơn đặt hàng này đã được thanh toán trước đó.");
         }
 
         // 2. Tạo URL thanh toán ZaloPay bằng cách gọi ZaloPayService với thông tin loại dịch vụ
-        string paymentUrl = await _zalopayService.CreatePaymentUrlAsync(booking.Id, booking.TotalPrice, booking.ServiceType);
+        string paymentUrl = await _zalopayService.CreatePaymentUrlAsync(booking.Id, booking.TotalPrice, booking.ServiceType.ToString());
 
         return paymentUrl;
     }

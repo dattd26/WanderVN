@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using WanderVN.API.Common.Responses;
 using WanderVN.Application.Features.Payouts.Commands.ConfirmPayout;
+using WanderVN.Application.Features.Payouts.Commands.RejectPayout;
 using WanderVN.Application.Features.Payouts.Queries.GetPayouts;
 using WanderVN.Application.Features.Payouts.Queries.GetPayoutStats;
 using WanderVN.Application.Features.Users.Queries.GetUsers;
@@ -44,6 +45,16 @@ public class PayoutsController : ControllerBase
         command.Id = id;
         var result = await _mediator.Send(command, cancellationToken);
         var response = new ApiResponse<bool>(true, "Xác nhận thanh toán cho đối tác thành công.", 200, result);
+        return Ok(response);
+    }
+
+    /// PUT api/v1/payouts/{id}/reject
+    [HttpPut("{id:int}/reject")]
+    public async Task<IActionResult> RejectPayout(int id, [FromBody] RejectPayoutCommand command, CancellationToken cancellationToken)
+    {
+        command.Id = id;
+        var result = await _mediator.Send(command, cancellationToken);
+        var response = new ApiResponse<bool>(true, "Từ chối khoản thanh toán đối tác thành công.", 200, result);
         return Ok(response);
     }
 }

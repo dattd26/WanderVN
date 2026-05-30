@@ -79,6 +79,9 @@ public static class DependencyInjection
             c.Timeout = TimeSpan.FromSeconds(30);
         });
 
+        // Đăng ký Background Service đối soát và tạo Payout tự động
+        services.AddHostedService<BookingSettlementBackgroundService>();
+
         return services;
     }
 }

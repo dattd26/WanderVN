@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Application.Features.Hotels.Queries.SearchHotels;
 using WanderVN.Application.Features.Hotels.Queries.GetHotelDetail;
+using WanderVN.Domain.Enums;
 using WanderVN.Infrastructure.Data;
 
 namespace WanderVN.Infrastructure.Repositories;
@@ -129,7 +130,7 @@ public class HotelRepository : IHotelRepository
                     AvailableRooms = rt.TotalRooms - _dbContext.BookingHotels
                         .Join(_dbContext.Rooms, bh => bh.RoomId, r => r.Id, (bh, r) => new { bh, r })
                         .Join(_dbContext.Bookings, x => x.bh.BookingId, b => b.Id, (x, b) => new { x.bh, x.r, b })
-                        .Count(x => x.r.RoomTypeId == rt.Id && x.b.Status != "Cancelled" && !(x.bh.CheckOutDate <= DateOnly.FromDateTime(System.DateTime.Today) || x.bh.CheckInDate >= DateOnly.FromDateTime(System.DateTime.Today)))
+                        .Count(x => x.r.RoomTypeId == rt.Id && x.b.Status != BookingStatus.Cancelled && !(x.bh.CheckOutDate <= DateOnly.FromDateTime(System.DateTime.Today) || x.bh.CheckInDate >= DateOnly.FromDateTime(System.DateTime.Today)))
                 }).ToList()
             })
             .FirstOrDefaultAsync(cancellationToken);

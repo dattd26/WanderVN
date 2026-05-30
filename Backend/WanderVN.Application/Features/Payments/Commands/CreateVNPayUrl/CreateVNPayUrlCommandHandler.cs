@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MediatR;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Domain.Repositories;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Application.Features.Payments.Commands.CreateVNPayUrl;
 
@@ -36,13 +37,13 @@ public class CreateVNPayUrlCommandHandler : IRequestHandler<CreateVNPayUrlComman
             throw new Exception($"Không tìm thấy đơn đặt hàng nào có ID là {command.BookingId}");
         }
 
-        if (booking.PaymentStatus == "Paid")
+        if (booking.PaymentStatus == BookingPaymentStatus.Paid)
         {
             throw new Exception("Đơn đặt hàng này đã được thanh toán trước đó.");
         }
 
         // 2. Tạo URL thanh toán VNPay bằng cách gọi VNPayService với thông tin loại dịch vụ
-        string paymentUrl = _vnpayService.CreatePaymentUrl(booking.Id, booking.TotalPrice, command.IpAddress, booking.ServiceType);
+        string paymentUrl = _vnpayService.CreatePaymentUrl(booking.Id, booking.TotalPrice, command.IpAddress, booking.ServiceType.ToString());
 
         return paymentUrl;
     }

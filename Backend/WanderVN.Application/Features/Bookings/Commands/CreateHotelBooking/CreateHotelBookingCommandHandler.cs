@@ -8,6 +8,7 @@ using WanderVN.Application.Common.Interfaces;
 using WanderVN.Application.DTOs.Request;
 using WanderVN.Application.DTOs.Response;
 using WanderVN.Domain.Entities;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Application.Features.Bookings.Commands.CreateHotelBooking;
 
@@ -66,10 +67,10 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
         {
             UserId = request.Request.UserId,
             BookingCode = GenerateBookingCode(),
-            ServiceType = "Hotel",
+            ServiceType = BookingServiceType.Hotel,
             TotalPrice = totalPrice,
-            Status = "Pending",
-            PaymentStatus = "Unpaid",
+            Status = BookingStatus.Pending,
+            PaymentStatus = BookingPaymentStatus.Unpaid,
             CreatedAt = DateTimeOffset.UtcNow,
             Email = request.Request.Email,
             CustomerName = request.Request.CustomerName,
@@ -168,7 +169,7 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
             BookingId = booking.Id,
             BookingCode = booking.BookingCode,
             TotalPrice = booking.TotalPrice,
-            Status = booking.Status ?? string.Empty
+            Status = booking.Status.ToString()
         };
     }
 

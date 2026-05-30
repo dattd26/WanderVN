@@ -7,6 +7,7 @@ using WanderVN.Application.Common.Interfaces;
 using WanderVN.Application.DTOs.Response;
 using WanderVN.Domain.Entities;
 using WanderVN.Domain.Repositories;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Application.Features.Payments.Commands.ProcessVNPayIpn;
 
@@ -81,7 +82,7 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
             }
 
             // 5. Kiểm tra xem hóa đơn này đã được xác nhận thanh toán trước đó chưa (tránh Double Confirm)
-            if (booking.PaymentStatus == "Paid")
+            if (booking.PaymentStatus == BookingPaymentStatus.Paid)
             {
                 return new VNPayIpnResponse { Success = true, RspCode = "02", Message = "Order already confirmed" };
             }
@@ -89,8 +90,8 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
             // 6. Xử lý trạng thái thanh toán dựa trên vnp_ResponseCode ("00" là thành công)
             if (responseCode == "00")
             {
-                booking.PaymentStatus = "Paid";
-                booking.Status = "Confirmed";
+                booking.PaymentStatus = BookingPaymentStatus.Paid;
+                booking.Status = BookingStatus.Confirmed;
 
                 // Lưu thông tin giao dịch vào bảng Payments làm lịch sử giao dịch (sử dụng đơn vị VND thống nhất)
                 var payment = new WanderVN.Domain.Entities.Payments
@@ -103,38 +104,12 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
                 };
 
                 await _unitOfWork.Payments.AddAsync(payment, cancellationToken);
-
-                // Cập nhật PartnerPayout cho khách sạn nếu là đơn đặt phòng
-                if (booking.ServiceType == "Hotel" && booking.BookingHotels != null && booking.BookingHotels.Any())
-                {
-                    var hotel = booking.BookingHotels.FirstOrDefault()?.Room?.RoomType?.Hotel;
-                    if (hotel != null && hotel.OwnerId != null)
-                    {
-                        var commissionSetting = await _unitOfWork.SystemSettings.FindFirstOrDefaultAsync(s => s.Key == "CommissionFee", cancellationToken: cancellationToken);
-                        decimal commissionRate = 0.15m;
-                        if (commissionSetting != null && decimal.TryParse(commissionSetting.Value, out var parsedRate))
-                        {
-                            commissionRate = parsedRate / 100m;
-                        }
-
-                        var payout = new WanderVN.Domain.Entities.PartnerPayouts
-                        {
-                            PartnerId = hotel.OwnerId.Value,
-                            BookingId = booking.Id,
-                            GrossAmount = booking.TotalPrice,
-                            CommissionAmount = booking.TotalPrice * commissionRate,
-                            NetAmount = booking.TotalPrice - (booking.TotalPrice * commissionRate),
-                            Status = "Pending"
-                        };
-                        await _unitOfWork.PartnerPayouts.AddAsync(payout, cancellationToken);
-                    }
-                }
             }
             else
             {
                 // Giao dịch không thành công ở cổng VNPay
-                booking.PaymentStatus = "Failed";
-                booking.Status = "Cancelled";
+                booking.PaymentStatus = BookingPaymentStatus.Failed;
+                booking.Status = BookingStatus.Cancelled;
             }
 
             // Đánh dấu cập nhật thực thể Booking

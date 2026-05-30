@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Domain.Entities;
 
@@ -11,13 +12,13 @@ public partial class Bookings
 
     public string BookingCode { get; set; } = null!;
 
-    public string ServiceType { get; set; } = null!;
+    public BookingServiceType ServiceType { get; set; }
 
     public decimal TotalPrice { get; set; }
 
-    public string? Status { get; set; }
+    public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
-    public string? PaymentStatus { get; set; }
+    public BookingPaymentStatus PaymentStatus { get; set; } = BookingPaymentStatus.Unpaid;
 
     public DateTimeOffset? CreatedAt { get; set; }
 
@@ -26,6 +27,8 @@ public partial class Bookings
     public string? CustomerName { get; set; }
 
     public string? CustomerPhone { get; set; }
+
+    public DateTimeOffset? CheckedOutAt { get; set; }
 
     public virtual ICollection<BookingFlights> BookingFlights { get; set; } = new List<BookingFlights>();
 

@@ -117,6 +117,39 @@ export function AdminFinance() {
         }
     };
 
+    const handleReject = async (p: PayoutDto) => {
+        const reason = prompt(`Nhập lý do từ chối khoản chi trả cho "${p.partnerName ?? 'N/A'}" (Booking ${p.bookingCode}):`);
+        if (reason === null) {
+            return;
+        }
+        try {
+            await payoutService.rejectPayout(p.id, reason);
+            await Promise.all([fetchPayouts(), fetchStats()]);
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Không thể từ chối thanh toán.');
+        }
+    };
+
+    const handleViewDetail = (p: PayoutDto) => {
+        alert(
+            `CHI TIẾT KHOẢN CHI TRẢ #${p.id}\n` +
+            `-----------------------------------\n` +
+            `• Đối tác: ${p.partnerName ?? 'N/A'} (${p.partnerEmail ?? '—'})\n` +
+            `• Mã Booking: ${p.bookingCode} [${p.serviceType}]\n` +
+            `• Trạng thái Booking: ${p.bookingStatus ?? '—'}\n` +
+            `• Trạng thái Thanh toán: ${p.paymentStatus ?? '—'}\n` +
+            `• Doanh thu (Gross): ${p.grossAmount.toLocaleString('vi-VN')}₫\n` +
+            `• Phí hoa hồng: ${p.commissionAmount.toLocaleString('vi-VN')}₫\n` +
+            `• Thực nhận (Net): ${p.netAmount.toLocaleString('vi-VN')}₫\n` +
+            `• Phương thức: ${p.payoutMethod}\n` +
+            `• Trạng thái: ${p.status === 'Pending' ? 'Chờ thanh toán' : p.status === 'Processing' ? 'Đang xử lý' : p.status === 'Paid' ? 'Đã chi trả' : p.status === 'Failed' ? 'Thất bại' : p.status === 'Cancelled' ? 'Đã hủy' : p.status}\n` +
+            (p.checkedOutAt ? `• Ngày Checkout: ${new Date(p.checkedOutAt).toLocaleString('vi-VN')}\n` : '') +
+            (p.paidAt ? `• Ngày Chi trả: ${new Date(p.paidAt).toLocaleString('vi-VN')}\n` : '') +
+            (p.transactionReference ? `• Tham chiếu/Lý do: ${p.transactionReference}\n` : '') +
+            `• Tạo lúc: ${new Date(p.createdAt).toLocaleString('vi-VN')}`
+        );
+    };
+
     const handleReset = () => {
         setKeyword('');
         setStatus('');
@@ -129,7 +162,7 @@ export function AdminFinance() {
     const totalItems = pagedResult?.totalItems ?? 0;
     const totalPages = pagedResult?.totalPages ?? 0;
     const currentPage = pagedResult?.pageNumber ?? 1;
-    const pendingCount = items.filter((p) => p.status === 'Pending' || p.status === 'Approved').length;
+    const pendingCount = items.filter((p) => p.status === 'Pending' || p.status === 'Processing').length;
 
     return (
         <div className="p-admin-lg max-w-admin-container-max mx-auto w-full">
@@ -196,6 +229,8 @@ export function AdminFinance() {
                 pageSize={pageSize}
                 onRetry={fetchPayouts}
                 onConfirm={handleConfirm}
+                onReject={handleReject}
+                onViewDetail={handleViewDetail}
             />
 
             {!isLoading && !error && totalPages > 0 && (
@@ -214,8 +249,8 @@ export function AdminFinance() {
                         Chính sách đối soát
                     </h4>
                     <p className="text-admin-body-sm text-admin-on-surface-variant font-admin-sans leading-relaxed">
-                        Các khoản thanh toán được tạo tự động khi booking đạt trạng thái <b>SettlementPending</b> (đã hoàn tất chuyến đi).
-                        Hoa hồng nền tảng mặc định 15% giá trị booking, có thể tuỳ chỉnh theo hợp đồng với từng partner.
+                        Các khoản thanh toán được tạo tự động sau khi khách <b>Checkout</b> cộng với thời gian bảo lưu (grace period) cấu hình trong hệ thống.
+                        Hoa hồng nền tảng mặc định 15% giá trị booking, có thể tuỳ chỉnh trong mục SystemSettings.
                     </p>
                 </div>
                 <div className="bg-admin-surface-container-low p-admin-md rounded-lg border border-admin-outline-variant/30">

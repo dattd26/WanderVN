@@ -36,11 +36,26 @@ public class PartnerPayoutRepository : GenericRepository<PartnerPayouts>, IPartn
                 p.Booking.BookingCode.Contains(keyword));
         }
 
-        // Lọc theo Status (Pending, Approved, Paid, Rejected)
+        // Lọc theo Status
         if (!string.IsNullOrWhiteSpace(status))
         {
-            var statusFilter = status.Trim();
-            query = query.Where(p => p.Status == statusFilter);
+            var statusTrimmed = status.Trim();
+            if (Enum.TryParse<PayoutStatus>(statusTrimmed, true, out var statusEnum))
+            {
+                query = query.Where(p => p.Status == statusEnum);
+            }
+            else
+            {
+                // Ánh xạ trạng thái cũ (nếu có)
+                if (statusTrimmed.Equals("Approved", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(p => p.Status == PayoutStatus.Processing);
+                }
+                else if (statusTrimmed.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(p => p.Status == PayoutStatus.Cancelled);
+                }
+            }
         }
 
         // Lọc theo khoảng thời gian (CreatedAt)
@@ -85,7 +100,7 @@ public class PartnerPayoutRepository : GenericRepository<PartnerPayouts>, IPartn
         CancellationToken cancellationToken = default)
     {
         var totalNetPending = await _context.PartnerPayouts
-            .Where(p => p.Status == "Pending" || p.Status == "Approved")
+            .Where(p => p.Status == PayoutStatus.Pending || p.Status == PayoutStatus.Processing)
             .SumAsync(p => (decimal?)p.NetAmount, cancellationToken) ?? 0m;
 
         var totalCommission = await _context.PartnerPayouts

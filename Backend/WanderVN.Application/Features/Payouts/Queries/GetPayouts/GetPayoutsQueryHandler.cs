@@ -37,19 +37,20 @@ public class GetPayoutsQueryHandler : IRequestHandler<GetPayoutsQuery, PagedResu
 
             BookingId = p.BookingId,
             BookingCode = p.Booking?.BookingCode ?? string.Empty,
-            ServiceType = p.Booking?.ServiceType ?? string.Empty,
-            BookingStatus = p.Booking?.Status,
-            PaymentStatus = p.Booking?.PaymentStatus,
+            ServiceType = p.Booking != null ? p.Booking.ServiceType.ToString() : string.Empty,
+            BookingStatus = p.Booking != null ? p.Booking.Status.ToString() : string.Empty,
+            PaymentStatus = p.Booking != null ? p.Booking.PaymentStatus.ToString() : string.Empty,
             BookingCreatedAt = p.Booking?.CreatedAt,
 
             GrossAmount = p.GrossAmount,
             CommissionAmount = p.CommissionAmount,
             NetAmount = p.NetAmount,
 
-            Status = p.Status,
+            Status = p.Status.ToString(),
             PayoutMethod = p.PayoutMethod,
             PaidAt = p.PaidAt,
             TransactionReference = p.TransactionReference,
+            CheckedOutAt = p.Booking?.CheckedOutAt,
             CreatedAt = p.CreatedAt
         }).ToList();
 
