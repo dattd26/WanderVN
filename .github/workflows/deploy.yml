@@ -37,6 +37,7 @@ jobs:
       run: |
         import ftplib
         import io
+        import time
         ftp = ftplib.FTP('${{ secrets.SOMEE_FTP_SERVER }}')
         ftp.login('${{ secrets.SOMEE_FTP_USERNAME }}', '${{ secrets.SOMEE_FTP_PASSWORD }}')
         ftp.cwd('www.wandervn.somee.com/')
@@ -45,7 +46,7 @@ jobs:
         ftp.storbinary('STOR app_offline.htm', io.BytesIO(offline_html.encode('utf-8')))
         ftp.quit()
         print("Đã đưa ứng dụng vào trạng thái offline.")
-
+        time.sleep(10)
     # Tự động đồng bộ hóa thư mục compiled lên FTP Server của Somee
     - name: FTP Deploy to Somee
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
