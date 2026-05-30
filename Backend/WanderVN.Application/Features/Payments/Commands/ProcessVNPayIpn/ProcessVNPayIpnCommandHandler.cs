@@ -103,32 +103,6 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
                 };
 
                 await _unitOfWork.Payments.AddAsync(payment, cancellationToken);
-
-                // Cập nhật PartnerPayout cho khách sạn nếu là đơn đặt phòng
-                if (booking.ServiceType == "Hotel" && booking.BookingHotels != null && booking.BookingHotels.Any())
-                {
-                    var hotel = booking.BookingHotels.FirstOrDefault()?.Room?.RoomType?.Hotel;
-                    if (hotel != null && hotel.OwnerId != null)
-                    {
-                        var commissionSetting = await _unitOfWork.SystemSettings.FindFirstOrDefaultAsync(s => s.Key == "CommissionFee", cancellationToken: cancellationToken);
-                        decimal commissionRate = 0.15m;
-                        if (commissionSetting != null && decimal.TryParse(commissionSetting.Value, out var parsedRate))
-                        {
-                            commissionRate = parsedRate / 100m;
-                        }
-
-                        var payout = new WanderVN.Domain.Entities.PartnerPayouts
-                        {
-                            PartnerId = hotel.OwnerId.Value,
-                            BookingId = booking.Id,
-                            GrossAmount = booking.TotalPrice,
-                            CommissionAmount = booking.TotalPrice * commissionRate,
-                            NetAmount = booking.TotalPrice - (booking.TotalPrice * commissionRate),
-                            Status = "Pending"
-                        };
-                        await _unitOfWork.PartnerPayouts.AddAsync(payout, cancellationToken);
-                    }
-                }
             }
             else
             {

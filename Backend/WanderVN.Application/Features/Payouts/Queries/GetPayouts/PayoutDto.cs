@@ -28,5 +28,6 @@ public class PayoutDto
     public string PayoutMethod { get; set; } = "Manual";
     public DateTimeOffset? PaidAt { get; set; }
     public string? TransactionReference { get; set; }
+    public DateTimeOffset? CheckedOutAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }

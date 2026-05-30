@@ -182,6 +182,14 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .WithMany(b => b.PartnerPayouts)
                 .HasForeignKey(p => p.BookingId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.CommissionAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.GrossAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.NetAmount).HasColumnType("decimal(18, 2)");
+
+            entity.Property(e => e.Status)
+                .HasConversion<int>()
+                .HasDefaultValue(PayoutStatus.Pending);
         });
 
         modelBuilder.Entity<HomeTravelMoods>(entity =>

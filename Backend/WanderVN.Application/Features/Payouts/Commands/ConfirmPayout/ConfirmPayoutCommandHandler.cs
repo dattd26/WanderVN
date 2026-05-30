@@ -1,4 +1,5 @@
 using MediatR;
+using WanderVN.Domain.Entities;
 using WanderVN.Domain.Repositories;
 
 namespace WanderVN.Application.Features.Payouts.Commands.ConfirmPayout;
@@ -21,13 +22,13 @@ public class ConfirmPayoutCommandHandler : IRequestHandler<ConfirmPayoutCommand,
         if (payout == null)
             throw new KeyNotFoundException($"Không tìm thấy khoản thanh toán với ID = {request.Id}.");
 
-        if (payout.Status == "Paid")
-            throw new ArgumentException("Khoản thanh toán này đã được xác nhận trước đó.");
+        if (payout.Status == PayoutStatus.Paid)
+            throw new ArgumentException("Khoản thanh toán này đã được xác nhận chi trả trước đó.");
 
-        if (payout.Status == "Rejected")
-            throw new ArgumentException("Không thể xác nhận một khoản thanh toán đã bị từ chối.");
+        if (payout.Status == PayoutStatus.Cancelled)
+            throw new ArgumentException("Không thể xác nhận một khoản thanh toán đã bị từ chối/hủy bỏ.");
 
-        payout.Status = "Paid";
+        payout.Status = PayoutStatus.Paid;
         payout.PaidAt = DateTimeOffset.UtcNow;
 
         if (!string.IsNullOrWhiteSpace(request.TransactionReference))
@@ -37,6 +38,15 @@ public class ConfirmPayoutCommandHandler : IRequestHandler<ConfirmPayoutCommand,
             payout.PayoutMethod = request.PayoutMethod.Trim();
 
         _payoutRepository.Update(payout);
+
+        // Đồng bộ trạng thái Booking sang Settled
+        var booking = await _unitOfWork.Bookings.GetByIdAsync(payout.BookingId, cancellationToken);
+        if (booking != null)
+        {
+            booking.Status = "Settled";
+            _unitOfWork.Bookings.Update(booking);
+        }
+
         var result = await _unitOfWork.SaveChangesAsync(cancellationToken);
         return result > 0;
     }

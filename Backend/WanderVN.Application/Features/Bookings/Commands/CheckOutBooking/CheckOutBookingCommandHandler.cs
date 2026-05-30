@@ -23,6 +23,7 @@ public class CheckOutBookingCommandHandler : IRequestHandler<CheckOutBookingComm
         if (booking.ServiceType != "Hotel") return false;
 
         booking.Status = "Completed"; // mark as completed (checked out)
+        booking.CheckedOutAt = DateTimeOffset.UtcNow;
 
         // free up room if exists
         var bh = await _dbContext.BookingHotels

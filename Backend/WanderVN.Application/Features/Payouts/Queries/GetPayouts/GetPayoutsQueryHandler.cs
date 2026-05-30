@@ -46,10 +46,11 @@ public class GetPayoutsQueryHandler : IRequestHandler<GetPayoutsQuery, PagedResu
             CommissionAmount = p.CommissionAmount,
             NetAmount = p.NetAmount,
 
-            Status = p.Status,
+            Status = p.Status.ToString(),
             PayoutMethod = p.PayoutMethod,
             PaidAt = p.PaidAt,
             TransactionReference = p.TransactionReference,
+            CheckedOutAt = p.Booking?.CheckedOutAt,
             CreatedAt = p.CreatedAt
         }).ToList();
 
