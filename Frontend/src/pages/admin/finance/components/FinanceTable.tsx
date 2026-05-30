@@ -7,6 +7,8 @@ interface Props {
     pageSize: number;
     onRetry: () => void;
     onConfirm: (p: PayoutDto) => void;
+    onReject: (p: PayoutDto) => void;
+    onViewDetail: (p: PayoutDto) => void;
 }
 
 const formatVnd = (n: number) =>
@@ -14,10 +16,11 @@ const formatVnd = (n: number) =>
 
 function StatusBadge({ status }: { status: PayoutStatus }) {
     const cfg: Record<PayoutStatus, { label: string; cls: string }> = {
-        Pending: { label: 'Chờ thanh toán', cls: 'bg-error-container text-on-error-container' },
-        Approved: { label: 'Đã duyệt', cls: 'bg-admin-secondary-container/30 text-admin-on-secondary-container' },
+        Pending: { label: 'Chờ thanh toán', cls: 'bg-amber-100 text-amber-800 border border-amber-200' },
+        Processing: { label: 'Đang xử lý', cls: 'bg-blue-100 text-blue-800 border border-blue-200' },
         Paid: { label: 'Đã chi trả', cls: 'bg-green-100 text-green-800 border border-green-200' },
-        Rejected: { label: 'Từ chối', cls: 'bg-admin-surface-variant text-admin-on-surface-variant' },
+        Failed: { label: 'Thất bại', cls: 'bg-error-container text-on-error-container border border-error/10' },
+        Cancelled: { label: 'Đã hủy', cls: 'bg-admin-surface-variant text-admin-on-surface-variant border border-admin-outline-variant/30' },
     };
     const c = cfg[status] ?? cfg.Pending;
     return (
@@ -58,7 +61,7 @@ function ServiceIcon({ type }: { type: string }) {
     );
 }
 
-export function FinanceTable({ items, isLoading, error, pageSize, onRetry, onConfirm }: Props) {
+export function FinanceTable({ items, isLoading, error, pageSize, onRetry, onConfirm, onReject, onViewDetail }: Props) {
     if (error) {
         return (
             <div className="bg-white border border-admin-outline-variant rounded-lg p-admin-xl text-center">
@@ -106,7 +109,7 @@ export function FinanceTable({ items, isLoading, error, pageSize, onRetry, onCon
                                     <td className="px-admin-lg py-admin-md text-center"><div className="h-4 w-20 bg-admin-surface-container animate-pulse rounded mx-auto" /></td>
                                     <td className="px-admin-lg py-admin-md text-right"><div className="h-7 w-28 bg-admin-surface-container animate-pulse rounded ml-auto" /></td>
                                 </tr>
-                            ))}
+                             ))}
 
                         {!isLoading && items.length === 0 && (
                             <tr>
@@ -118,10 +121,11 @@ export function FinanceTable({ items, isLoading, error, pageSize, onRetry, onCon
                         )}
 
                         {!isLoading && items.map((p) => {
-                            const isApproved = p.status === 'Approved';
-                            const isPaid = p.status === 'Paid';
-                            const isRejected = p.status === 'Rejected';
                             const isPending = p.status === 'Pending';
+                            const isProcessing = p.status === 'Processing';
+                            const isPaid = p.status === 'Paid';
+                            const isFailed = p.status === 'Failed';
+                            const isCancelled = p.status === 'Cancelled';
                             return (
                                 <tr key={p.id} className="hover:bg-admin-surface-container-low/50 transition-colors">
                                     <td className="px-admin-lg py-admin-md">
@@ -158,28 +162,71 @@ export function FinanceTable({ items, isLoading, error, pageSize, onRetry, onCon
                                             </p>
                                         )}
                                     </td>
-                                    <td className="px-admin-lg py-admin-md text-right select-none">
-                                        {isApproved ? (
+                                    <td className="px-admin-lg py-admin-md text-right select-none font-admin-sans">
+                                        <div className="flex items-center justify-end gap-2">
                                             <button
-                                                onClick={() => onConfirm(p)}
-                                                className="px-admin-md py-admin-sm rounded font-admin-sans text-admin-body-sm font-bold transition-all shadow-sm bg-admin-primary text-white hover:opacity-90 active:scale-95"
+                                                onClick={() => onViewDetail(p)}
+                                                className="text-[11px] font-bold text-admin-primary hover:underline px-2 py-1 rounded hover:bg-admin-primary/5 transition-all"
                                             >
-                                                Xác nhận chi trả
+                                                Xem chi tiết
                                             </button>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-admin-sans italic text-admin-on-surface-variant">
-                                                <span className="material-symbols-outlined text-[14px]">
-                                                    {isPaid ? 'check_circle' : isRejected ? 'block' : 'hourglass_empty'}
-                                                </span>
-                                                {isPaid
-                                                    ? 'Đã chi trả'
-                                                    : isRejected
-                                                        ? 'Đã từ chối'
-                                                        : isPending
-                                                            ? 'Chờ duyệt'
-                                                            : '—'}
-                                            </span>
-                                        )}
+
+                                            {isPending && (
+                                                <>
+                                                    <span className="text-admin-outline-variant">|</span>
+                                                    <button
+                                                        onClick={() => onConfirm(p)}
+                                                        className="text-[11px] font-bold text-green-700 hover:underline px-2 py-1 rounded hover:bg-green-50 transition-all"
+                                                    >
+                                                        Xác nhận chi trả
+                                                    </button>
+                                                    <span className="text-admin-outline-variant">|</span>
+                                                    <button
+                                                        onClick={() => onReject(p)}
+                                                        className="text-[11px] font-bold text-error hover:underline px-2 py-1 rounded hover:bg-error-container/10 transition-all"
+                                                    >
+                                                        Từ chối
+                                                    </button>
+                                                </>
+                                            )}
+
+                                            {isProcessing && (
+                                                <>
+                                                    <span className="text-admin-outline-variant">|</span>
+                                                    <span className="text-[11px] italic text-admin-outline">Đang xử lý...</span>
+                                                </>
+                                            )}
+
+                                            {isPaid && (
+                                                <>
+                                                    <span className="text-admin-outline-variant">|</span>
+                                                    <span className="text-[11px] font-bold text-green-700 inline-flex items-center gap-0.5">
+                                                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                                                        Đã chi trả
+                                                    </span>
+                                                </>
+                                            )}
+
+                                            {isFailed && (
+                                                <>
+                                                    <span className="text-admin-outline-variant">|</span>
+                                                    <span className="text-[11px] font-bold text-error inline-flex items-center gap-0.5">
+                                                        <span className="material-symbols-outlined text-[14px]">error</span>
+                                                        Thất bại
+                                                    </span>
+                                                </>
+                                            )}
+
+                                            {isCancelled && (
+                                                <>
+                                                    <span className="text-admin-outline-variant">|</span>
+                                                    <span className="text-[11px] italic text-admin-outline inline-flex items-center gap-0.5">
+                                                        <span className="material-symbols-outlined text-[14px]">block</span>
+                                                        Đã hủy
+                                                    </span>
+                                                </>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             );

@@ -59,9 +59,10 @@ export function FinanceFilters({
                     >
                         <option value="">Tất cả</option>
                         <option value="Pending">Chờ thanh toán</option>
-                        <option value="Approved">Đã duyệt</option>
+                        <option value="Processing">Đang xử lý</option>
                         <option value="Paid">Đã chi trả</option>
-                        <option value="Rejected">Từ chối</option>
+                        <option value="Failed">Thất bại</option>
+                        <option value="Cancelled">Đã hủy</option>
                     </select>
                 </div>
 

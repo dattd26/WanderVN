@@ -1,6 +1,6 @@
 // Kiểu dữ liệu cho Tài chính / Đối soát thanh toán Partner
 
-export type PayoutStatus = 'Pending' | 'Approved' | 'Paid' | 'Rejected';
+export type PayoutStatus = 'Pending' | 'Processing' | 'Paid' | 'Failed' | 'Cancelled';
 
 export type ServiceType = 'Hotel' | 'Flight' | string;
 
@@ -27,6 +27,7 @@ export interface PayoutDto {
   payoutMethod: string;
   paidAt?: string | null;
   transactionReference?: string | null;
+  checkedOutAt?: string | null;
   createdAt: string;
 }
 

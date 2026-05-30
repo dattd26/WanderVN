@@ -34,4 +34,12 @@ export const payoutService = {
       body: JSON.stringify(payload ?? {}),
     });
   },
+
+  async rejectPayout(id: number, reason?: string): Promise<boolean> {
+    return request<boolean>(`/payouts/${id}/reject`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: reason ?? '' }),
+    });
+  },
 };
