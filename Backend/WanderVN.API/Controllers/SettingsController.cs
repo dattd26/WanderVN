@@ -10,6 +10,7 @@ namespace WanderVN.API.Controllers;
 
 [Route("api/v1/[controller]")]
 [ApiController]
+[Authorize(Roles = "Admin")]
 public class SettingsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -29,7 +30,6 @@ public class SettingsController : ControllerBase
         return Ok(new ApiResponse<SettingResponseDto>(true, "Lấy thông tin cài đặt thành công", 200, result));
     }
 
-    [Authorize(Roles = "Admin")]
     [HttpPut("{key}")]
     public async Task<IActionResult> UpdateSetting(string key, [FromBody] UpdateSettingRequest request)
     {
