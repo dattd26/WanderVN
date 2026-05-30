@@ -53,8 +53,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({ hotelId, bookings, onR
 
       triggerMessage('success', action === 'complete' ? 'Hoàn tất booking thành công, sau 3 - 5 phút sẽ bắt đầu chờ đối soát (thời gian đối soát ~24h).' : 'Thao tác thành công.');
       onRefresh();
-    } catch (err: any) {
-      triggerMessage('error', err.message || 'Có lỗi xảy ra.');
+    } catch (err: unknown) {
+      triggerMessage('error', (err as { message?: string }).message || 'Có lỗi xảy ra.');
     } finally {
       setLoadingId(null);
     }
