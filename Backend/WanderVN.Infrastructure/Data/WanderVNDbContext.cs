@@ -41,6 +41,7 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
     public virtual DbSet<HomeWeekendEscapes> HomeWeekendEscapes { get; set; }
     public virtual DbSet<HomeStayCollections> HomeStayCollections { get; set; }
     public virtual DbSet<HotelTravelMoods> HotelTravelMoods { get; set; }
+    public virtual DbSet<SystemSettings> SystemSettings { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -251,6 +252,14 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .WithMany(m => m.HotelTravelMoods)
                 .HasForeignKey(e => e.TravelMoodId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SystemSettings>(entity =>
+        {
+            entity.HasKey(e => e.Key);
+            entity.Property(e => e.Key).HasMaxLength(50);
+            entity.Property(e => e.Value).HasMaxLength(255);
+            entity.Property(e => e.Description).HasMaxLength(500);
         });
 
         OnModelCreatingPartial(modelBuilder);
