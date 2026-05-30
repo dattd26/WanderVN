@@ -61,7 +61,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         var duffelRequest = new DuffelOrderRequestDto();
         duffelRequest.Data.Type = "instant";
         duffelRequest.Data.SelectedOffers.Add(request.OfferId);
-        
+
         foreach (var pax in request.Passengers)
         {
             duffelRequest.Data.Passengers.Add(new DuffelPassengerDto
@@ -95,22 +95,36 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         // 3. Parse Duffel Response to get Order ID
         var jsonDoc = JsonDocument.Parse(duffelResponseJson);
         var root = jsonDoc.RootElement;
-        
-        var duffelOrderId = root.GetProperty("data").GetProperty("id").GetString() 
+
+        var duffelOrderId = root.GetProperty("data").GetProperty("id").GetString()
                             ?? GenerateLocalBookingCode();
 
         // 4. Quy đổi giá trị đặt vé từ USD sang VND và lưu vào cơ sở dữ liệu để thống nhất tiền tệ VND
-        decimal totalPriceInVnd = WanderVN.Application.Common.Utils.CurrencyConverter.ConvertUsdToVnd(request.TotalPrice);
+        decimal totalPriceInVnd = Common.Utils.CurrencyConverter.ConvertUsdToVnd(request.TotalPrice);
+
+        // Trích xuất thông tin liên hệ từ hành khách đầu tiên
+        var primaryPax = request.Passengers.FirstOrDefault();
+        var guestEmail = primaryPax?.Email;
+        var guestName = primaryPax != null ? $"{primaryPax.GivenName} {primaryPax.FamilyName}".Trim() : null;
+        var guestPhone = primaryPax?.PhoneNumber;
+
+        if (request.UserId == null && string.IsNullOrWhiteSpace(guestEmail))
+        {
+            throw new ArgumentException("Vui lòng cung cấp email liên hệ để đặt vé máy bay.");
+        }
 
         var booking = new WanderVN.Domain.Entities.Bookings
         {
             UserId = request.UserId,
-            BookingCode = duffelOrderId, // Sử dụng Duffel Order ID làm Mã đặt vé
+            BookingCode = duffelOrderId,
             ServiceType = "Flight",
             TotalPrice = totalPriceInVnd,
-            Status = "Pending", // Trạng thái chờ thanh toán
+            Status = "Pending",
             PaymentStatus = "Unpaid",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
+            Email = guestEmail,
+            CustomerName = guestName,
+            CustomerPhone = guestPhone
         };
 
         try
@@ -129,18 +143,30 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                     // FlightId is left null as we rely on Duffel for flight data (Option A)
                     FlightId = null
                 };
-                
+
                 await _dbContext.BookingFlights.AddAsync(bookingFlight, cancellationToken);
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // Lấy thông tin user để gửi email xác nhận
-            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
-            if (user != null && !string.IsNullOrEmpty(user.Email))
+            // Xác định email người nhận xác nhận (ưu tiên guest info, fallback sang user đã đăng nhập)
+            string? recipientEmail = guestEmail;
+            string recipientName = guestName ?? "Quý khách";
+
+            if (string.IsNullOrEmpty(recipientEmail) && request.UserId.HasValue)
             {
-                var userEmail = user.Email;
-                var userFullName = user.FullName ?? "Quý khách";
+                var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == request.UserId.Value, cancellationToken);
+                if (user != null)
+                {
+                    recipientEmail = user.Email;
+                    recipientName = user.FullName ?? recipientName;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(recipientEmail))
+            {
+                var emailTo = recipientEmail;
+                var nameForEmail = recipientName;
                 var bookingCode = booking.BookingCode;
                 var totalPrice = booking.TotalPrice;
                 var passengerNames = request.Passengers.Select(p => $"{p.Title.ToUpper()} {p.GivenName} {p.FamilyName}").ToList();
@@ -152,7 +178,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                         var emailSubject = $"[WanderVN] Xác nhận yêu cầu đặt vé máy bay #{bookingCode}";
                         var passengerListHtml = string.Join("<br/>", passengerNames.Select(name => $"• {name}"));
                         var emailBody = $@"
-                            <p>Kính gửi quý khách <strong>{userFullName}</strong>,</p>
+                            <p>Kính gửi quý khách <strong>{nameForEmail}</strong>,</p>
                             <p>Cảm ơn bạn đã lựa chọn <strong>WanderVN</strong> làm bạn đồng hành. Yêu cầu đặt vé máy bay của bạn đã được tiếp nhận thành công và đang chờ thanh toán.</p>
                             <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
                                 <tr>
@@ -178,19 +204,18 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                             </table>
                             <p>Vui lòng tiến hành thanh toán trong thời gian sớm nhất để hoàn tất việc xuất vé máy bay của bạn.</p>";
 
-                        await _emailService.SendEmailAsync(userEmail, emailSubject, emailBody, isHtml: true);
+                        await _emailService.SendEmailAsync(emailTo, emailSubject, emailBody, isHtml: true);
                     }
                     catch (Exception)
                     {
-                        // Bỏ qua lỗi gửi mail để tránh làm gián đoạn luồng chính
                     }
                 });
             }
         }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+        catch (DbUpdateException ex)
         {
             // Bắt lỗi cập nhật DB và ném ra chi tiết lỗi bên trong (Inner Exception) để dễ dàng chẩn đoán lỗi
-            throw new System.Exception($"Lỗi lưu cơ sở dữ liệu: {ex.Message}. Chi tiết lỗi SQL Server: {ex.InnerException?.Message}", ex);
+            throw new Exception($"Lỗi lưu cơ sở dữ liệu: {ex.Message}. Chi tiết lỗi SQL Server: {ex.InnerException?.Message}", ex);
         }
 
         return new FlightBookingResponse

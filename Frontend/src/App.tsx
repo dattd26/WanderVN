@@ -21,6 +21,7 @@ import { AccessDenied } from './pages/auth/AccessDenied';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import { BookingHistory } from './pages/client/BookingHistory';
 import BookingDetail from './pages/client/BookingDetail';
+import { BookingLookup } from './pages/client/BookingLookup';
 import MoodCollection from './pages/client/MoodCollection';
 
 /** Component điều hướng thông minh cho luồng đối tác (Partner Redirect).
@@ -64,6 +65,7 @@ function AppLayout() {
           <Route path="/access-denied" element={<AccessDenied />} />
           <Route path="/booking-history" element={<BookingHistory />} />
           <Route path="/booking-history/:bookingId" element={<BookingDetail />} />
+          <Route path="/booking-lookup" element={<BookingLookup />} />
           <Route path="/collections/mood/:id" element={<MoodCollection />} />
 
           {/* Partner portal */}

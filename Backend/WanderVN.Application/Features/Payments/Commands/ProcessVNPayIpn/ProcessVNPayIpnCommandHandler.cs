@@ -118,9 +118,9 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // Gửi email thông báo trạng thái thanh toán và đơn hàng bất đồng bộ
-            if (booking.User != null && !string.IsNullOrEmpty(booking.User.Email))
+            if (!string.IsNullOrEmpty(booking.Email) || (booking.User != null && !string.IsNullOrEmpty(booking.User.Email)))
             {
-                var userEmail = booking.User.Email;
+                var userEmail = booking.Email ?? booking.User!.Email;
                 var transNo = transactionNo?.ToString() ?? "N/A";
 
                 _ = Task.Run(async () =>

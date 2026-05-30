@@ -21,7 +21,7 @@ export const FlightCheckout: React.FC = () => {
   const navigate = useNavigate();
   const WANDER_SELECTED_OFFER = 'wander_selected_offer';
   const storedUserId = localStorage.getItem('userId') || localStorage.getItem('user_id');
-  const currentUserId = storedUserId ? parseInt(storedUserId, 10) : 4005;
+  const currentUserId = storedUserId ? parseInt(storedUserId, 10) : null;
 
   // Trạng thái vé máy bay đang được thanh toán - khôi phục đồng bộ trực tiếp từ state hoặc sessionStorage để tránh trễ render và vi phạm eslint
   const [offer] = useState<FlightOfferDto | null>(() => {

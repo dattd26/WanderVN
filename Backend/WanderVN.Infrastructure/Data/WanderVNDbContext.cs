@@ -142,6 +142,9 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<Bookings>(entity =>
         {
             entity.Property(b => b.TotalPrice).HasColumnType("decimal(18, 2)");
+            entity.Property(b => b.Email).HasMaxLength(255);
+            entity.Property(b => b.CustomerName).HasMaxLength(255);
+            entity.Property(b => b.CustomerPhone).HasMaxLength(50).IsUnicode(false);
         });
 
         modelBuilder.Entity<Payments>(entity =>

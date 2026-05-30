@@ -8,7 +8,7 @@ public static class PaymentEmailTemplateBuilder
 {
     public static (string Subject, string Body) BuildPaymentEmail(Bookings booking, string transactionNo)
     {
-        var userFullName = booking.User?.FullName ?? "Quý khách";
+        var userFullName = booking.CustomerName ?? booking.User?.FullName ?? "Quý khách";
         var bookingCode = booking.BookingCode;
         var serviceType = booking.ServiceType;
         var totalPrice = booking.TotalPrice;
