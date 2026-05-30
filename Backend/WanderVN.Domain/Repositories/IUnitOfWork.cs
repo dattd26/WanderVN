@@ -20,6 +20,8 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     IGenericRepository<RoomTypes> RoomTypes { get; }
     IGenericRepository<Flights> Flights { get; }
     IGenericRepository<Payments> Payments { get; }
+    IGenericRepository<PartnerPayouts> PartnerPayouts { get; }
+    IGenericRepository<SystemSettings> SystemSettings { get; }
 
     /// <summary>
     /// Lưu tất cả các thay đổi đang chờ trong unit of work này vào cơ sở dữ liệu .

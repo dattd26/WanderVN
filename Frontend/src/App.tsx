@@ -109,6 +109,7 @@ function AppLayout() {
             <Route path="partners" element={<AdminPartners />} />
             <Route path="content" element={<AdminContent />} />
             <Route path="finance" element={<AdminFinance />} />
+            <Route path="settings" element={<AdminSettings />} />
             <Route path="change-password" element={<ChangePasswordAdmin />} />
           </Route>
         </Routes>
@@ -130,6 +131,7 @@ import { AdminUsers } from './pages/admin/users/AdminUsers';
 import { AdminPartners } from './pages/admin/partners/AdminPartners';
 import { AdminContent } from './pages/admin/content/AdminContent';
 import { AdminFinance } from './pages/admin/finance/AdminFinance';
+import { AdminSettings } from './pages/admin/settings/AdminSettings';
 import { ChangePasswordAdmin } from './pages/admin/change-password/ChangePasswordAdmin';
 
 function App() {

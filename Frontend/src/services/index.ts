@@ -13,4 +13,4 @@ export * from './userService';
 export * from './payoutService';
 export * from './roleService';
 export * from './admin/hotelReviewService';
-
+export * from './admin/settingsService';
