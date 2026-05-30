@@ -192,6 +192,42 @@ export const partnerService = {
       method: 'GET',
     });
   },
+
+  /**
+   * Xác nhận Check-in cho đơn đặt phòng
+   */
+  async confirmCheckIn(hotelId: number, bookingId: number): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>(`/partner/hotels/${hotelId}/bookings/${bookingId}/check-in`, {
+      method: 'PUT',
+    });
+  },
+
+  /**
+   * Xác nhận Check-out cho đơn đặt phòng
+   */
+  async confirmCheckOut(hotelId: number, bookingId: number): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>(`/partner/hotels/${hotelId}/bookings/${bookingId}/check-out`, {
+      method: 'PUT',
+    });
+  },
+
+  /**
+   * Hoàn tất lưu trú cho đơn đặt phòng
+   */
+  async completeBooking(hotelId: number, bookingId: number): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>(`/partner/hotels/${hotelId}/bookings/${bookingId}/complete`, {
+      method: 'PUT',
+    });
+  },
+
+  /**
+   * Đánh dấu khách không đến (No-show) cho đơn đặt phòng
+   */
+  async markNoShow(hotelId: number, bookingId: number): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>(`/partner/hotels/${hotelId}/bookings/${bookingId}/no-show`, {
+      method: 'PUT',
+    });
+  },
 };
 
 export default partnerService;
