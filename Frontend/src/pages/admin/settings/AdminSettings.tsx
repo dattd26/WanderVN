@@ -1,4 +1,3 @@
-import React from 'react';
 
 export function AdminSettings() {
     return (
@@ -9,7 +8,7 @@ export function AdminSettings() {
                     Manage global platform configurations and preferences.
                 </p>
             </div>
-            
+
             <div className="bg-admin-surface-container-lowest border border-admin-outline-variant rounded-xl p-admin-lg shadow-sm hover:shadow-md transition-all duration-200 border-t-4 border-t-admin-secondary mb-admin-lg">
                 <div className="flex items-center justify-between mb-admin-lg">
                     <h3 className="font-admin-sans text-admin-headline-sm text-admin-primary">General Settings</h3>
