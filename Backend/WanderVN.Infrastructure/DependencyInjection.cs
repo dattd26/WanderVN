@@ -62,6 +62,7 @@ public static class DependencyInjection
 
         services.AddScoped<IHotelRepository, HotelRepository>();
         services.AddScoped<IHomeRepository, HomeRepository>();
+        services.AddScoped<IBookingRepository, BookingRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPropertyTypeRepository, PropertyTypeRepository>();
         services.AddScoped<ISearchAutocompleteRepository, SearchAutocompleteRepository>();
