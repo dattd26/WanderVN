@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using WanderVN.Domain.Entities;
 using WanderVN.Domain.Repositories;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Application.Features.Payouts.Commands.RejectPayout;
 
@@ -42,7 +43,7 @@ public class RejectPayoutCommandHandler : IRequestHandler<RejectPayoutCommand, b
         var booking = await _unitOfWork.Bookings.GetByIdAsync(payout.BookingId, cancellationToken);
         if (booking != null)
         {
-            booking.Status = "Completed";
+            booking.Status = BookingStatus.Completed;
             _unitOfWork.Bookings.Update(booking);
         }
 

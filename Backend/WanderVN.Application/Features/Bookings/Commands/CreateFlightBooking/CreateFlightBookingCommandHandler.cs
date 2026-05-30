@@ -9,6 +9,7 @@ using WanderVN.Application.Common.Interfaces;
 using WanderVN.Application.DTOs.Request;
 using WanderVN.Application.DTOs.Response;
 using WanderVN.Domain.Entities;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Application.Features.Bookings.Commands.CreateFlightBooking;
 
@@ -117,10 +118,10 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         {
             UserId = request.UserId,
             BookingCode = duffelOrderId,
-            ServiceType = "Flight",
+            ServiceType = BookingServiceType.Flight,
             TotalPrice = totalPriceInVnd,
-            Status = "Pending",
-            PaymentStatus = "Unpaid",
+            Status = BookingStatus.Pending,
+            PaymentStatus = BookingPaymentStatus.Unpaid,
             CreatedAt = DateTimeOffset.UtcNow,
             Email = guestEmail,
             CustomerName = guestName,
@@ -223,7 +224,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             BookingId = booking.Id,
             BookingCode = booking.BookingCode,
             TotalPrice = booking.TotalPrice,
-            Status = booking.Status ?? string.Empty
+            Status = booking.Status.ToString()
         };
     }
 

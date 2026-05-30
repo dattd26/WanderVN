@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WanderVN.Domain.Entities;
+using WanderVN.Domain.Enums;
 using WanderVN.Application.Common.Interfaces;
 
 namespace WanderVN.Infrastructure.Data;
@@ -146,6 +147,17 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
             entity.Property(b => b.Email).HasMaxLength(255);
             entity.Property(b => b.CustomerName).HasMaxLength(255);
             entity.Property(b => b.CustomerPhone).HasMaxLength(50).IsUnicode(false);
+
+            entity.Property(b => b.ServiceType)
+                .HasConversion<int>();
+
+            entity.Property(b => b.Status)
+                .HasConversion<int>()
+                .HasDefaultValue(BookingStatus.Pending);
+
+            entity.Property(b => b.PaymentStatus)
+                .HasConversion<int>()
+                .HasDefaultValue(BookingPaymentStatus.Unpaid);
         });
 
         modelBuilder.Entity<Payments>(entity =>

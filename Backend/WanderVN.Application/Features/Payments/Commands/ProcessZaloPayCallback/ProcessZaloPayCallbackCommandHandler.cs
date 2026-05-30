@@ -9,6 +9,7 @@ using WanderVN.Application.Common.Utils;
 using WanderVN.Application.DTOs.Response;
 using WanderVN.Domain.Entities;
 using WanderVN.Domain.Repositories;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Application.Features.Payments.Commands.ProcessZaloPayCallback;
 
@@ -86,14 +87,14 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
             }
 
             // 6. Kiểm tra xem đơn hàng đã được xác nhận thanh toán chưa (tránh xử lý trùng lặp - Double Confirm)
-            if (booking.PaymentStatus == "Paid")
+            if (booking.PaymentStatus == BookingPaymentStatus.Paid)
             {
                 return new ZaloPayCallbackResponse { ReturnCode = 1, ReturnMessage = "Đơn hàng đã được ghi nhận thanh toán trước đó (double confirm)" };
             }
 
             // 7. Cập nhật trạng thái thanh toán thành công
-            booking.PaymentStatus = "Paid";
-            booking.Status = "Confirmed";
+            booking.PaymentStatus = BookingPaymentStatus.Paid;
+            booking.Status = BookingStatus.Confirmed;
 
             // 8. Lưu lịch sử giao dịch vào bảng Payments (sử dụng đơn vị VND để thống nhất dòng tiền thực tế)
             var payment = new WanderVN.Domain.Entities.Payments

@@ -1,6 +1,7 @@
 using MediatR;
 using WanderVN.Domain.Entities;
 using WanderVN.Domain.Repositories;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Application.Features.Payouts.Commands.ConfirmPayout;
 
@@ -43,7 +44,7 @@ public class ConfirmPayoutCommandHandler : IRequestHandler<ConfirmPayoutCommand,
         var booking = await _unitOfWork.Bookings.GetByIdAsync(payout.BookingId, cancellationToken);
         if (booking != null)
         {
-            booking.Status = "Settled";
+            booking.Status = BookingStatus.Settled;
             _unitOfWork.Bookings.Update(booking);
         }
 

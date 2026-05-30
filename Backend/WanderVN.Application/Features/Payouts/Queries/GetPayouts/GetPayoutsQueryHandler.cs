@@ -37,9 +37,9 @@ public class GetPayoutsQueryHandler : IRequestHandler<GetPayoutsQuery, PagedResu
 
             BookingId = p.BookingId,
             BookingCode = p.Booking?.BookingCode ?? string.Empty,
-            ServiceType = p.Booking?.ServiceType ?? string.Empty,
-            BookingStatus = p.Booking?.Status,
-            PaymentStatus = p.Booking?.PaymentStatus,
+            ServiceType = p.Booking != null ? p.Booking.ServiceType.ToString() : string.Empty,
+            BookingStatus = p.Booking != null ? p.Booking.Status.ToString() : string.Empty,
+            PaymentStatus = p.Booking != null ? p.Booking.PaymentStatus.ToString() : string.Empty,
             BookingCreatedAt = p.Booking?.CreatedAt,
 
             GrossAmount = p.GrossAmount,

@@ -10,9 +10,9 @@ public static class PaymentEmailTemplateBuilder
     {
         var userFullName = booking.CustomerName ?? booking.User?.FullName ?? "Quý khách";
         var bookingCode = booking.BookingCode;
-        var serviceType = booking.ServiceType;
+        var serviceType = booking.ServiceType.ToString();
         var totalPrice = booking.TotalPrice;
-        var status = booking.Status;
+        var status = booking.Status.ToString();
 
         string detailsHtml = "";
 

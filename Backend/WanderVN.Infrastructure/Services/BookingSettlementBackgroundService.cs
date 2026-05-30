@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using WanderVN.Domain.Entities;
+using WanderVN.Domain.Enums;
 using WanderVN.Infrastructure.Data;
 
 namespace WanderVN.Infrastructure.Services;
@@ -83,9 +84,9 @@ public class BookingSettlementBackgroundService : BackgroundService
             .Include(b => b.BookingHotels)
                 .ThenInclude(bh => bh.Room!)
                     .ThenInclude(r => r.Hotel)
-            .Where(b => b.ServiceType == "Hotel"
-                     && b.Status == "Completed"
-                     && b.PaymentStatus == "Paid"
+            .Where(b => b.ServiceType == BookingServiceType.Hotel
+                     && b.Status == BookingStatus.Completed
+                     && b.PaymentStatus == BookingPaymentStatus.Paid
                      && b.CheckedOutAt != null
                      && b.CheckedOutAt <= thresholdTime
                      && !context.PartnerPayouts.Any(p => p.BookingId == b.Id))
@@ -132,7 +133,7 @@ public class BookingSettlementBackgroundService : BackgroundService
                 context.PartnerPayouts.Add(payout);
 
                 // Cập nhật trạng thái Booking sang SettlementPending
-                booking.Status = "SettlementPending";
+                booking.Status = BookingStatus.SettlementPending;
                 context.Bookings.Update(booking);
 
                 await context.SaveChangesAsync(stoppingToken);

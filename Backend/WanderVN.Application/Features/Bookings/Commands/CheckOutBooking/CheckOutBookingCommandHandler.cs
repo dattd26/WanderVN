@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using MediatR;
 using WanderVN.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Application.Features.Bookings.Commands.CheckOutBooking;
 
@@ -20,9 +21,9 @@ public class CheckOutBookingCommandHandler : IRequestHandler<CheckOutBookingComm
         var booking = await _dbContext.Bookings.FindAsync(new object[] { request.BookingId }, cancellationToken);
         if (booking == null) return false;
 
-        if (booking.ServiceType != "Hotel") return false;
+        if (booking.ServiceType != BookingServiceType.Hotel) return false;
 
-        booking.Status = "Completed"; // mark as completed (checked out)
+        booking.Status = BookingStatus.Completed; // mark as completed (checked out)
         booking.CheckedOutAt = DateTimeOffset.UtcNow;
 
         // free up room if exists

@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Domain.Entities;
+using WanderVN.Domain.Enums;
 
 namespace WanderVN.Application.Features.Bookings.Commands.CancelBooking;
 
@@ -22,9 +23,9 @@ public class CancelBookingCommandHandler : IRequestHandler<CancelBookingCommand,
         if (booking == null) return false;
 
         // Only allow cancel if service type is Hotel and not already cancelled/completed
-        if (booking.ServiceType != "Hotel") return false;
+        if (booking.ServiceType != BookingServiceType.Hotel) return false;
 
-        booking.Status = "Cancelled";
+        booking.Status = BookingStatus.Cancelled;
 
         // If there is associated booking hotel record, set room status back to Available
         var bh = await _dbContext.BookingHotels
