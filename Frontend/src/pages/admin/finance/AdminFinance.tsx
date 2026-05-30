@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { payoutService } from '../../../services';
+import { payoutService, settingsService } from '../../../services';
 import type {
     PayoutDto,
     PayoutStatsDto,
@@ -14,6 +14,8 @@ import { FinancePagination } from './components/FinancePagination';
 export function AdminFinance() {
     const [pagedResult, setPagedResult] = useState<PagedResult<PayoutDto> | null>(null);
     const [stats, setStats] = useState<PayoutStatsDto | null>(null);
+    const [commissionFee, setCommissionFee] = useState<number>(15);
+    const [lastUpdated, setLastUpdated] = useState<string>('');
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -67,6 +69,27 @@ export function AdminFinance() {
         }
     }, []);
 
+    const fetchSetting = useCallback(async () => {
+        try {
+            const data = await settingsService.getSetting('CommissionFee');
+            setCommissionFee(parseFloat(data.value) || 15);
+        } catch {
+            // Lỗi khi tải setting, dùng mặc định
+        }
+    }, []);
+
+    const handleUpdateFee = async () => {
+        try {
+            await settingsService.updateSetting('CommissionFee', commissionFee.toString());
+            const today = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+            setLastUpdated(today);
+            alert(`Commission fee globally updated to ${commissionFee}%`);
+        } catch (err: unknown) {
+            console.log(err);
+            alert('Lỗi cập nhật Commission Fee.' + (err instanceof Error ? err.message : ''));
+        }
+    };
+
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchPayouts();
@@ -77,9 +100,10 @@ export function AdminFinance() {
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchStats();
+            fetchSetting();
         }, 0);
         return () => clearTimeout(timer);
-    }, [fetchStats]);
+    }, [fetchStats, fetchSetting]);
 
     const handleConfirm = async (p: PayoutDto) => {
         if (!confirm(`Xác nhận chi trả ${p.netAmount.toLocaleString('vi-VN')}₫ cho "${p.partnerName ?? 'N/A'}" — Booking ${p.bookingCode}?`)) {
@@ -109,6 +133,46 @@ export function AdminFinance() {
 
     return (
         <div className="p-admin-lg max-w-admin-container-max mx-auto w-full">
+            {/* Commission Fee Settings */}
+            <div className="bg-admin-surface-container-lowest border border-admin-outline-variant rounded-xl p-admin-lg shadow-sm hover:shadow-md transition-all duration-200 border-t-4 border-t-admin-secondary mb-admin-lg">
+                <div className="flex items-center justify-between mb-admin-lg">
+                    <h3 className="font-admin-sans text-admin-headline-sm text-admin-primary">Commission Fee</h3>
+                    <span className="material-symbols-outlined text-admin-secondary">analytics</span>
+                </div>
+                <p className="font-admin-sans text-admin-body-sm text-admin-on-surface-variant mb-admin-xl leading-relaxed max-w-3xl">
+                    Define the global service fee percentage for all platform transactions and bookings.
+                </p>
+                <div className="flex flex-col md:flex-row gap-admin-md items-end max-w-3xl">
+                    <div className="flex-1 w-full">
+                        <label className="font-admin-sans text-admin-body-sm font-bold block mb-admin-sm">
+                            Percentage Fee (%)
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="number"
+                                step="0.1"
+                                value={commissionFee}
+                                onChange={(e) => setCommissionFee(parseFloat(e.target.value) || 0)}
+                                className="w-full px-admin-md py-admin-md border border-admin-outline-variant rounded-lg focus:border-admin-secondary focus:ring-2 focus:ring-admin-secondary/20 transition-all font-admin-mono text-admin-display-lg font-bold text-admin-primary outline-none"
+                            />
+                            <span className="absolute right-admin-md top-1/2 -translate-y-1/2 font-bold text-admin-outline">%</span>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleUpdateFee}
+                        className="py-admin-md px-admin-xl h-[64px] bg-admin-primary-container text-white rounded-lg font-bold hover:bg-admin-primary transition-colors flex items-center justify-center gap-admin-sm select-none"
+                    >
+                        <span className="material-symbols-outlined text-sm">save</span>
+                        Update Fee Structure
+                    </button>
+                </div>
+                {lastUpdated && (
+                    <p className="font-admin-sans text-admin-label-caps text-admin-outline mt-admin-sm select-none">
+                        Last updated: {lastUpdated} by Admin
+                    </p>
+                )}
+            </div>
+
             <FinanceStatsCards stats={stats} pendingCount={pendingCount} />
 
             <FinanceFilters
