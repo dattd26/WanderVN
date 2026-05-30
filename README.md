@@ -1,45 +1,202 @@
 # WanderVN
 
-WanderVN là một ứng dụng web B2C, cung cấp các giải pháp tìm kiếm, đặt chỗ và thanh toán trực tuyến cho Khách sạn, Chuyến bay và Tour du lịch.
+WanderVN là một nền tảng du lịch trực tuyến (OTA - Online Travel Agency) cho phép người dùng tìm kiếm, đặt chỗ và thanh toán trực tuyến các dịch vụ du lịch như khách sạn và chuyến bay.
 
-### Tài khoản mẫu
+Dự án được xây dựng với mục tiêu mang đến trải nghiệm tìm kiếm và đặt dịch vụ du lịch hiện đại, đồng thời đóng vai trò như một hệ thống thực hành các kỹ thuật phát triển phần mềm thực tế như Clean Architecture, CQRS, thanh toán trực tuyến, quản lý đối tác và xử lý giao dịch.
 
-| Role | Email | Password |
-|---|---|---|
-| Admin | admin@wandervn.com | az0777541112@ |
-| Partner | partner-test@gmail.com | az0777541112@ |
-| Customer | dattd0511@gmail.com | 123456 |
+---
 
-## Kiến trúc (Architecture)
+## Chức năng chính
 
-Kho lưu trữ (repository) này được chia thành hai phần chính:
+### Khách hàng (Customer)
 
-### 1. Frontend (React + Vite + Tailwind CSS)
+* Tìm kiếm khách sạn theo địa điểm, ngày nhận phòng và số lượng khách.
+* Xem thông tin chi tiết khách sạn, loại phòng và giá bán.
+* Tìm kiếm chuyến bay theo hành trình và ngày khởi hành.
+* Đặt phòng khách sạn và vé máy bay trực tuyến.
+* Thanh toán qua VNPay và ZaloPay.
+* Theo dõi lịch sử đặt chỗ.
+* Tra cứu đơn hàng bằng mã đặt chỗ và email.
+* Hủy đặt chỗ hoặc thanh toán lại đối với các đơn hàng chưa hoàn tất.
 
-* **Framework:** ReactJS 19 (TypeScript) xây dựng với Vite.
-* **Styling:** Tailwind CSS v3.
-* **Vị trí:** `Frontend/`
+### Đối tác (Partner)
 
-### 2. Backend (ASP.NET Core Web API)
+* Đăng ký trở thành đối tác lưu trú.
+* Quản lý thông tin khách sạn.
+* Quản lý loại phòng và giá bán.
+* Theo dõi doanh thu từ các đơn đặt chỗ.
+* Theo dõi các khoản đối soát và hoa hồng.
 
-* **Framework:** .NET Core Web API (C#).
-* **Kiến trúc:** Clean Architecture + CQRS.
-* `WanderVN.Domain`: Các thực thể cốt lõi (entities) và giao diện (interfaces).
-* `WanderVN.Application`: Logic nghiệp vụ.
-* `WanderVN.Infrastructure`: Truy cập dữ liệu (EF Core + Dapper).
-* `WanderVN.API`: Web API, Swagger và cấu hình Dependency Injection (DI).
+### Quản trị viên (Admin)
 
-## Hướng dẫn cấu hình local bảo mật (Local Secret Configuration)
+* Quản lý người dùng.
+* Quản lý đối tác.
+* Quản lý khách sạn và nội dung hệ thống.
+* Theo dõi doanh thu và thống kê hoạt động.
+* Quản lý các yêu cầu đăng ký đối tác.
 
-Để bảo mật thông tin nhạy cảm (như API Access Token của Duffel) và tránh bị lộ trên GitHub, dự án đã cấu hình sử dụng **.NET User Secrets** ở môi trường phát triển local.
+---
 
-Khi clone dự án về, mỗi thành viên trong nhóm cần thực hiện lệnh sau trong terminal tại thư mục chứa file dự án của mình để cấu hình token local của riêng họ:
+## Kiến trúc hệ thống
 
-### Cấu hình Duffel Access Token local:
-1. Mở terminal tại thư mục: `Backend/WanderVN.API`
-2. Chạy lệnh:
-   ```bash
-   dotnet user-secrets set "Duffel:AccessToken" "YOUR_DUFFEL_ACCESS_TOKEN_HERE"
-   ```
+Dự án được xây dựng theo mô hình Clean Architecture kết hợp CQRS.
 
-*Lưu ý: Mọi thay đổi trong `appsettings.json` đều đã được thay thế bằng placeholder `"YOUR_DUFFEL_ACCESS_TOKEN_HERE"`. Không thay đổi trực tiếp file `appsettings.json`.
+```text
+Backend
+├── WanderVN.API
+├── WanderVN.Application
+├── WanderVN.Domain
+└── WanderVN.Infrastructure
+```
+
+### WanderVN.Domain
+
+Chứa các Entity, Value Objects, Enums và Repository Interfaces.
+
+### WanderVN.Application
+
+Chứa:
+
+* CQRS Commands & Queries
+* MediatR Handlers
+* DTOs
+* Validators
+* Business Rules
+
+### WanderVN.Infrastructure
+
+Chứa:
+
+* Entity Framework Core
+* Dapper
+* SQL Server
+* Payment Integrations
+* External Services
+
+### WanderVN.API
+
+Chứa:
+
+* RESTful APIs
+* Authentication & Authorization
+* Middleware
+* Swagger/OpenAPI
+
+---
+
+## Công nghệ sử dụng
+
+### Frontend
+
+* React 19
+* TypeScript
+* Vite
+* Tailwind CSS
+* React Router
+* Lucide React
+
+### Backend
+
+* ASP.NET Core 8 Web API
+* Entity Framework Core
+* Dapper
+* MediatR
+* FluentValidation
+* JWT Authentication
+
+### Database
+
+* Microsoft SQL Server
+
+### Thanh toán
+
+* VNPay
+* ZaloPay
+
+### Dịch vụ bên thứ ba
+
+* Duffel API (Flight Search)
+
+---
+
+## Chiến lược truy cập dữ liệu
+
+Dự án sử dụng mô hình Hybrid Data Access:
+
+* Entity Framework Core cho các nghiệp vụ ghi dữ liệu (Create, Update, Delete).
+* Dapper cho các truy vấn đọc phức tạp hoặc yêu cầu hiệu năng cao.
+
+Mục tiêu là cân bằng giữa tốc độ phát triển, khả năng bảo trì và hiệu năng hệ thống.
+
+---
+
+
+## Chạy dự án
+
+### Backend
+
+```bash
+cd Backend
+
+dotnet restore
+
+dotnet run --project WanderVN.API
+```
+
+Mặc định:
+
+```text
+http://localhost:5096
+```
+
+### Frontend
+
+```bash
+cd Frontend
+
+npm install
+
+npm run dev
+```
+
+Mặc định:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## Triển khai
+
+Dự án sử dụng GitHub Actions để tự động triển khai khi có thay đổi trên nhánh `main`.
+
+Backend hiện được triển khai trên Somee.com.
+
+Các GitHub Secrets cần cấu hình:
+
+```text
+SOMEE_FTP_SERVER
+SOMEE_FTP_USERNAME
+SOMEE_FTP_PASSWORD
+APPSETTINGS_PRODUCTION_JSON
+```
+
+---
+
+## Mục tiêu học tập
+
+Dự án được thực hiện nhằm nghiên cứu và áp dụng:
+
+* Clean Architecture
+* CQRS & MediatR
+* Repository & Unit of Work
+* Entity Framework Core
+* Dapper
+* Thanh toán trực tuyến
+* Tích hợp API bên thứ ba
+* CI/CD với GitHub Actions
+* Xây dựng hệ thống OTA thực tế
+
+```
+```
