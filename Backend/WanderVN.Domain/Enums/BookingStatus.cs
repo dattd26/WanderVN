@@ -7,5 +7,8 @@ public enum BookingStatus
     Completed = 2,
     Cancelled = 3,
     SettlementPending = 4,
-    Settled = 5
+    Settled = 5,
+    CheckedIn = 6,
+    CheckedOut = 7,
+    NoShow = 8
 }
