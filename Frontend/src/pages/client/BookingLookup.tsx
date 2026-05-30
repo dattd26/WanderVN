@@ -55,9 +55,9 @@ export const BookingLookup: React.FC = () => {
       } else {
         setError('Không tìm thấy đơn đặt chỗ khớp với thông tin đã nhập.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Lỗi tra cứu hành trình:', err);
-      setError(err.message || 'Không tìm thấy đơn đặt chỗ hợp lệ.');
+      setError((err as Error).message || 'Không tìm thấy đơn đặt chỗ hợp lệ.');
     } finally {
       setLoading(false);
     }
@@ -70,16 +70,16 @@ export const BookingLookup: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      await request<any>(`/bookings/${booking.bookingId}/cancel`, {
+      await request<BookingLookupDetailDto>(`/bookings/${booking.bookingId}/cancel`, {
         method: 'PUT'
       });
-      setBooking((prev: BookingLookupDetailDto | null) => 
+      setBooking((prev: BookingLookupDetailDto | null) =>
         prev ? { ...prev, status: 'Cancelled' } : null
       );
       alert('Hủy đặt chỗ thành công!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Lỗi hủy đặt chỗ:', err);
-      alert(err.message || 'Có lỗi xảy ra khi hủy đặt chỗ.');
+      alert((err as Error).message || 'Có lỗi xảy ra khi hủy đặt chỗ.');
     } finally {
       setIsProcessing(false);
     }
@@ -92,16 +92,16 @@ export const BookingLookup: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      await request<any>(`/bookings/${booking.bookingId}/checkout`, {
+      await request<BookingLookupDetailDto>(`/bookings/${booking.bookingId}/checkout`, {
         method: 'PUT'
       });
-      setBooking((prev: BookingLookupDetailDto | null) => 
+      setBooking((prev: BookingLookupDetailDto | null) =>
         prev ? { ...prev, status: 'Completed' } : null
       );
       alert('Xác nhận trả phòng thành công!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Lỗi trả phòng:', err);
-      alert(err.message || 'Có lỗi xảy ra khi trả phòng.');
+      alert((err as Error).message || 'Có lỗi xảy ra khi trả phòng.');
     } finally {
       setIsProcessing(false);
     }
@@ -124,9 +124,9 @@ export const BookingLookup: React.FC = () => {
       } else {
         alert('Không khởi tạo được liên kết thanh toán.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(`Lỗi thanh toán ${provider}:`, err);
-      alert(err.message || 'Có lỗi xảy ra khi tạo liên kết thanh toán.');
+      alert((err as Error).message || 'Có lỗi xảy ra khi tạo liên kết thanh toán.');
     } finally {
       setIsProcessing(false);
     }
@@ -283,7 +283,7 @@ export const BookingLookup: React.FC = () => {
               {/* Service information */}
               <section className="space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-secondary">Thông tin dịch vụ</h3>
-                
+
                 {booking.serviceType === 'Hotel' ? (
                   <div className="border border-neutral-100 rounded-lg p-5 sm:p-6 flex flex-col md:flex-row gap-6 justify-between items-center bg-white shadow-sm hover:border-secondary/20 transition-all duration-300">
                     <div className="w-full md:w-36 h-36 flex-shrink-0 bg-neutral-50 rounded-lg overflow-hidden border border-neutral-200">
