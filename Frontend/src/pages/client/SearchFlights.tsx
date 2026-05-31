@@ -179,20 +179,22 @@ export const SearchFlights: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Cinematic Hero Section */}
-      <section className="relative h-[65vh] flex items-center justify-center">
-        <div className="absolute inset-0 z-0 overflow-hidden">
+      <section className="relative min-h-[70dvh] flex items-center justify-center">
+        <div className="absolute inset-0 z-0 overflow-hidden bg-[#111]">
           <img
-            alt="Mây trời phi cơ nghệ thuật"
-            className="w-full h-full object-cover grayscale-[15%] brightness-[65%]"
+            alt=""
+            className="w-full h-full object-cover opacity-90 scale-105 brightness-[85%] saturate-[1.1] transition-all duration-700"
             src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=80"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#fdf9f4]"></div>
+          {/* Lớp hạt nhiễu mờ tạo cảm giác ảnh tạp chí in */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/stardust.png")' }}></div>
         </div>
-        <div className="relative z-10 text-center text-on-primary px-margin-mobile">
-          <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg mb-4 drop-shadow-xl select-none">
-            Tìm Chuyến Bay Của Bạn
+        <div className="relative z-10 text-center text-on-primary px-margin-mobile -translate-y-12">
+          <h1 className="font-display-lg text-display-lg-mobile md:text-[5.5rem] leading-[1.1] mb-6 drop-shadow-2xl select-none tracking-tight">
+            Tìm Chuyến Bay <br className="hidden md:block" /> Của Bạn
           </h1>
-          <p className="font-headline-md text-body-lg max-w-2xl mx-auto opacity-95 italic select-none">
+          <p className="font-headline-md text-body-lg max-w-2xl mx-auto opacity-90 italic select-none tracking-wide text-white/90">
             Kết nối di sản ngàn năm với các chuyến bay thoải mái bậc nhất Việt Nam.
           </p>
         </div>
@@ -223,23 +225,25 @@ export const SearchFlights: React.FC = () => {
       {/* Main Results Content Area */}
       <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mt-28 md:mt-36 mb-section-gap w-full flex-grow">
         {!hasSearched ? (
-          <div className="bg-surface border border-outline/10 p-12 text-center rounded-lg limestone-shadow max-w-3xl mx-auto flex flex-col items-center gap-6 mt-4">
-            <div className="w-20 h-20 rounded-full bg-secondary/10 flex items-center justify-center text-secondary mb-2 animate-bounce">
-              <Plane className="h-10 w-10 rotate-[45deg]" />
+          <div className="flex flex-col items-center mt-12 mb-20 max-w-4xl mx-auto">
+            <div className="text-center mb-16 max-w-2xl">
+              <div className="w-20 h-20 rounded-full bg-surface-container-low border border-outline/10 flex items-center justify-center text-secondary mb-6 mx-auto shadow-sm">
+                <Plane className="h-8 w-8 rotate-[45deg]" />
+              </div>
+              <h3 className="font-display-md text-headline-lg text-primary font-bold tracking-tight mb-4">
+                Khám Phá Các Chặng Bay Thượng Lưu
+              </h3>
+              <p className="text-body-md text-on-surface-variant leading-relaxed">
+                WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam.
+                Hãy điền thông tin chặng bay và ngày khởi hành ở thanh tìm kiếm phía trên để chúng tôi tìm kiếm các ưu đãi chuyến bay tốt nhất dành cho hành trình tinh hoa của bạn.
+              </p>
             </div>
-            <h3 className="font-display-md text-headline-md text-primary font-bold">
-              Khám Phá Các Chặng Bay Thượng Lưu
-            </h3>
-            <p className="text-body-md text-on-surface-variant max-w-xl leading-relaxed">
-              WanderVN kết nối các chuyến bay đẳng cấp tới mọi miền di sản của Việt Nam.
-              Hãy điền thông tin chặng bay và ngày khởi hành ở thanh tìm kiếm phía trên để chúng tôi tìm kiếm các ưu đãi chuyến bay tốt nhất dành cho hành trình tinh hoa của bạn.
-            </p>
-            <div className="w-full border-t border-outline/10 my-4" />
-            <div className="w-full text-left">
-              <span className="font-label-md text-label-md text-secondary uppercase tracking-widest block mb-4 text-center">
+
+            <div className="w-full">
+              <span className="font-label-md text-[11px] text-secondary uppercase tracking-[0.2em] block mb-8 text-center font-semibold">
                 Gợi ý chặng bay phổ biến
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
                   { from: 'HAN', to: 'SGN', title: 'Hà Nội → TP. Hồ Chí Minh', desc: 'Chặng bay nhộn nhịp nhất nối liền 2 đầu cầu kinh tế.' },
                   { from: 'HAN', to: 'DAD', title: 'Hà Nội → Đà Nẵng', desc: 'Hành trình đến với thành phố đáng sống bên sông Hàn thơ mộng.' },
@@ -251,10 +255,10 @@ export const SearchFlights: React.FC = () => {
                   <button
                     key={`${route.from}-${route.to}`}
                     onClick={() => handleSearchSubmit(route.from, route.to, departureDate, 'one-way', 'business')}
-                    className="p-5 border border-outline/15 hover:border-primary/40 rounded-lg text-left bg-surface-container-low hover:bg-surface-container-high transition-all flex flex-col gap-1 limestone-shadow-sm hover:scale-[1.02]"
+                    className="group flex flex-col items-start p-8 text-left bg-surface hover:bg-surface-container-lowest transition-all duration-300 limestone-shadow hover:shadow-[0_20px_40px_rgba(28,28,25,0.06)] rounded-xl border border-transparent hover:border-outline/10 hover:-translate-y-1"
                   >
-                    <span className="font-label-md text-primary">{route.title}</span>
-                    <span className="text-caption text-on-surface-variant font-medium line-clamp-2 mt-1">{route.desc}</span>
+                    <span className="font-display-md text-headline-sm text-primary mb-2 group-hover:text-secondary transition-colors">{route.title}</span>
+                    <span className="text-body-sm text-on-surface-variant leading-relaxed">{route.desc}</span>
                   </button>
                 ))}
               </div>
@@ -305,11 +309,11 @@ export const SearchFlights: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="space-y-6" ref={resultsRef}>
-                <div className="flex justify-between items-center pb-4 border-b border-outline-variant/20 mb-6">
+              <div className="space-y-8" ref={resultsRef}>
+                <div className="flex justify-between items-center pb-6 border-b border-outline/10 mb-8">
                   <div>
-                    <h2 className="font-display-md text-headline-md text-primary">Các Chuyến Bay Khả Dụng</h2>
-                    <p className="text-body-md text-on-surface-variant italic mt-0.5">
+                    <h2 className="font-display-md text-headline-lg text-primary tracking-tight">Các Chuyến Bay Khả Dụng</h2>
+                    <p className="text-body-md text-on-surface-variant italic mt-2">
                       Tìm thấy {offers.length} chuyến bay cao cấp từ {origin} đi {destination}
                     </p>
                   </div>
@@ -321,125 +325,137 @@ export const SearchFlights: React.FC = () => {
                   return (
                     <div
                       key={offer.id}
-                      className={`group bg-surface border transition-all duration-500 overflow-hidden rounded-lg limestone-shadow ${isSelected
-                        ? 'border-secondary ring-1 ring-secondary/20 bg-surface-container-low'
-                        : 'border-outline/10 hover:border-primary/20'
+                      className={`group relative bg-surface transition-all duration-500 overflow-hidden rounded-xl limestone-shadow ${isSelected
+                        ? 'ring-2 ring-secondary bg-surface-container-lowest shadow-[0_20px_40px_rgba(212,175,55,0.15)]'
+                        : 'hover:shadow-[0_20px_40px_rgba(28,28,25,0.08)] hover:-translate-y-1'
                         }`}
                     >
-                      <div className="p-8 flex flex-col lg:flex-row items-center justify-between gap-8">
+                      {isSelected && (
+                        <div className="absolute top-0 right-0 bg-secondary text-on-primary text-[10px] uppercase tracking-widest px-4 py-1.5 font-bold rounded-bl-lg z-10">
+                          Đã chọn
+                        </div>
+                      )}
+                      <div className="p-8 lg:p-10 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
                         {/* Thông tin Hãng hàng không */}
                         <div className="flex items-center gap-6 lg:w-1/4 w-full">
                           {offer.carrierLogoUrl ? (
                             <img
                               src={offer.carrierLogoUrl}
                               alt={offer.carrierName}
-                              className="w-12 h-12 object-contain rounded"
+                              className="w-14 h-14 object-contain rounded-md"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-primary flex items-center justify-center text-on-primary rounded font-bold">
+                            <div className="w-14 h-14 bg-primary flex items-center justify-center text-on-primary rounded-md font-bold text-lg shadow-inner">
                               {offer.carrierCode}
                             </div>
                           )}
                           <div>
-                            <h3 className="font-label-md text-label-md uppercase tracking-wider text-primary">
+                            <h3 className="font-label-md text-label-md uppercase tracking-[0.1em] text-primary">
                               {offer.carrierName}
                             </h3>
-                            <p className="text-caption text-on-surface-variant font-medium">
+                            <p className="text-caption text-on-surface-variant font-medium mt-1">
                               {cabinClass === 'economy' ? 'Hạng Phổ thông' : 'Hạng Thương gia'}
                             </p>
                           </div>
                         </div>
 
                         {/* Điểm xuất phát - Điểm đến - Thời gian bay */}
-                        <div className="flex-1 flex items-center justify-between gap-6 md:gap-12 w-full lg:px-12 py-4 lg:py-0 border-y lg:border-y-0 lg:border-x border-outline-variant/20">
+                        <div className="flex-1 flex items-center justify-between gap-6 md:gap-12 w-full lg:px-8 py-6 lg:py-0 border-y lg:border-y-0 lg:border-x border-outline/10">
                           {/* Điểm đi */}
                           <div className="text-center md:text-left">
-                            <div className="font-headline-md text-headline-md text-primary">
+                            <div className="font-display-md text-display-sm text-primary tracking-tight">
                               {formatTime(offer.departingAt)}
                             </div>
-                            <div className="text-caption font-bold text-secondary uppercase tracking-widest mt-1">
+                            <div className="text-[11px] font-bold text-secondary uppercase tracking-[0.2em] mt-2">
                               {offer.originCode}
                             </div>
                           </div>
 
                           {/* Trục bay đồ họa */}
-                          <div className="flex flex-col items-center flex-1 max-w-[240px] relative">
-                            <div className="text-[10px] uppercase tracking-tighter text-on-surface-variant mb-1.5 font-semibold">
-                              {formatDuration(offer.duration)} • Trực tiếp
+                          <div className="flex flex-col items-center flex-1 max-w-[280px] relative px-4">
+                            <div className="text-[11px] uppercase tracking-widest text-on-surface-variant mb-3 font-semibold">
+                              {formatDuration(offer.duration)}
                             </div>
-                            <div className="w-full h-px bg-outline/25 relative">
-                              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-outline"></div>
-                              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-outline"></div>
-                              <Plane className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-primary h-4 w-4 bg-surface px-1.5 box-content rotate-90" />
+                            <div className="w-full h-px bg-outline/20 relative">
+                              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 border-outline bg-surface"></div>
+                              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 border-outline bg-surface"></div>
+                              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface px-2">
+                                <Plane className="text-primary h-5 w-5 rotate-90 opacity-80" />
+                              </div>
                             </div>
-                            <div className="text-[10px] mt-1.5 text-on-surface-variant select-none">
+                            <div className="text-caption mt-3 text-on-surface-variant select-none">
                               {offer.aircraftName || 'Airbus A350-900'}
                             </div>
                           </div>
 
                           {/* Điểm đến */}
                           <div className="text-center md:text-right">
-                            <div className="font-headline-md text-headline-md text-primary">
+                            <div className="font-display-md text-display-sm text-primary tracking-tight">
                               {formatTime(offer.arrivingAt)}
                             </div>
-                            <div className="text-caption font-bold text-secondary uppercase tracking-widest mt-1">
+                            <div className="text-[11px] font-bold text-secondary uppercase tracking-[0.2em] mt-2">
                               {offer.destinationCode}
                             </div>
                           </div>
                         </div>
 
                         {/* Giá vé & Nút chọn */}
-                        <div className="lg:w-1/4 w-full flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-4">
+                        <div className="lg:w-1/4 w-full flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-6">
                           <div className="text-left lg:text-right">
-                            <div className="font-headline-md text-headline-lg text-primary">
-                              ${offer.totalAmount.toFixed(2)} <span className="text-caption font-normal text-on-surface-variant">USD /khách</span>
+                            <div className="font-display-md text-headline-lg text-primary">
+                              ${offer.totalAmount.toFixed(2)}
+                            </div>
+                            <div className="text-[11px] uppercase tracking-wider font-medium text-on-surface-variant mt-1">
+                              USD / Khách
                             </div>
                           </div>
-                          <div className="flex flex-col gap-2">
+                          <div className="flex flex-col gap-3 w-full sm:w-auto">
                             {/* Nút mở modal chi tiết */}
                             <button
                               id={`btn-detail-${offer.id}`}
                               onClick={() => openModal(offer)}
-                              className="px-8 py-3 border border-secondary text-secondary hover:bg-secondary hover:text-on-primary font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none"
+                              className="w-full px-6 py-2.5 border-b-2 border-transparent text-on-surface-variant hover:text-primary font-label-md text-caption uppercase tracking-[0.15em] transition-all select-none hover:border-primary/30"
                             >
-                              XEM CHI TIẾT
+                              Xem chi tiết
                             </button>
-                            {/* Nút chọn nhanh (giữ booking bar cũ) */}
+                            {/* Nút chọn nhanh */}
                             <button
                               id={`btn-select-${offer.id}`}
                               onClick={() => setSelectedOffer(isSelected ? null : offer)}
-                              className={`px-8 py-3 border font-label-md text-label-md uppercase tracking-wider rounded-[4px] transition-all select-none ${isSelected
-                                ? 'bg-primary text-on-primary border-primary'
-                                : 'border-primary text-primary hover:bg-primary hover:text-on-primary'
+                              className={`w-full px-8 py-3.5 font-label-md text-label-md uppercase tracking-[0.15em] rounded-md transition-all duration-300 active:scale-[0.98] select-none ${isSelected
+                                ? 'bg-primary text-on-primary shadow-lg'
+                                : 'bg-surface border border-primary/20 text-primary hover:bg-primary hover:text-on-primary hover:shadow-lg'
                                 }`}
                             >
-                              {isSelected ? 'ĐÃ CHỌN' : 'CHỌN CHUYẾN BAY'}
+                              {isSelected ? 'Đã Chọn' : 'Chọn Chuyến'}
                             </button>
                           </div>
                         </div>
                       </div>
 
                       {/* Phân mục tiện ích đặc trưng của chặng bay */}
-                      <div className="bg-surface-container-low px-8 py-3 border-t border-outline/5 flex flex-wrap gap-8">
-                        <span className="flex items-center gap-1.5 text-caption text-on-surface-variant">
-                          <Utensils className="h-3.5 w-3.5 text-secondary" /> Fine Dining (Ẩm thực Việt)
+                      <div className="bg-surface-container-lowest px-8 lg:px-10 py-4 border-t border-outline/5 flex flex-wrap gap-x-8 gap-y-3">
+                        <span className="flex items-center gap-2 text-caption text-on-surface-variant">
+                          <Utensils className="h-4 w-4 text-secondary/80" /> <span className="tracking-wide">Fine Dining</span>
                         </span>
-                        <span className="flex items-center gap-1.5 text-caption text-on-surface-variant">
-                          <BedDouble className="h-3.5 w-3.5 text-secondary" /> Lie-flat Seat (Giường phẳng)
+                        <span className="flex items-center gap-2 text-caption text-on-surface-variant">
+                          <BedDouble className="h-4 w-4 text-secondary/80" /> <span className="tracking-wide">Lie-flat Seat</span>
                         </span>
-                        <span className="flex items-center gap-1.5 text-caption text-on-surface-variant">
-                          <Wifi className="h-3.5 w-3.5 text-secondary" /> SkyConnect WiFi
+                        <span className="flex items-center gap-2 text-caption text-on-surface-variant">
+                          <Wifi className="h-4 w-4 text-secondary/80" /> <span className="tracking-wide">SkyConnect WiFi</span>
                         </span>
                       </div>
                     </div>
                   );
                 })}
 
-                <FlightPagination 
-                  currentPage={currentPage} 
-                  totalPages={totalPages} 
-                  onPageChange={handlePageChange} 
-                />
+                <div className="pt-8">
+                  <FlightPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
               </div>
             )}
           </>
@@ -448,26 +464,28 @@ export const SearchFlights: React.FC = () => {
 
       {/* Booking Bar (Thanh chọn vé cố định ở chân trang) */}
       {selectedOffer && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-primary text-on-primary px-8 py-4 rounded-full shadow-2xl z-40 flex flex-col sm:flex-row items-center justify-between gap-6 border border-white/10 backdrop-blur-md animate-slide-up">
-          <div className="flex items-center gap-6 divide-x divide-white/20 w-full sm:w-auto">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl bg-primary/95 text-on-primary px-8 py-5 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] z-40 flex flex-col sm:flex-row items-center justify-between gap-6 border border-white/15 backdrop-blur-xl animate-slide-up">
+          <div className="flex items-center gap-8 divide-x divide-white/20 w-full sm:w-auto">
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase tracking-tighter opacity-60">Chặng Bay Đã Chọn</span>
-              <span className="font-label-md text-label-md text-secondary-fixed flex items-center gap-1.5">
-                {origin} <ArrowRight className="h-3.5 w-3.5" /> {destination}
+              <span className="text-[10px] uppercase tracking-[0.2em] opacity-70 mb-1">Chặng Bay Đã Chọn</span>
+              <span className="font-label-md text-label-lg text-secondary-fixed flex items-center gap-3">
+                <span className="text-white">{origin}</span>
+                <ArrowRight className="h-4 w-4 opacity-50" />
+                <span className="text-white">{destination}</span>
               </span>
             </div>
-            <div className="flex flex-col pl-6">
-              <span className="text-[10px] uppercase tracking-tighter opacity-60">Tổng chi phí</span>
-              <span className="font-label-md text-label-md text-white">
-                ${selectedOffer.totalAmount.toFixed(2)} USD
+            <div className="flex flex-col pl-8">
+              <span className="text-[10px] uppercase tracking-[0.2em] opacity-70 mb-1">Tổng chi phí</span>
+              <span className="font-display-md text-headline-sm text-secondary">
+                ${selectedOffer.totalAmount.toFixed(2)} <span className="text-sm font-sans tracking-widest text-white/70">USD</span>
               </span>
             </div>
           </div>
           <button
             onClick={() => navigate('/flights/checkout', { state: { offer: selectedOffer } })}
-            className="bg-secondary-container text-on-secondary-container px-8 py-3 rounded-full font-label-md text-label-md hover:scale-105 transition-transform w-full sm:w-auto uppercase tracking-wider text-center select-none"
+            className="bg-secondary text-primary px-10 py-4 rounded-xl font-label-md text-label-md hover:bg-secondary-fixed transition-all duration-300 w-full sm:w-auto uppercase tracking-[0.15em] text-center select-none shadow-[0_10px_20px_rgba(212,175,55,0.2)] active:scale-95"
           >
-            ĐẶT VÉ &amp; THANH TOÁN
+            Đặt vé & Thanh toán
           </button>
         </div>
       )}

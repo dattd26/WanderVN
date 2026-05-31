@@ -145,26 +145,52 @@ export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
   // Xác định các lớp CSS dựa trên chủ đề (Theme) để đảm bảo tính đồng nhất
   const isDark = theme === 'dark';
   const containerClasses = isDark
-    ? `bg-[#1a1a1a]/95 backdrop-blur-md p-8 rounded-lg shadow-2xl border border-white/10 w-full max-w-container-max mx-auto`
-    : `bg-surface p-6 rounded-lg ${compact ? 'shadow-sm border border-outline-variant/30' : 'limestone-shadow border border-outline-variant/20'} w-full max-w-container-max mx-auto`;
+    ? `bg-[#121212]/80 backdrop-blur-2xl p-8 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)] border border-white/10 w-full max-w-container-max mx-auto`
+    : `bg-surface p-6 rounded-2xl ${compact ? 'shadow-sm border border-outline-variant/30' : 'shadow-[0_20px_40px_rgba(28,28,25,0.06),inset_0_1px_0_rgba(255,255,255,0.8)] border border-outline/10'} w-full max-w-container-max mx-auto`;
 
   const labelClasses = isDark
-    ? `text-caption text-white/50 block font-medium uppercase tracking-wider mb-2`
-    : `text-caption text-on-surface-variant block font-medium uppercase tracking-wider mb-2`;
+    ? `text-[10px] text-white/50 block font-medium uppercase tracking-[0.2em] mb-2`
+    : `text-[10px] text-on-surface-variant block font-medium uppercase tracking-[0.2em] mb-2`;
 
   const inputContainerClasses = isDark
-    ? `flex items-center gap-2 border-b border-white/20 pb-2 relative`
-    : `flex items-center gap-2 border-b border-primary/20 focus-within:border-primary pb-2 relative`;
+    ? `flex items-center gap-3 border-b border-white/20 pb-3 relative group focus-within:border-secondary transition-colors duration-300`
+    : `flex items-center gap-3 border-b border-outline/20 pb-3 relative group focus-within:border-primary transition-colors duration-300`;
 
-  const iconClasses = isDark ? `text-white/50 h-5 w-5 shrink-0` : `text-outline h-5 w-5 shrink-0`;
+  const iconClasses = isDark ? `text-white/40 h-5 w-5 shrink-0 group-focus-within:text-secondary transition-colors` : `text-outline h-5 w-5 shrink-0 group-focus-within:text-primary transition-colors`;
 
   const inputClasses = isDark
-    ? `w-full bg-transparent border-none p-0 text-white focus:ring-0 font-body-md text-body-md cursor-pointer placeholder:text-white/30 [color-scheme:dark]`
-    : `w-full bg-transparent border-none p-0 text-on-surface focus:ring-0 font-body-md text-body-md cursor-pointer placeholder:text-outline/60`;
+    ? `w-full bg-transparent border-none p-0 text-white focus:ring-0 font-body-md text-body-md cursor-pointer placeholder:text-white/30 [color-scheme:dark] outline-none`
+    : `w-full bg-transparent border-none p-0 text-on-surface focus:ring-0 font-body-md text-body-md cursor-pointer placeholder:text-outline/60 outline-none`;
 
   return (
     <form onSubmit={handleSubmit} className={containerClasses}>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes glowMove {
+          0% {
+            background-position: 0% 50%;
+          }
+          100% {
+            background-position: 200% 50%;
+          }
+        }
+        .glow-underline-bar {
+          background: linear-gradient(
+            90deg,
+            #d97706, /* Đồng cổ (Tạo điểm nhấn tối hai đầu) */
+            #f59e0b, /* Vàng Hổ Phách */
+            #fef08a, /* Vàng Chanh Sáng (Tạo điểm rực sáng - Glow) */
+            #fff9e6, /* Ánh Kim Trắng (Tâm điểm bắt sáng cực đại) */
+            #fbf2b7, /* Quay lại vàng sáng */
+            #f59e0b, /* Vàng Hổ Phách */
+            #d97706  /* Lặp lại để mượt vòng lặp animation */
+          );
+          background-size: 200% auto;
+          animation: glowMove 3s linear infinite;
+        }
+      `}} />
+
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8 items-end">
 
         {/* 1. Điểm đến hoặc tên khách sạn (Autocomplete) */}
         <div className="space-y-2 relative md:col-span-1" ref={dropdownRef}>
@@ -278,10 +304,16 @@ export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
         {/* 5. Nút tìm kiếm */}
         <button
           type="submit"
-          className="bg-secondary text-on-primary font-label-md text-label-md rounded-[4px] py-4 hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 w-full select-none"
+          className="relative overflow-hidden bg-[#e5c158] hover:bg-[#f3ca52] text-[#121212] font-bold font-label-md text-caption uppercase tracking-[0.15em] rounded-xl py-4 transition-all duration-300 flex items-center justify-center gap-3 w-full select-none shadow-[0_10px_20px_rgba(229,193,88,0.2)] hover:shadow-[0_12px_24px_rgba(243,202,82,0.3)] active:scale-95 border border-transparent"
         >
-          <Search className="h-5 w-5" />
-          TÌM KHÁCH SẠN
+          {/* Lớp phản chiếu mờ nhẹ bên trên đường viền tạo chiều sâu */}
+          <div className="absolute bottom-0 left-0 right-0 h-[6px] opacity-25 blur-[4px] glow-underline-bar" />
+
+          {/* Đường viền dưới động (Glow Gradient Underline) */}
+          <div className="absolute bottom-0 left-0 right-0 h-[3px] glow-underline-bar" />
+
+          <Search className="h-4 w-4 z-10 stroke-[2.5]" />
+          <span className="z-10">TÌM KHÁCH SẠN</span>
         </button>
 
       </div>
