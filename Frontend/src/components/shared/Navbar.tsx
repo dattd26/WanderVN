@@ -13,6 +13,7 @@ export const Navbar: React.FC = () => {
   // Kiểm tra trạng thái đăng nhập trực tiếp từ localStorage
   const token = localStorage.getItem('token');
   const email = localStorage.getItem('userEmail');
+  const role = localStorage.getItem('role');
   const isLoggedIn = !!(token && email);
   const userEmail = email || '';
 
@@ -46,10 +47,19 @@ export const Navbar: React.FC = () => {
     { name: 'Tour và Trải nghiệm', path: '#' },
   ];
 
-  const userMenuLinks = [
-    { name: 'Lịch sử Booking', path: '/booking-history' },
-    { name: 'Trở thành Partner', path: '/partner/onboarding' },
-  ];
+  // Phân quyền danh sách liên kết trong menu người dùng dựa trên vai trò (Role)
+  const userMenuLinks = (() => {
+    if (role === 'Admin') {
+      return [{ name: 'Trang quản trị', path: '/admin/dashboard' }];
+    }
+    if (role === 'Partner') {
+      return [{ name: 'Trang đối tác', path: '/partner/dashboard' }];
+    }
+    return [
+      { name: 'Lịch sử Booking', path: '/booking-history' },
+      { name: 'Trở thành Partner', path: '/partner/onboarding' },
+    ];
+  })();
 
   return (
     <nav
