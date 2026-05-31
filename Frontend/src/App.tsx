@@ -134,10 +134,13 @@ import { AdminFinance } from './pages/admin/finance/AdminFinance';
 import { AdminSettings } from './pages/admin/settings/AdminSettings';
 import { ChangePasswordAdmin } from './pages/admin/change-password/ChangePasswordAdmin';
 
+import { ScrollToTop } from './components/shared/ScrollToTop';
+
 function App() {
   return (
     <ToastProvider>
       <Router>
+        <ScrollToTop />
         <AppLayout />
       </Router>
     </ToastProvider>
