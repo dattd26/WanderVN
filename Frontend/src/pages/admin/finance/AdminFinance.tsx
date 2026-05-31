@@ -10,8 +10,10 @@ import { FinanceStatsCards } from './components/FinanceStatsCards';
 import { FinanceFilters } from './components/FinanceFilters';
 import { FinanceTable } from './components/FinanceTable';
 import { FinancePagination } from './components/FinancePagination';
+import { AdminBatchesPanel } from './components/AdminBatchesPanel';
 
 export function AdminFinance() {
+    const [activeTab, setActiveTab] = useState<'single' | 'batch'>('single');
     const [pagedResult, setPagedResult] = useState<PagedResult<PayoutDto> | null>(null);
     const [stats, setStats] = useState<PayoutStatsDto | null>(null);
     const [commissionFee, setCommissionFee] = useState<number>(15);
@@ -208,38 +210,70 @@ export function AdminFinance() {
 
             <FinanceStatsCards stats={stats} pendingCount={pendingCount} />
 
-            <FinanceFilters
-                keyword={keyword}
-                status={status}
-                fromDate={fromDate}
-                toDate={toDate}
-                pageSize={pageSize}
-                onKeywordChange={setKeyword}
-                onStatusChange={(s) => { setStatus(s); setPageNumber(1); }}
-                onFromDateChange={(d) => { setFromDate(d); setPageNumber(1); }}
-                onToDateChange={(d) => { setToDate(d); setPageNumber(1); }}
-                onPageSizeChange={(s) => { setPageSize(s); setPageNumber(1); }}
-                onReset={handleReset}
-            />
+            {/* Tab Navigation */}
+            <div className="flex border-b border-admin-outline-variant/60 mb-admin-lg select-none">
+                <button
+                    onClick={() => setActiveTab('single')}
+                    className={`px-admin-lg py-admin-sm font-admin-sans font-bold text-admin-body-sm transition-all border-b-2 flex items-center gap-1 ${
+                        activeTab === 'single'
+                            ? 'border-admin-primary text-admin-primary font-bold'
+                            : 'border-transparent text-admin-outline hover:text-admin-on-surface'
+                    }`}
+                >
+                    <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+                    Giao dịch đơn lẻ
+                </button>
+                <button
+                    onClick={() => setActiveTab('batch')}
+                    className={`px-admin-lg py-admin-sm font-admin-sans font-bold text-admin-body-sm transition-all border-b-2 flex items-center gap-1 ${
+                        activeTab === 'batch'
+                            ? 'border-admin-primary text-admin-primary font-bold'
+                            : 'border-transparent text-admin-outline hover:text-admin-on-surface'
+                    }`}
+                >
+                    <span className="material-symbols-outlined text-[18px]">layers</span>
+                    Đợt Chi Trả (Batches)
+                </button>
+            </div>
 
-            <FinanceTable
-                items={items}
-                isLoading={isLoading}
-                error={error}
-                pageSize={pageSize}
-                onRetry={fetchPayouts}
-                onConfirm={handleConfirm}
-                onReject={handleReject}
-                onViewDetail={handleViewDetail}
-            />
+            {activeTab === 'single' ? (
+                <>
+                    <FinanceFilters
+                        keyword={keyword}
+                        status={status}
+                        fromDate={fromDate}
+                        toDate={toDate}
+                        pageSize={pageSize}
+                        onKeywordChange={setKeyword}
+                        onStatusChange={(s) => { setStatus(s); setPageNumber(1); }}
+                        onFromDateChange={(d) => { setFromDate(d); setPageNumber(1); }}
+                        onToDateChange={(d) => { setToDate(d); setPageNumber(1); }}
+                        onPageSizeChange={(s) => { setPageSize(s); setPageNumber(1); }}
+                        onReset={handleReset}
+                    />
 
-            {!isLoading && !error && totalPages > 0 && (
-                <FinancePagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalItems={totalItems}
-                    onPageChange={setPageNumber}
-                />
+                    <FinanceTable
+                        items={items}
+                        isLoading={isLoading}
+                        error={error}
+                        pageSize={pageSize}
+                        onRetry={fetchPayouts}
+                        onConfirm={handleConfirm}
+                        onReject={handleReject}
+                        onViewDetail={handleViewDetail}
+                    />
+
+                    {!isLoading && !error && totalPages > 0 && (
+                        <FinancePagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            onPageChange={setPageNumber}
+                        />
+                    )}
+                </>
+            ) : (
+                <AdminBatchesPanel />
             )}
 
             <div className="mt-admin-xl grid grid-cols-1 md:grid-cols-2 gap-admin-lg opacity-80 select-none">
