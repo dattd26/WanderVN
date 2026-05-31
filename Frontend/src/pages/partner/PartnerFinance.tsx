@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Wallet,
   TrendingUp,
-  ArrowUpRight,
-  Clock,
   Percent,
   RefreshCw,
-  Info,
   Banknote,
   ChevronDown,
   ChevronRight,
@@ -29,20 +25,19 @@ export const PartnerFinance: React.FC = () => {
   const [transTotal, setTransTotal] = useState(0);
 
   const [batches, setBatches] = useState<PartnerBatchDto[]>([]);
-  const [batchPage, setBatchPage] = useState(1);
-  const [batchTotal, setBatchTotal] = useState(0);
+  const [batchPage] = useState(1);
   const [expandedBatchId, setExpandedBatchId] = useState<number | null>(null);
 
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
       const res = await payoutService.getPartnerSummary();
       setSummary(res);
     } catch (error) {
       console.error('Failed to fetch summary', error);
     }
-  };
+  }, []);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       const res = await payoutService.getPartnerTransactions({
         status: transactionStatus,
@@ -54,20 +49,19 @@ export const PartnerFinance: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch transactions', error);
     }
-  };
+  }, [transactionStatus, transPage]);
 
-  const fetchBatches = async () => {
+  const fetchBatches = useCallback(async () => {
     try {
       const res = await payoutService.getPartnerBatches({
         pageNumber: batchPage,
         pageSize: 10
       });
       setBatches(res.items);
-      setBatchTotal(res.totalItems);
     } catch (error) {
       console.error('Failed to fetch batches', error);
     }
-  };
+  }, [batchPage]);
 
   useEffect(() => {
     const loadAll = async () => {
@@ -76,7 +70,7 @@ export const PartnerFinance: React.FC = () => {
       setLoading(false);
     };
     loadAll();
-  }, [transactionStatus, transPage, batchPage]);
+  }, [fetchSummary, fetchTransactions, fetchBatches]);
 
   const toggleBatch = (id: number) => {
     if (expandedBatchId === id) setExpandedBatchId(null);
@@ -171,7 +165,7 @@ export const PartnerFinance: React.FC = () => {
                     {['', 'Pending', 'Processing', 'Paid', 'Cancelled'].map((st) => (
                       <button
                         key={st}
-                        onClick={() => { setTransactionStatus(st as any); setTransPage(1); }}
+                        onClick={() => { setTransactionStatus(st as PayoutStatus | ''); setTransPage(1); }}
                         className={`px-3 py-1.5 rounded-full font-label-md text-[10px] uppercase tracking-wider border transition-colors ${transactionStatus === st
                           ? 'bg-[#1C1C19] text-[#FAF6F0] border-[#1C1C19]'
                           : 'bg-transparent text-[#444748] border-[#E6E2DD] hover:bg-[#F1EDE8]'
