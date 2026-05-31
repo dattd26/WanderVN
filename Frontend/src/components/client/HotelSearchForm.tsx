@@ -132,7 +132,7 @@ export const HotelSearchForm: React.FC<HotelSearchFormProps> = ({
       }
     }
 
-    let url = `/stays?locationId=${targetLocId}&locationName=${encodeURIComponent(targetLocName)}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&capacity=${capacity}`;
+    let url = `/stays?locationId=${targetLocId}&locationName=${encodeURIComponent(targetLocName)}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&capacity=${capacity}&_t=${Date.now()}`;
 
     if (targetHotelId) {
       url += `&hotelId=${targetHotelId}`;

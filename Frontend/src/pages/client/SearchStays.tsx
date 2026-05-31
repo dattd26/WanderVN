@@ -81,7 +81,7 @@ export const SearchStays: React.FC = () => {
     };
 
     fetchData();
-  }, [locationId, checkInDate, checkOutDate, capacity]);
+  }, [searchParams]);
 
   // Bộ lọc phụ ở Client-side (Lọc theo Giá, Loại hình, Tiện ích)
   const displayedHotels = hotels.filter((hotel) => {

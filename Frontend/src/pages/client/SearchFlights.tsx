@@ -136,6 +136,7 @@ export const SearchFlights: React.FC = () => {
       departureDate: newDate,
       tripType: newTripType,
       cabinClass: newCabinClass,
+      _t: Date.now().toString(), // Thêm timestamp để kích hoạt tìm kiếm lại khi click cùng bộ lọc
     };
     if (newTripType === 'round-trip' && newReturnDate) {
       params.returnDate = newReturnDate;
