@@ -309,6 +309,12 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
             entity.Property(e => e.Description).HasMaxLength(500);
         });
 
+        modelBuilder.Entity<WanderVN.Application.DTOs.Response.BookingLookupDetailDto>(entity =>
+        {
+            entity.HasNoKey();
+            entity.Property(b => b.TotalPrice).HasColumnType("decimal(18, 2)");
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 

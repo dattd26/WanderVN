@@ -17,10 +17,14 @@ public class BookingRepository : GenericRepository<Bookings>, IBookingRepository
 
     public async Task<BookingLookupDetailDto?> LookupBookingAsync(string bookingCode, string email, CancellationToken cancellationToken = default)
     {
-        var result = await _dbContext.Database.SqlQuery<BookingLookupDetailDto>(
-            $"EXEC sp_LookupBooking @BookingCode = {bookingCode}, @Email = {email}")
-            .FirstOrDefaultAsync(cancellationToken);
+        var result = _dbContext.Database.SqlQuery<BookingLookupDetailDto>(
+            $"EXEC sp_LookupBooking @BookingCode = {bookingCode}, @Email = {email}");
 
-        return result;
+        await foreach (var item in result.AsAsyncEnumerable().WithCancellation(cancellationToken))
+        {
+            return item;
+        }
+
+        return null;
     }
 }
