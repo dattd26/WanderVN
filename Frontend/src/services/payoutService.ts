@@ -7,6 +7,10 @@ import type {
   PayoutStatsDto,
   GetPayoutsQuery,
   ConfirmPayoutPayload,
+  AdminBatchDto,
+  CreateBatchPayload,
+  ConfirmBatchPayload,
+  GetAdminBatchesQuery,
 } from '../types';
 
 export const payoutService = {
@@ -64,5 +68,48 @@ export const payoutService = {
 
     const qs = params.toString();
     return request<PagedResult<import('../types').PartnerBatchDto>>(`/payouts/partner/batches${qs ? `?${qs}` : ''}`);
+  },
+
+  async getAdminBatches(query?: GetAdminBatchesQuery): Promise<PagedResult<AdminBatchDto>> {
+    const params = new URLSearchParams();
+    if (query?.partnerKeyword) params.append('PartnerKeyword', query.partnerKeyword);
+    if (query?.status) params.append('Status', query.status);
+    if (query?.pageNumber !== undefined) params.append('PageNumber', query.pageNumber.toString());
+    if (query?.pageSize !== undefined) params.append('PageSize', query.pageSize.toString());
+
+    const qs = params.toString();
+    return request<PagedResult<AdminBatchDto>>(`/payouts/batches${qs ? `?${qs}` : ''}`);
+  },
+
+  async getAdminBatchDetail(id: number): Promise<AdminBatchDto> {
+    return request<AdminBatchDto>(`/payouts/batches/${id}`);
+  },
+
+  async getUnbatchedPayouts(partnerId: number): Promise<PayoutDto[]> {
+    return request<PayoutDto[]>(`/payouts/unbatched/${partnerId}`);
+  },
+
+  async createBatch(payload: CreateBatchPayload): Promise<number> {
+    return request<number>('/payouts/batches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async confirmBatch(id: number, payload?: ConfirmBatchPayload): Promise<boolean> {
+    return request<boolean>(`/payouts/batches/${id}/confirm`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload ?? {}),
+    });
+  },
+
+  async cancelBatch(id: number, reason?: string): Promise<boolean> {
+    return request<boolean>(`/payouts/batches/${id}/cancel`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: reason ?? '' }),
+    });
   },
 };

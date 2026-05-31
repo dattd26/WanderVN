@@ -82,6 +82,51 @@ export interface PartnerBatchDto {
   payouts?: BatchPayoutDto[];
 }
 
+export interface BatchPayoutItemDto {
+  id: number;
+  bookingCode: string;
+  serviceType: string;
+  grossAmount: number;
+  commissionAmount: number;
+  netAmount: number;
+  status: string;
+}
+
+export interface AdminBatchDto {
+  id: number;
+  batchCode: string;
+  partnerId: number;
+  partnerName?: string | null;
+  partnerEmail?: string | null;
+  totalGross: number;
+  totalCommission: number;
+  totalNet: number;
+  bookingCount: number;
+  status: string; // "Processing", "Paid", "Cancelled"
+  note?: string | null;
+  paidAt?: string | null;
+  transactionReference?: string | null;
+  createdAt: string;
+  payouts: BatchPayoutItemDto[];
+}
+
+export interface CreateBatchPayload {
+  partnerId: number;
+  payoutIds: number[];
+  note?: string;
+}
+
+export interface ConfirmBatchPayload {
+  transactionReference?: string;
+}
+
+export interface GetAdminBatchesQuery {
+  partnerKeyword?: string;
+  status?: string;
+  pageNumber?: number;
+  pageSize?: number;
+}
+
 export interface GetPartnerTransactionsQuery {
   status?: PayoutStatus | '';
   pageNumber?: number;

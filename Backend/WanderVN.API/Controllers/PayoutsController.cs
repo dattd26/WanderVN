@@ -10,6 +10,12 @@ using WanderVN.Application.Features.Users.Queries.GetUsers;
 using WanderVN.Application.Features.Payouts.Queries.GetPartnerBatches;
 using WanderVN.Application.Features.Payouts.Queries.GetPartnerPayoutSummary;
 using WanderVN.Application.Features.Payouts.Queries.GetPartnerTransactions;
+using WanderVN.Application.Features.Payouts.Commands.CreateBatch;
+using WanderVN.Application.Features.Payouts.Commands.ConfirmBatch;
+using WanderVN.Application.Features.Payouts.Commands.CancelBatch;
+using WanderVN.Application.Features.Payouts.Queries.GetUnbatchedPayouts;
+using WanderVN.Application.Features.Payouts.Queries.GetAdminBatches;
+using WanderVN.Application.Features.Payouts.Queries.GetAdminBatchDetail;
 
 namespace WanderVN.API.Controllers;
 
@@ -96,4 +102,65 @@ public class PayoutsController : ControllerBase
         var response = new ApiResponse<PagedResult<PartnerBatchDto>>(true, "Lấy danh sách đợt chi trả thành công.", 200, data);
         return Ok(response);
     }
+
+    // ==========================================
+    // ADMIN BATCH MANAGEMENT ENDPOINTS
+    // ==========================================
+
+    [HttpGet("batches")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAdminBatches([FromQuery] GetAdminBatchesQuery query, CancellationToken cancellationToken)
+    {
+        var data = await _mediator.Send(query, cancellationToken);
+        var response = new ApiResponse<PagedResult<AdminBatchDto>>(true, "Lấy danh sách đợt chi trả thành công.", 200, data);
+        return Ok(response);
+    }
+
+    [HttpGet("batches/{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAdminBatchDetail(int id, CancellationToken cancellationToken)
+    {
+        var data = await _mediator.Send(new GetAdminBatchDetailQuery { Id = id }, cancellationToken);
+        var response = new ApiResponse<AdminBatchDto>(true, "Lấy chi tiết đợt chi trả thành công.", 200, data);
+        return Ok(response);
+    }
+
+    [HttpGet("unbatched/{partnerId:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetUnbatchedPayouts(int partnerId, CancellationToken cancellationToken)
+    {
+        var data = await _mediator.Send(new GetUnbatchedPayoutsQuery { PartnerId = partnerId }, cancellationToken);
+        var response = new ApiResponse<List<PayoutDto>>(true, "Lấy danh sách khoản chi trả chưa gom thành công.", 200, data);
+        return Ok(response);
+    }
+
+    [HttpPost("batches")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateBatch([FromBody] CreateBatchCommand command, CancellationToken cancellationToken)
+    {
+        var data = await _mediator.Send(command, cancellationToken);
+        var response = new ApiResponse<int>(true, "Tạo đợt chi trả thành công.", 201, data);
+        return Ok(response);
+    }
+
+    [HttpPut("batches/{id:int}/confirm")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ConfirmBatch(int id, [FromBody] ConfirmBatchCommand command, CancellationToken cancellationToken)
+    {
+        command.BatchId = id;
+        var data = await _mediator.Send(command, cancellationToken);
+        var response = new ApiResponse<bool>(true, "Xác nhận chi trả đợt thành công.", 200, data);
+        return Ok(response);
+    }
+
+    [HttpPut("batches/{id:int}/cancel")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CancelBatch(int id, [FromBody] CancelBatchCommand command, CancellationToken cancellationToken)
+    {
+        command.BatchId = id;
+        var data = await _mediator.Send(command, cancellationToken);
+        var response = new ApiResponse<bool>(true, "Hủy đợt chi trả thành công.", 200, data);
+        return Ok(response);
+    }
 }
+

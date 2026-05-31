@@ -21,6 +21,7 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     IGenericRepository<Flights> Flights { get; }
     IGenericRepository<Payments> Payments { get; }
     IGenericRepository<PartnerPayouts> PartnerPayouts { get; }
+    IGenericRepository<PayoutBatches> PayoutBatches { get; }
     IGenericRepository<SystemSettings> SystemSettings { get; }
 
     /// <summary>

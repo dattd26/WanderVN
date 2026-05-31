@@ -36,4 +36,20 @@ public interface IPartnerPayoutRepository : IGenericRepository<PartnerPayouts>
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<PartnerPayouts>> GetUnbatchedPendingPayoutsAsync(
+        int partnerId,
+        CancellationToken cancellationToken = default);
+
+    Task<(IEnumerable<PayoutBatches> Items, int TotalCount)> GetAdminPagedBatchesAsync(
+        string? partnerKeyword,
+        string? status,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<PayoutBatches?> GetBatchDetailsByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default);
 }
+
