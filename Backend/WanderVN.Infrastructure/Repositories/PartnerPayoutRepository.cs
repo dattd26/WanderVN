@@ -218,4 +218,76 @@ public class PartnerPayoutRepository : GenericRepository<PartnerPayouts>, IPartn
 
         return (items, totalItems);
     }
+
+    public async Task<IEnumerable<PartnerPayouts>> GetUnbatchedPendingPayoutsAsync(
+        int partnerId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.PartnerPayouts
+            .AsNoTracking()
+            .Include(p => p.Booking)
+            .Where(p => p.PartnerId == partnerId && p.Status == PayoutStatus.Pending && p.BatchId == null)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<(IEnumerable<PayoutBatches> Items, int TotalCount)> GetAdminPagedBatchesAsync(
+        string? partnerKeyword,
+        string? status,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.PayoutBatches
+            .AsNoTracking()
+            .Include(b => b.Partner)
+            .Include(b => b.Payouts)
+                .ThenInclude(p => p.Booking)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(partnerKeyword))
+        {
+            var keyword = partnerKeyword.Trim();
+            query = query.Where(b => 
+                (b.Partner.FullName != null && b.Partner.FullName.Contains(keyword)) ||
+                (b.Partner.Email != null && b.Partner.Email.Contains(keyword)) ||
+                b.BatchCode.Contains(keyword));
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            var statusTrimmed = status.Trim();
+            if (Enum.TryParse<BatchStatus>(statusTrimmed, true, out var statusEnum))
+            {
+                query = query.Where(b => b.Status == statusEnum);
+            }
+        }
+
+        var totalItems = await query.CountAsync(cancellationToken);
+        if (totalItems == 0)
+        {
+            return (Enumerable.Empty<PayoutBatches>(), 0);
+        }
+
+        var items = await query
+            .OrderByDescending(b => b.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalItems);
+    }
+
+    public async Task<PayoutBatches?> GetBatchDetailsByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.PayoutBatches
+            .AsNoTracking()
+            .Include(b => b.Partner)
+            .Include(b => b.Payouts)
+                .ThenInclude(p => p.Booking)
+            .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
+    }
 }
+

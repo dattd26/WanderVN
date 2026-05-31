@@ -25,6 +25,7 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<Flights> Flights => Repository<Flights>();
     public IGenericRepository<Payments> Payments => Repository<Payments>();
     public IGenericRepository<PartnerPayouts> PartnerPayouts => Repository<PartnerPayouts>();
+    public IGenericRepository<PayoutBatches> PayoutBatches => Repository<PayoutBatches>();
     public IGenericRepository<SystemSettings> SystemSettings => Repository<SystemSettings>();
 
     public UnitOfWork(WanderVNDbContext context)
