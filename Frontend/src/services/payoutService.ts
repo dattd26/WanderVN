@@ -42,4 +42,27 @@ export const payoutService = {
       body: JSON.stringify({ reason: reason ?? '' }),
     });
   },
+
+  async getPartnerSummary(): Promise<import('../types').PartnerPayoutSummaryDto> {
+    return request<import('../types').PartnerPayoutSummaryDto>('/payouts/partner/summary');
+  },
+
+  async getPartnerTransactions(query?: import('../types').GetPartnerTransactionsQuery): Promise<PagedResult<PayoutDto>> {
+    const params = new URLSearchParams();
+    if (query?.status) params.append('Status', query.status);
+    if (query?.pageNumber !== undefined) params.append('PageNumber', query.pageNumber.toString());
+    if (query?.pageSize !== undefined) params.append('PageSize', query.pageSize.toString());
+
+    const qs = params.toString();
+    return request<PagedResult<PayoutDto>>(`/payouts/partner/transactions${qs ? `?${qs}` : ''}`);
+  },
+
+  async getPartnerBatches(query?: import('../types').GetPartnerBatchesQuery): Promise<PagedResult<import('../types').PartnerBatchDto>> {
+    const params = new URLSearchParams();
+    if (query?.pageNumber !== undefined) params.append('PageNumber', query.pageNumber.toString());
+    if (query?.pageSize !== undefined) params.append('PageSize', query.pageSize.toString());
+
+    const qs = params.toString();
+    return request<PagedResult<import('../types').PartnerBatchDto>>(`/payouts/partner/batches${qs ? `?${qs}` : ''}`);
+  },
 };

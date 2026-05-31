@@ -51,3 +51,52 @@ export interface ConfirmPayoutPayload {
   transactionReference?: string;
   payoutMethod?: string;
 }
+
+export interface PartnerPayoutSummaryDto {
+  grossTotal: number;
+  commissionTotal: number;
+  netTotal: number;
+  pendingBalance: number;
+  paidThisMonth: number;
+  commissionRate: number; // e.g., 0.10 for 10%
+}
+
+export interface BatchPayoutDto {
+  id: number;
+  bookingCode: string;
+  netAmount: number;
+}
+
+export interface PartnerBatchDto {
+  id: number;
+  batchCode: string;
+  totalGross: number;
+  totalCommission: number;
+  totalNet: number;
+  bookingCount: number;
+  status: string; // "Processing", "Paid", "Cancelled"
+  note?: string;
+  paidAt?: string;
+  transactionReference?: string;
+  createdAt: string;
+  payouts?: BatchPayoutDto[];
+}
+
+export interface GetPartnerTransactionsQuery {
+  status?: PayoutStatus | '';
+  pageNumber?: number;
+  pageSize?: number;
+}
+
+export interface GetPartnerBatchesQuery {
+  pageNumber?: number;
+  pageSize?: number;
+}
+
+export const PAYOUT_STATUS_LABEL: Record<PayoutStatus, string> = {
+  Pending: 'Chờ chi trả',
+  Processing: 'Đang xử lý',
+  Paid: 'Đã chi trả',
+  Failed: 'Từ chối / Thất bại',
+  Cancelled: 'Bị hủy',
+};

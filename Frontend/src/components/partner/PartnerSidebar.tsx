@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
-  Wallet,
+  BarChart3,
   Plus,
   ArrowLeft,
   Hotel
@@ -82,8 +82,8 @@ export const PartnerSidebar: React.FC<PartnerSidebarProps> = () => {
             }`
           }
         >
-          <Wallet className="h-4.5 w-4.5 text-[#735C00]" />
-          <span>Tài chính &amp; Đối soát</span>
+          <BarChart3 className="h-4.5 w-4.5 text-[#735C00]" />
+          <span>Doanh thu &amp; Chi trả</span>
         </NavLink>
       </nav>
 
