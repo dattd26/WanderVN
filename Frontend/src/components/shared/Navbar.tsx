@@ -18,7 +18,7 @@ export const Navbar: React.FC = () => {
   const userEmail = email || '';
 
   // thanh điều hướng có trong suốt
-  const isTransparent = !isScrolled && location.pathname === '/';
+  const isTransparent = !isScrolled && location.pathname === '/' && !isMobileMenuOpen;
 
   // Khi cuộn trang qua 50px, thanh navbar sẽ đổi sang màu nền mờ nhòe kính mờ sang trọng
   useEffect(() => {
@@ -63,12 +63,15 @@ export const Navbar: React.FC = () => {
 
   return (
     <nav
-      className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${isScrolled
-        ? 'bg-background/90 backdrop-blur-lg border-b border-surface-variant/20 py-5 lg:py-6 shadow-sm'
-        : location.pathname !== '/'
-          ? 'bg-background/95 backdrop-blur-md border-b border-surface-variant/40 py-6 lg:py-8 shadow-sm'
-          : 'bg-transparent py-8 lg:py-10'
-        }`}
+      className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${
+        isMobileMenuOpen
+          ? 'bg-background border-b border-surface-variant/20 py-5 lg:py-6 shadow-sm'
+          : isScrolled
+            ? 'bg-background/90 backdrop-blur-lg border-b border-surface-variant/20 py-5 lg:py-6 shadow-sm'
+            : location.pathname !== '/'
+              ? 'bg-background/95 backdrop-blur-md border-b border-surface-variant/40 py-6 lg:py-8 shadow-sm'
+              : 'bg-transparent py-8 lg:py-10'
+      }`}
     >
       <div className="flex justify-between items-center px-margin-mobile lg:px-12 xl:px-16 w-full max-w-[1440px] mx-auto relative">
         {/* Brand Logo - Logo thương hiệu kết hợp biểu tượng khách sạn cổ điển */}
@@ -173,7 +176,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer Overlay - Ngăn kéo hiển thị danh sách mục trên thiết bị di động */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 w-full bg-background/98 backdrop-blur-lg border-b border-surface-variant/50 shadow-lg py-6 px-margin-mobile flex flex-col gap-6 animate-fade-in max-h-[80vh] overflow-y-auto">
+        <div className="lg:hidden absolute top-full left-0 w-full bg-background border-b border-surface-variant/50 shadow-lg py-6 px-margin-mobile flex flex-col gap-6 animate-fade-in max-h-[80vh] overflow-y-auto">
           <ul className="flex flex-col gap-2">
             {[...navLinks, ...userMenuLinks].map((link) => {
               const isActive = location.pathname === link.path;
