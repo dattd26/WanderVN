@@ -12,7 +12,7 @@ export function AdminBatchesPanel() {
   const [status, setStatus] = useState<string>('');
   
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +52,10 @@ export function AdminBatchesPanel() {
   }, [debouncedKeyword, status, pageNumber, pageSize]);
 
   useEffect(() => {
-    fetchBatches();
+    const timer = setTimeout(() => {
+      fetchBatches();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchBatches]);
 
   const handleToggleExpand = (id: number) => {

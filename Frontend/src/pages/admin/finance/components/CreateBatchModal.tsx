@@ -56,19 +56,24 @@ export function CreateBatchModal({ isOpen, onClose, onSuccess }: CreateBatchModa
       }
     };
 
-    fetchPendingPartners();
-    setSelectedPartnerId('');
-    setUnbatchedPayouts([]);
-    setSelectedPayoutIds([]);
-    setNote('');
+    const timer = setTimeout(() => {
+      fetchPendingPartners();
+      setSelectedPartnerId('');
+      setUnbatchedPayouts([]);
+      setSelectedPayoutIds([]);
+      setNote('');
+    }, 0);
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
   // Load unbatched payouts when a partner is selected
   useEffect(() => {
     if (!selectedPartnerId) {
-      setUnbatchedPayouts([]);
-      setSelectedPayoutIds([]);
-      return;
+      const timer = setTimeout(() => {
+        setUnbatchedPayouts([]);
+        setSelectedPayoutIds([]);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     const fetchUnbatched = async () => {
@@ -86,7 +91,10 @@ export function CreateBatchModal({ isOpen, onClose, onSuccess }: CreateBatchModa
       }
     };
 
-    fetchUnbatched();
+    const timer = setTimeout(() => {
+      fetchUnbatched();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [selectedPartnerId]);
 
   const handleToggleSelectAll = () => {
@@ -128,7 +136,7 @@ export function CreateBatchModal({ isOpen, onClose, onSuccess }: CreateBatchModa
 
   // Totals calculations for selected payouts
   const selectedItems = unbatchedPayouts.filter(p => selectedPayoutIds.includes(p.id));
-  const totalGross = selectedItems.sum ? 0 : selectedItems.reduce((acc, curr) => acc + curr.grossAmount, 0);
+  const totalGross = selectedItems.reduce((acc, curr) => acc + curr.grossAmount, 0);
   const totalCommission = selectedItems.reduce((acc, curr) => acc + curr.commissionAmount, 0);
   const totalNet = selectedItems.reduce((acc, curr) => acc + curr.netAmount, 0);
 

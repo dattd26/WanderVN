@@ -16,7 +16,6 @@ export function ConfirmBatchModal({ isOpen, batchId, onClose, onSuccess }: Confi
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     if (!isOpen || !batchId) return;
 
@@ -33,8 +32,11 @@ export function ConfirmBatchModal({ isOpen, batchId, onClose, onSuccess }: Confi
       }
     };
 
-    fetchBatchDetail();
-    setTxRef('');
+    const timer = setTimeout(() => {
+      fetchBatchDetail();
+      setTxRef('');
+    }, 0);
+    return () => clearTimeout(timer);
   }, [isOpen, batchId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
