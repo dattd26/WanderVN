@@ -19,4 +19,21 @@ public interface IPartnerPayoutRepository : IGenericRepository<PartnerPayouts>
 
     Task<(decimal TotalNetPending, decimal TotalCommission, decimal TotalRevenue, int ActivePartners)> GetPayoutStatsAsync(
         CancellationToken cancellationToken = default);
+
+    Task<(IEnumerable<PartnerPayouts> Items, int TotalCount)> GetPartnerPagedPayoutsAsync(
+        int partnerId,
+        string? status,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<(decimal GrossTotal, decimal CommissionTotal, decimal NetTotal, decimal PendingBalance, decimal PaidThisMonth, decimal CommissionRate)> GetPartnerSummaryStatsAsync(
+        int partnerId,
+        CancellationToken cancellationToken = default);
+
+    Task<(IEnumerable<PayoutBatches> Items, int TotalCount)> GetPartnerPagedBatchesAsync(
+        int partnerId,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
 }

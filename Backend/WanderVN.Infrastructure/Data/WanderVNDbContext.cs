@@ -37,6 +37,7 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
     public virtual DbSet<Wishlists> Wishlists { get; set; }
     public virtual DbSet<PropertyTypes> PropertyTypes { get; set; }
     public virtual DbSet<PartnerPayouts> PartnerPayouts { get; set; }
+    public virtual DbSet<PayoutBatches> PayoutBatches { get; set; }
     public virtual DbSet<HomeTravelMoods> HomeTravelMoods { get; set; }
     public virtual DbSet<HomeEditorialDestinations> HomeEditorialDestinations { get; set; }
     public virtual DbSet<HomeWeekendEscapes> HomeWeekendEscapes { get; set; }
@@ -180,6 +181,27 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
             entity.Property(rp => rp.PriceMultiplier).HasColumnType("decimal(18, 2)");
         });
 
+        modelBuilder.Entity<PayoutBatches>(entity =>
+        {
+            entity.ToTable("PayoutBatches");
+            entity.HasKey(e => e.Id);
+
+            entity.HasIndex(e => e.BatchCode).IsUnique();
+
+            entity.HasOne(b => b.Partner)
+                .WithMany()
+                .HasForeignKey(b => b.PartnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.TotalGross).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.TotalCommission).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.TotalNet).HasColumnType("decimal(18, 2)");
+
+            entity.Property(e => e.Status)
+                .HasConversion<int>()
+                .HasDefaultValue(BatchStatus.Processing);
+        });
+
         modelBuilder.Entity<PartnerPayouts>(entity =>
         {
             entity.ToTable("PartnerPayouts");
@@ -194,6 +216,11 @@ public partial class WanderVNDbContext : DbContext, IApplicationDbContext
                 .WithMany(b => b.PartnerPayouts)
                 .HasForeignKey(p => p.BookingId)
                 .OnDelete(DeleteBehavior.Restrict);
+                
+            entity.HasOne(p => p.Batch)
+                .WithMany(b => b.Payouts)
+                .HasForeignKey(p => p.BatchId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.Property(e => e.CommissionAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.GrossAmount).HasColumnType("decimal(18, 2)");

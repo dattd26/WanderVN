@@ -116,4 +116,106 @@ public class PartnerPayoutRepository : GenericRepository<PartnerPayouts>, IPartn
 
         return (totalNetPending, totalCommission, totalRevenue, activePartners);
     }
+
+    public async Task<(IEnumerable<PartnerPayouts> Items, int TotalCount)> GetPartnerPagedPayoutsAsync(
+        int partnerId,
+        string? status,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.PartnerPayouts
+            .AsNoTracking()
+            .Include(p => p.Booking)
+            .Where(p => p.PartnerId == partnerId)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            var statusTrimmed = status.Trim();
+            if (Enum.TryParse<PayoutStatus>(statusTrimmed, true, out var statusEnum))
+            {
+                query = query.Where(p => p.Status == statusEnum);
+            }
+        }
+
+        var totalItems = await query.CountAsync(cancellationToken);
+        if (totalItems == 0)
+        {
+            return (Enumerable.Empty<PartnerPayouts>(), 0);
+        }
+
+        var items = await query
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalItems);
+    }
+
+    public async Task<(decimal GrossTotal, decimal CommissionTotal, decimal NetTotal, decimal PendingBalance, decimal PaidThisMonth, decimal CommissionRate)> GetPartnerSummaryStatsAsync(
+        int partnerId,
+        CancellationToken cancellationToken = default)
+    {
+        // Read dynamic commission rate from SystemSettings
+        decimal commissionRate = 0.10m; // Default 10%
+        var feeSetting = await _context.SystemSettings.FirstOrDefaultAsync(s => s.Key == "CommissionFee", cancellationToken);
+        if (feeSetting != null && decimal.TryParse(feeSetting.Value, out var rate))
+        {
+            commissionRate = rate / 100m;
+        }
+
+        var payouts = await _context.PartnerPayouts
+            .Where(p => p.PartnerId == partnerId)
+            .ToListAsync(cancellationToken);
+
+        var grossTotal = payouts.Sum(p => p.GrossAmount);
+        var commissionTotal = payouts.Sum(p => p.CommissionAmount);
+        var netTotal = payouts.Sum(p => p.NetAmount);
+        
+        var pendingBalance = payouts
+            .Where(p => p.Status == PayoutStatus.Pending || p.Status == PayoutStatus.Processing)
+            .Sum(p => p.NetAmount);
+
+        var currentMonth = DateTimeOffset.UtcNow.Month;
+        var currentYear = DateTimeOffset.UtcNow.Year;
+        
+        var paidThisMonth = payouts
+            .Where(p => p.Status == PayoutStatus.Paid && 
+                        p.PaidAt.HasValue && 
+                        p.PaidAt.Value.Month == currentMonth && 
+                        p.PaidAt.Value.Year == currentYear)
+            .Sum(p => p.NetAmount);
+
+        return (grossTotal, commissionTotal, netTotal, pendingBalance, paidThisMonth, commissionRate);
+    }
+
+    public async Task<(IEnumerable<PayoutBatches> Items, int TotalCount)> GetPartnerPagedBatchesAsync(
+        int partnerId,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.PayoutBatches
+            .AsNoTracking()
+            .Include(b => b.Payouts)
+                .ThenInclude(p => p.Booking)
+            .Where(b => b.PartnerId == partnerId)
+            .AsQueryable();
+
+        var totalItems = await query.CountAsync(cancellationToken);
+        if (totalItems == 0)
+        {
+            return (Enumerable.Empty<PayoutBatches>(), 0);
+        }
+
+        var items = await query
+            .OrderByDescending(b => b.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalItems);
+    }
 }

@@ -38,4 +38,8 @@ public partial class PartnerPayouts
     public virtual Users Partner { get; set; } = null!;
 
     public virtual Bookings Booking { get; set; } = null!;
+    
+    public int? BatchId { get; set; }
+    
+    public virtual PayoutBatches? Batch { get; set; }
 }
