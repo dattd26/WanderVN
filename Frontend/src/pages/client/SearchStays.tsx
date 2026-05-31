@@ -11,12 +11,6 @@ import { Loader2, Hotel } from 'lucide-react';
 export const SearchStays: React.FC = () => {
   const [searchParams] = useSearchParams();
 
-  // Đọc các bộ lọc tìm kiếm gốc từ URL
-  const locationId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102; // Mặc định Hội An
-  const checkInDate = searchParams.get('checkInDate') || '';
-  const checkOutDate = searchParams.get('checkOutDate') || '';
-  const capacity = searchParams.get('capacity') ? parseInt(searchParams.get('capacity')!) : 2;
-
   // Lọc theo khoảng giá từ sidebar (VNĐ)
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 500000, max: 8000000 });
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -42,6 +36,11 @@ export const SearchStays: React.FC = () => {
       setError(null);
       setHotels([]); // 🧹 QUAN TRỌNG: Dọn sạch danh sách cũ (Hà Nội) trước khi gọi API mới (Đà Nẵng)
       try {
+        const locationId = searchParams.get('locationId') ? parseInt(searchParams.get('locationId')!) : 102; // Mặc định Hội An
+        const checkInDate = searchParams.get('checkInDate') || '';
+        const checkOutDate = searchParams.get('checkOutDate') || '';
+        const capacity = searchParams.get('capacity') ? parseInt(searchParams.get('capacity')!) : 2;
+
         const finalCheckIn = checkInDate || new Date().toISOString().split('T')[0];
         const finalCheckOut = checkOutDate || new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
@@ -81,7 +80,7 @@ export const SearchStays: React.FC = () => {
     };
 
     fetchData();
-  }, [locationId, checkInDate, checkOutDate, capacity]);
+  }, [searchParams]);
 
   // Bộ lọc phụ ở Client-side (Lọc theo Giá, Loại hình, Tiện ích)
   const displayedHotels = hotels.filter((hotel) => {
