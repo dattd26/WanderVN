@@ -446,12 +446,12 @@ export const JourneyRevealHero: React.FC = () => {
       </div>
 
       {/* ── Layer 7: Floating Search Bar (Dark Glassmorphism) ── */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-full max-w-container-max px-margin-mobile md:px-margin-desktop z-[40]">
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-full max-w-container-max px-margin-mobile md:px-margin-desktop z-[45]">
         <HotelSearchForm theme="dark" />
       </div>
 
       {/* ── Layer 8: Bottom Corner Metadata ── */}
-      <div className="absolute bottom-10 left-6 md:left-10 z-[50] select-none pointer-events-none">
+      <div className="hidden md:block absolute bottom-10 left-6 md:left-10 z-[30] select-none pointer-events-none">
         <p
           key={`meta-name-${textKey}`}
           className={[
@@ -475,7 +475,7 @@ export const JourneyRevealHero: React.FC = () => {
         </p>
       </div>
 
-      <div className="absolute bottom-10 right-6 md:right-10 z-[50] flex items-baseline gap-1 select-none pointer-events-none">
+      <div className="hidden md:block absolute bottom-10 right-6 md:right-10 z-[30] flex items-baseline gap-1 select-none pointer-events-none">
         <span className="text-xl font-light" style={{ color: '#D6A84F', fontVariantNumeric: 'tabular-nums' }}>
           {slideNum}
         </span>
@@ -483,7 +483,7 @@ export const JourneyRevealHero: React.FC = () => {
       </div>
 
       <div
-        className="absolute bottom-10 right-20 md:right-24 z-[50] w-12 h-[1px] select-none pointer-events-none"
+        className="hidden md:block absolute bottom-10 right-20 md:right-24 z-[30] w-12 h-[1px] select-none pointer-events-none"
         style={{ background: 'rgba(214,168,79,0.4)' }}
       />
     </header>
