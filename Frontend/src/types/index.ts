@@ -13,4 +13,5 @@ export * from './user';
 export * from './payout';
 export * from './role';
 export * from './adminHotelReview';
+export * from './adminDashboard';
 
