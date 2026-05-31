@@ -282,7 +282,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
               value={departureDate}
               min={new Date().toISOString().split('T')[0]}
               onChange={(e) => setDepartureDate(e.target.value)}
-              onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
+              onClick={(e) => { try { e.currentTarget.showPicker(); } catch { /* Bỏ qua lỗi nếu trình duyệt không hỗ trợ showPicker */ } }}
               className="bg-transparent border-none p-0 text-white focus:ring-0 w-full font-body-md text-body-md cursor-pointer outline-none [color-scheme:dark]"
             />
           </div>
@@ -306,7 +306,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
                 value={returnDate}
                 min={departureDate}
                 onChange={(e) => setReturnDate(e.target.value)}
-                onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) { } }}
+                onClick={(e) => { try { e.currentTarget.showPicker(); } catch { /* Bỏ qua lỗi nếu trình duyệt không hỗ trợ showPicker */ } }}
                 className="bg-transparent border-none p-0 text-white focus:ring-0 w-full font-body-md text-body-md cursor-pointer outline-none [color-scheme:dark]"
               />
             </div>
