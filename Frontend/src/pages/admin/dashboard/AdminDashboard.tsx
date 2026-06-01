@@ -22,8 +22,8 @@ function formatRelativeTime(isoTime: string): { time: string; date: string } {
   const d = new Date(isoTime);
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
+  // const diffMins = Math.floor(diffMs / 60000);
+  // const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
   const timeStr = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -151,8 +151,8 @@ export function AdminDashboard() {
         setError(null);
         const data = await dashboardService.getStats();
         if (!cancelled) setStats(data);
-      } catch (err: any) {
-        if (!cancelled) setError(err.message || 'Không thể tải dữ liệu Dashboard.');
+      } catch (err: unknown) {
+        if (!cancelled) setError((err as Error).message || 'Không thể tải dữ liệu Dashboard.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -191,10 +191,10 @@ export function AdminDashboard() {
   const circumference = 2 * Math.PI * 80; // ~502
   const staysDash = stats ? (stats.staysRevenuePercent / 100) * circumference : 0;
   const flightsDash = stats ? (stats.flightsRevenuePercent / 100) * circumference : 0;
-  const staysOffset = circumference - staysDash;
-  const flightsOffset = circumference - flightsDash;
+  // const staysOffset = circumference - staysDash;
+  // const flightsOffset = circumference - flightsDash;
   // Cung vé máy bay bắt đầu sau khi cung lưu trú kết thúc
-  const flightsRotation = stats ? (stats.staysRevenuePercent / 100) * 360 : 0;
+  // const flightsRotation = stats ? (stats.staysRevenuePercent / 100) * 360 : 0;
 
   // ── Trạng thái lỗi ──
   if (error && !loading) {
