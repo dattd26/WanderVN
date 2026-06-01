@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using System.Text.Encodings.Web;
 using WanderVN.API.Common.Responses;
 
 namespace WanderVN.API.Middleware
@@ -8,7 +9,8 @@ namespace WanderVN.API.Middleware
     {
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Encoder = JavaScriptEncoder.Create(System.Text.Unicode.UnicodeRanges.All)
         };
 
         private readonly RequestDelegate _next;
@@ -40,7 +42,7 @@ namespace WanderVN.API.Middleware
             HttpContext context,
             Exception exception)
         {
-            context.Response.ContentType = "application/json";
+            context.Response.ContentType = "application/json; charset=utf-8";
 
             var statusCode = exception switch
             {
@@ -52,8 +54,12 @@ namespace WanderVN.API.Middleware
 
             context.Response.StatusCode = statusCode;
 
+            var message = statusCode == (int)HttpStatusCode.InternalServerError
+                ? "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."
+                : exception.Message;
+
             var response = new ErrorResponse(
-                exception.Message,
+                message,
                 statusCode
             );
 
