@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using WanderVN.Application.Common.Interfaces;
+using WanderVN.Application.Common.Utils;
 using WanderVN.Application.DTOs.Response;
 using WanderVN.Domain.Entities;
 using WanderVN.Domain.Repositories;
@@ -87,6 +88,17 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
                 return new VNPayIpnResponse { Success = true, RspCode = "02", Message = "Order already confirmed" };
             }
 
+            var expirationMinutes = await BookingPaymentExpirationHelper.GetUnpaidBookingExpirationMinutesAsync(_unitOfWork, cancellationToken);
+            if (BookingPaymentExpirationHelper.IsExpiredUnpaidHotelBooking(booking, expirationMinutes, DateTimeOffset.UtcNow))
+            {
+                return new VNPayIpnResponse { Success = false, RspCode = "02", Message = "Order payment window expired" };
+            }
+
+            if (booking.Status != BookingStatus.Pending || booking.PaymentStatus != BookingPaymentStatus.Unpaid)
+            {
+                return new VNPayIpnResponse { Success = false, RspCode = "02", Message = "Order is no longer pending payment" };
+            }
+
             // 6. Xử lý trạng thái thanh toán dựa trên vnp_ResponseCode ("00" là thành công)
             if (responseCode == "00")
             {
@@ -110,6 +122,7 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
                 // Giao dịch không thành công ở cổng VNPay
                 booking.PaymentStatus = BookingPaymentStatus.Failed;
                 booking.Status = BookingStatus.Cancelled;
+                ReleaseHotelRooms(booking);
             }
 
             // Đánh dấu cập nhật thực thể Booking
@@ -145,6 +158,22 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
         {
             Console.WriteLine($"⚠️ Lỗi khi xử lý IPN VNPay: {ex.Message}");
             return new VNPayIpnResponse { Success = false, RspCode = "99", Message = "Internal Server Error" };
+        }
+    }
+
+    private static void ReleaseHotelRooms(WanderVN.Domain.Entities.Bookings booking)
+    {
+        if (booking.ServiceType != BookingServiceType.Hotel)
+        {
+            return;
+        }
+
+        foreach (var bookingHotel in booking.BookingHotels)
+        {
+            if (bookingHotel.Room != null)
+            {
+                bookingHotel.Room.Status = "Available";
+            }
         }
     }
 }

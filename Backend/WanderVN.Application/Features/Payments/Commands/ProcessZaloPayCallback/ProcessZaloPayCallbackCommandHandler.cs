@@ -92,6 +92,17 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
                 return new ZaloPayCallbackResponse { ReturnCode = 1, ReturnMessage = "Đơn hàng đã được ghi nhận thanh toán trước đó (double confirm)" };
             }
 
+            var expirationMinutes = await BookingPaymentExpirationHelper.GetUnpaidBookingExpirationMinutesAsync(_unitOfWork, cancellationToken);
+            if (BookingPaymentExpirationHelper.IsExpiredUnpaidHotelBooking(booking, expirationMinutes, DateTimeOffset.UtcNow))
+            {
+                return new ZaloPayCallbackResponse { ReturnCode = 2, ReturnMessage = "Đơn hàng đã quá hạn thanh toán" };
+            }
+
+            if (booking.Status != BookingStatus.Pending || booking.PaymentStatus != BookingPaymentStatus.Unpaid)
+            {
+                return new ZaloPayCallbackResponse { ReturnCode = 2, ReturnMessage = "Đơn hàng không còn ở trạng thái chờ thanh toán" };
+            }
+
             // 7. Cập nhật trạng thái thanh toán thành công
             booking.PaymentStatus = BookingPaymentStatus.Paid;
             booking.Status = BookingStatus.Confirmed;

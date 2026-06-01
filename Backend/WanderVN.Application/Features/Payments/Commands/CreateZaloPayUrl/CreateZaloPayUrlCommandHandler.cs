@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using WanderVN.Application.Common.Interfaces;
+using WanderVN.Application.Common.Utils;
 using WanderVN.Domain.Repositories;
 using WanderVN.Domain.Enums;
 
@@ -40,6 +41,17 @@ public class CreateZaloPayUrlCommandHandler : IRequestHandler<CreateZaloPayUrlCo
         if (booking.PaymentStatus == BookingPaymentStatus.Paid)
         {
             throw new Exception("Đơn đặt hàng này đã được thanh toán trước đó.");
+        }
+
+        var expirationMinutes = await BookingPaymentExpirationHelper.GetUnpaidBookingExpirationMinutesAsync(_unitOfWork, cancellationToken);
+        if (BookingPaymentExpirationHelper.IsExpiredUnpaidHotelBooking(booking, expirationMinutes, DateTimeOffset.UtcNow))
+        {
+            throw new Exception("Đơn đặt hàng đã quá hạn thanh toán.");
+        }
+
+        if (booking.Status != BookingStatus.Pending || booking.PaymentStatus != BookingPaymentStatus.Unpaid)
+        {
+            throw new Exception("Đơn đặt hàng này không còn ở trạng thái chờ thanh toán.");
         }
 
         // 2. Tạo URL thanh toán ZaloPay bằng cách gọi ZaloPayService với thông tin loại dịch vụ
