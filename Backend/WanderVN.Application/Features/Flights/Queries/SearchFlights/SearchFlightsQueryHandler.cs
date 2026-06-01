@@ -7,6 +7,7 @@ using MediatR;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Application.DTOs.Request;
 using WanderVN.Application.DTOs.Response;
+using WanderVN.Domain.Repositories;
 
 namespace WanderVN.Application.Features.Flights.Queries.SearchFlights;
 
@@ -17,11 +18,13 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
 {
     private readonly IDuffelService _duffelService;
     private readonly IFlightSearchCacheService _flightSearchCacheService;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public SearchFlightsQueryHandler(IDuffelService duffelService, IFlightSearchCacheService flightSearchCacheService)
+    public SearchFlightsQueryHandler(IDuffelService duffelService, IFlightSearchCacheService flightSearchCacheService, IUnitOfWork unitOfWork)
     {
         _duffelService = duffelService;
         _flightSearchCacheService = flightSearchCacheService;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<List<FlightOfferDto>> Handle(SearchFlightsQuery request, CancellationToken cancellationToken)
@@ -38,18 +41,44 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
             ReturnDate = request.ReturnDate
         };
 
+        List<FlightOfferDto> offers;
         var cachedOffers = await _flightSearchCacheService.GetAsync(duffelRequest, cancellationToken);
         if (cachedOffers is not null)
         {
-            return cachedOffers;
+            offers = cachedOffers;
+        }
+        else
+        {
+            // Gửi yêu cầu qua Service trực tiếp tới Duffel Sandbox với chặng bay thật người dùng tìm kiếm
+            var responseJson = await _duffelService.SearchOffersAsync(duffelRequest);
+            // Thực hiện parse JSON từ Duffel và ánh xạ (map) sang List<FlightOfferDto> tối giản
+            offers = ParseDuffelOffers(responseJson, request.Origin, request.Destination, request.DepartureDate);
+
+            await _flightSearchCacheService.SetAsync(duffelRequest, offers, responseJson, cancellationToken);
         }
 
-        // Gửi yêu cầu qua Service trực tiếp tới Duffel Sandbox với chặng bay thật người dùng tìm kiếm
-        var responseJson = await _duffelService.SearchOffersAsync(duffelRequest);
-        // Thực hiện parse JSON từ Duffel và ánh xạ (map) sang List<FlightOfferDto> tối giản
-        var offers = ParseDuffelOffers(responseJson, request.Origin, request.Destination, request.DepartureDate);
+        // Đọc tỷ lệ markup từ SystemSettings (key: "FlightMarkupPercent", mặc định 5%)
+        decimal markupPercent = 5m;
+        var markupSetting = await _unitOfWork.SystemSettings
+            .FindFirstOrDefaultAsync(s => s.Key == "FlightMarkupPercent", cancellationToken: cancellationToken);
+        if (markupSetting != null && decimal.TryParse(markupSetting.Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var mp))
+            markupPercent = mp;
 
-        await _flightSearchCacheService.SetAsync(duffelRequest, offers, responseJson, cancellationToken);
+        // Đọc phí cổng thanh toán từ SystemSettings theo phương thức (mặc định VNPayFeeVnd là 10.000đ)
+        decimal paymentFeeVnd = 10000m;
+        var feeSetting = await _unitOfWork.SystemSettings
+            .FindFirstOrDefaultAsync(s => s.Key == "VNPayFeeVnd", cancellationToken: cancellationToken);
+        if (feeSetting != null && decimal.TryParse(feeSetting.Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var fee))
+            paymentFeeVnd = fee;
+
+        // Áp dụng markup và phí thanh toán vào từng chuyến bay
+        foreach (var offer in offers)
+        {
+            decimal duffelAmountVnd = Common.Utils.CurrencyConverter.ConvertUsdToVnd(offer.TotalAmount);
+            decimal markupAmountVnd = Math.Round(duffelAmountVnd * markupPercent / 100m);
+            decimal customerTotalVnd = duffelAmountVnd + markupAmountVnd + paymentFeeVnd;
+            offer.TotalAmount = Common.Utils.CurrencyConverter.ConvertVndToUsd(customerTotalVnd);
+        }
 
         return offers;
     }
