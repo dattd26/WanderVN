@@ -14,3 +14,4 @@ export * from './payoutService';
 export * from './roleService';
 export * from './admin/hotelReviewService';
 export * from './admin/settingsService';
+export * from './admin/dashboardService';
