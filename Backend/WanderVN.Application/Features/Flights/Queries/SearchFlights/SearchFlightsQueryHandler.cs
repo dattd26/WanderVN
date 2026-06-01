@@ -16,10 +16,12 @@ namespace WanderVN.Application.Features.Flights.Queries.SearchFlights;
 public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, List<FlightOfferDto>>
 {
     private readonly IDuffelService _duffelService;
+    private readonly IFlightSearchCacheService _flightSearchCacheService;
 
-    public SearchFlightsQueryHandler(IDuffelService duffelService)
+    public SearchFlightsQueryHandler(IDuffelService duffelService, IFlightSearchCacheService flightSearchCacheService)
     {
         _duffelService = duffelService;
+        _flightSearchCacheService = flightSearchCacheService;
     }
 
     public async Task<List<FlightOfferDto>> Handle(SearchFlightsQuery request, CancellationToken cancellationToken)
@@ -36,10 +38,20 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
             ReturnDate = request.ReturnDate
         };
 
+        var cachedOffers = await _flightSearchCacheService.GetAsync(duffelRequest, cancellationToken);
+        if (cachedOffers is not null)
+        {
+            return cachedOffers;
+        }
+
         // Gửi yêu cầu qua Service trực tiếp tới Duffel Sandbox với chặng bay thật người dùng tìm kiếm
         var responseJson = await _duffelService.SearchOffersAsync(duffelRequest);
         // Thực hiện parse JSON từ Duffel và ánh xạ (map) sang List<FlightOfferDto> tối giản
-        return ParseDuffelOffers(responseJson, request.Origin, request.Destination, request.DepartureDate);
+        var offers = ParseDuffelOffers(responseJson, request.Origin, request.Destination, request.DepartureDate);
+
+        await _flightSearchCacheService.SetAsync(duffelRequest, offers, responseJson, cancellationToken);
+
+        return offers;
     }
 
     /// <summary>
