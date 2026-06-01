@@ -30,6 +30,7 @@ public interface IApplicationDbContext
     DbSet<HomeWeekendEscapes> HomeWeekendEscapes { get; }
     DbSet<HomeStayCollections> HomeStayCollections { get; }
     DbSet<HotelTravelMoods> HotelTravelMoods { get; }
+    DbSet<SystemSettings> SystemSettings { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

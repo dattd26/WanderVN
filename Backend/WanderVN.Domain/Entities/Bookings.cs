@@ -16,6 +16,12 @@ public partial class Bookings
 
     public decimal TotalPrice { get; set; }
 
+    public decimal? DuffelAmountVnd { get; set; }
+
+    public decimal? MarkupAmountVnd { get; set; }
+
+    public decimal? PaymentFeeVnd { get; set; }
+
     public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
     public BookingPaymentStatus PaymentStatus { get; set; } = BookingPaymentStatus.Unpaid;
