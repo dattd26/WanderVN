@@ -81,6 +81,7 @@ public static class DependencyInjection
 
         // Đăng ký Background Service đối soát và tạo Payout tự động
         services.AddHostedService<BookingSettlementBackgroundService>();
+        services.AddHostedService<UnpaidBookingExpirationBackgroundService>();
 
         return services;
     }
