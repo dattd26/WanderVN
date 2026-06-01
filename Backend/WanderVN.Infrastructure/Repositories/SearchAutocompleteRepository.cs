@@ -65,13 +65,13 @@ public class SearchAutocompleteRepository : ISearchAutocompleteRepository
         }
 
         // TRƯỜNG HỢP 2: Có nhập từ khóa -> Truy vấn song song cả Địa danh và Khách sạn
-        
+
         // 1. Tìm kiếm tối đa 5 Địa danh (Locations) trùng khớp tên
         const string locationsSql = @"
             SELECT TOP 5 l.Id, l.Name, l.Type, l.ParentId, p.Name AS ParentName
             FROM Locations l
             LEFT JOIN Locations p ON l.ParentId = p.Id
-            WHERE LOWER(l.Name) LIKE @Keyword";
+            WHERE LOWER(l.Name) COLLATE Latin1_General_CI_AI LIKE @Keyword";
 
         var matchedLocations = await connection.QueryAsync<LocationQueryRow>(
             new CommandDefinition(locationsSql, new { Keyword = $"%{trimmedKeyword}%" }, cancellationToken: cancellationToken)
@@ -94,7 +94,7 @@ public class SearchAutocompleteRepository : ISearchAutocompleteRepository
             SELECT TOP 5 h.Id, h.Name, h.StarRating, l.Name AS LocationName
             FROM Hotels h
             LEFT JOIN Locations l ON h.LocationId = l.Id
-            WHERE h.IsActive = 1 AND (LOWER(h.Name) LIKE @Keyword OR LOWER(h.Address) LIKE @Keyword)";
+            WHERE h.IsActive = 1 AND (LOWER(h.Name) COLLATE Latin1_General_CI_AI LIKE @Keyword OR LOWER(h.Address) COLLATE Latin1_General_CI_AI LIKE @Keyword)";
 
         var matchedHotels = await connection.QueryAsync<HotelQueryRow>(
             new CommandDefinition(hotelsSql, new { Keyword = $"%{trimmedKeyword}%" }, cancellationToken: cancellationToken)
