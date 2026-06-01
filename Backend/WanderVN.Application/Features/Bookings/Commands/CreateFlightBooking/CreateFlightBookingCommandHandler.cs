@@ -12,17 +12,19 @@ using WanderVN.Application.DTOs.Response;
 using WanderVN.Domain.Entities;
 using WanderVN.Domain.Enums;
 
+using WanderVN.Domain.Repositories;
+
 namespace WanderVN.Application.Features.Bookings.Commands.CreateFlightBooking;
 
 public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBookingCommand, FlightBookingResponse>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IDuffelService _duffelService;
     private readonly IEmailService _emailService;
 
-    public CreateFlightBookingCommandHandler(IApplicationDbContext dbContext, IDuffelService duffelService, IEmailService emailService)
+    public CreateFlightBookingCommandHandler(IUnitOfWork unitOfWork, IDuffelService duffelService, IEmailService emailService)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
         _duffelService = duffelService;
         _emailService = emailService;
     }
@@ -108,8 +110,8 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
 
         // Đọc tỷ lệ markup từ SystemSettings (key: "FlightMarkupPercent", mặc định 5%)
         decimal markupPercent = 5m;
-        var markupSetting = await _dbContext.SystemSettings
-            .FirstOrDefaultAsync(s => s.Key == "FlightMarkupPercent", cancellationToken);
+        var markupSetting = await _unitOfWork.SystemSettings
+            .FindFirstOrDefaultAsync(s => s.Key == "FlightMarkupPercent", cancellationToken: cancellationToken);
         if (markupSetting != null && decimal.TryParse(markupSetting.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var mp))
             markupPercent = mp;
 
@@ -120,8 +122,8 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             "zalopay" => "ZaloPayFeeVnd",
             _ => "VNPayFeeVnd"
         };
-        var feeSetting = await _dbContext.SystemSettings
-            .FirstOrDefaultAsync(s => s.Key == feeKey, cancellationToken);
+        var feeSetting = await _unitOfWork.SystemSettings
+            .FindFirstOrDefaultAsync(s => s.Key == feeKey, cancellationToken: cancellationToken);
         if (feeSetting != null && decimal.TryParse(feeSetting.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var fee))
             paymentFeeVnd = fee;
 
@@ -158,8 +160,8 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
 
         try
         {
-            await _dbContext.Bookings.AddAsync(booking, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.Bookings.AddAsync(booking, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // Save passengers to BookingFlights
             foreach (var pax in request.Passengers)
@@ -173,10 +175,10 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                     FlightId = null
                 };
 
-                await _dbContext.BookingFlights.AddAsync(bookingFlight, cancellationToken);
+                await _unitOfWork.Repository<WanderVN.Domain.Entities.BookingFlights>().AddAsync(bookingFlight, cancellationToken);
             }
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // Xác định email người nhận xác nhận (ưu tiên guest info, fallback sang user đã đăng nhập)
             string? recipientEmail = guestEmail;
@@ -184,7 +186,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
 
             if (string.IsNullOrEmpty(recipientEmail) && request.UserId.HasValue)
             {
-                var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == request.UserId.Value, cancellationToken);
+                var user = await _unitOfWork.Users.FindFirstOrDefaultAsync(u => u.Id == request.UserId.Value, cancellationToken: cancellationToken);
                 if (user != null)
                 {
                     recipientEmail = user.Email;
