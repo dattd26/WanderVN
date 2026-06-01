@@ -19,8 +19,8 @@ export const hotelService = {
       body: JSON.stringify(bookingRequest),
     });
   },
-  async getMyHotelBookings(userId: number | string): Promise<HotelBookingHistoryDto[]> {
-    return request<HotelBookingHistoryDto[]>(`/bookings/user/${userId}`);
+  async getMyHotelBookings(): Promise<HotelBookingHistoryDto[]> {
+    return request<HotelBookingHistoryDto[]>('/bookings/history');
   }
   
 };

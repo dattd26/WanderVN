@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using WanderVN.API.Common.Responses;
@@ -117,12 +118,13 @@ public class BookingsController : ControllerBase
         var response = new ApiResponse<FlightBookingResponse>(true, "Dat ve may bay thanh cong", 200, result);
         return Ok(response);
     }
-    [HttpGet("user/{userId}")]
-    public async Task<IActionResult> GetHotelBookingHistory([FromRoute] int userId)
+    [Authorize]
+    [HttpGet("history")]
+    public async Task<IActionResult> GetHotelBookingHistory()
     {
         try
         {
-            var query = new GetHotelBookingHistoryQuery { UserId = userId };
+            var query = new GetHotelBookingHistoryQuery();
             var result = await _mediator.Send(query);
 
             var response = new ApiResponse<List<HotelBookingHistoryDto>>(
@@ -133,6 +135,15 @@ public class BookingsController : ControllerBase
             );
 
             return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ApiResponse<List<HotelBookingHistoryDto>>(
+                false,
+                ex.Message,
+                401,
+                null
+            ));
         }
         catch (Exception ex)
         {

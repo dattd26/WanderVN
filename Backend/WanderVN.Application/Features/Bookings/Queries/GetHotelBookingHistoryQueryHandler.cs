@@ -14,20 +14,25 @@ namespace WanderVN.Application.Features.Bookings.Queries.GetHotelBookingHistory;
 public class GetHotelBookingHistoryQueryHandler : IRequestHandler<GetHotelBookingHistoryQuery, List<HotelBookingHistoryDto>>
 {
     private readonly IApplicationDbContext _dbContext;
+    private readonly ICurrentUserService _currentUserService;
 
-    public GetHotelBookingHistoryQueryHandler(IApplicationDbContext dbContext)
+    public GetHotelBookingHistoryQueryHandler(IApplicationDbContext dbContext, ICurrentUserService currentUserService)
     {
         _dbContext = dbContext;
+        _currentUserService = currentUserService;
     }
 
     public async Task<List<HotelBookingHistoryDto>> Handle(GetHotelBookingHistoryQuery request, CancellationToken cancellationToken)
     {
+        var userId = _currentUserService.UserId
+            ?? throw new UnauthorizedAccessException("Không thể xác định người dùng.");
+
         var history = await _dbContext.BookingHotels
             .Join(_dbContext.Bookings, bh => bh.BookingId, b => b.Id, (bh, b) => new { bh, b })
             .Join(_dbContext.Rooms, x => x.bh.RoomId, r => r.Id, (x, r) => new { x.bh, x.b, r })
             .Join(_dbContext.RoomTypes, x => x.r.RoomTypeId, rt => rt.Id, (x, rt) => new { x.bh, x.b, x.r, rt })
             .Join(_dbContext.Hotels, x => x.rt.HotelId, h => h.Id, (x, h) => new { x.bh, x.b, x.r, x.rt, h })
-            .Where(x => x.b.UserId == request.UserId && x.b.ServiceType == BookingServiceType.Hotel)
+            .Where(x => x.b.UserId == userId && x.b.ServiceType == BookingServiceType.Hotel)
             .Select(x => new HotelBookingHistoryDto
             {
                 BookingId = x.b.Id,

@@ -40,7 +40,7 @@ export const BookingHistory: React.FC = () => {
       setError(null);
 
       try {
-        const data = await hotelService.getMyHotelBookings(currentUserId);
+        const data = await hotelService.getMyHotelBookings();
 
         if (!data || !Array.isArray(data)) {
           console.warn("Dữ liệu API trả về không đúng định dạng mảng:", data);
