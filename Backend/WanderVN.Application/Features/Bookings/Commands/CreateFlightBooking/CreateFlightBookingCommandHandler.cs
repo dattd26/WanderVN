@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -11,17 +12,19 @@ using WanderVN.Application.DTOs.Response;
 using WanderVN.Domain.Entities;
 using WanderVN.Domain.Enums;
 
+using WanderVN.Domain.Repositories;
+
 namespace WanderVN.Application.Features.Bookings.Commands.CreateFlightBooking;
 
 public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBookingCommand, FlightBookingResponse>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IDuffelService _duffelService;
     private readonly IEmailService _emailService;
 
-    public CreateFlightBookingCommandHandler(IApplicationDbContext dbContext, IDuffelService duffelService, IEmailService emailService)
+    public CreateFlightBookingCommandHandler(IUnitOfWork unitOfWork, IDuffelService duffelService, IEmailService emailService)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
         _duffelService = duffelService;
         _emailService = emailService;
     }
@@ -93,15 +96,39 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         // 3. Gọi Duffel API để tạo đặt vé
         var duffelResponseJson = await _duffelService.CreateOrderAsync(duffelRequest);
 
-        // 3. Parse Duffel Response to get Order ID
+        // Parse Duffel Response to get Order ID
         var jsonDoc = JsonDocument.Parse(duffelResponseJson);
         var root = jsonDoc.RootElement;
 
         var duffelOrderId = root.GetProperty("data").GetProperty("id").GetString()
                             ?? GenerateLocalBookingCode();
 
-        // 4. Quy đổi giá trị đặt vé từ USD sang VND và lưu vào cơ sở dữ liệu để thống nhất tiền tệ VND
-        decimal totalPriceInVnd = Common.Utils.CurrencyConverter.ConvertUsdToVnd(request.TotalPrice);
+        // 4. Tính toán giá vé chi tiết (server-side, không tin vào TotalPrice từ client)
+        decimal duffelAmountUsd = decimal.TryParse(originalAmount, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedUsd)
+            ? parsedUsd : 0m;
+        decimal duffelAmountVnd = Common.Utils.CurrencyConverter.ConvertUsdToVnd(duffelAmountUsd);
+
+        // Đọc tỷ lệ markup từ SystemSettings (key: "FlightMarkupPercent", mặc định 5%)
+        decimal markupPercent = 5m;
+        var markupSetting = await _unitOfWork.SystemSettings
+            .FindFirstOrDefaultAsync(s => s.Key == "FlightMarkupPercent", cancellationToken: cancellationToken);
+        if (markupSetting != null && decimal.TryParse(markupSetting.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var mp))
+            markupPercent = mp;
+
+        // Đọc phí cổng thanh toán từ SystemSettings theo phương thức (key: "VNPayFeeVnd" / "ZaloPayFeeVnd", mặc định 10.000đ)
+        decimal paymentFeeVnd = 10000m;
+        var feeKey = request.PaymentMethod?.Trim().ToLowerInvariant() switch
+        {
+            "zalopay" => "ZaloPayFeeVnd",
+            _ => "VNPayFeeVnd"
+        };
+        var feeSetting = await _unitOfWork.SystemSettings
+            .FindFirstOrDefaultAsync(s => s.Key == feeKey, cancellationToken: cancellationToken);
+        if (feeSetting != null && decimal.TryParse(feeSetting.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var fee))
+            paymentFeeVnd = fee;
+
+        decimal markupAmountVnd = Math.Round(duffelAmountVnd * markupPercent / 100m);
+        decimal customerTotalVnd = duffelAmountVnd + markupAmountVnd + paymentFeeVnd;
 
         // Trích xuất thông tin liên hệ từ hành khách đầu tiên
         var primaryPax = request.Passengers.FirstOrDefault();
@@ -119,7 +146,10 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             UserId = request.UserId,
             BookingCode = duffelOrderId,
             ServiceType = BookingServiceType.Flight,
-            TotalPrice = totalPriceInVnd,
+            TotalPrice = customerTotalVnd,
+            DuffelAmountVnd = duffelAmountVnd,
+            MarkupAmountVnd = markupAmountVnd,
+            PaymentFeeVnd = paymentFeeVnd,
             Status = BookingStatus.Pending,
             PaymentStatus = BookingPaymentStatus.Unpaid,
             CreatedAt = DateTimeOffset.UtcNow,
@@ -130,8 +160,8 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
 
         try
         {
-            await _dbContext.Bookings.AddAsync(booking, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.Bookings.AddAsync(booking, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // Save passengers to BookingFlights
             foreach (var pax in request.Passengers)
@@ -145,10 +175,10 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                     FlightId = null
                 };
 
-                await _dbContext.BookingFlights.AddAsync(bookingFlight, cancellationToken);
+                await _unitOfWork.Repository<WanderVN.Domain.Entities.BookingFlights>().AddAsync(bookingFlight, cancellationToken);
             }
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // Xác định email người nhận xác nhận (ưu tiên guest info, fallback sang user đã đăng nhập)
             string? recipientEmail = guestEmail;
@@ -156,7 +186,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
 
             if (string.IsNullOrEmpty(recipientEmail) && request.UserId.HasValue)
             {
-                var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == request.UserId.Value, cancellationToken);
+                var user = await _unitOfWork.Users.FindFirstOrDefaultAsync(u => u.Id == request.UserId.Value, cancellationToken: cancellationToken);
                 if (user != null)
                 {
                     recipientEmail = user.Email;
@@ -223,8 +253,11 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         {
             BookingId = booking.Id,
             BookingCode = booking.BookingCode,
-            TotalPrice = booking.TotalPrice,
-            Status = booking.Status.ToString()
+            Status = booking.Status.ToString(),
+            DuffelAmountVnd = duffelAmountVnd,
+            MarkupAmountVnd = markupAmountVnd,
+            PaymentFeeVnd = paymentFeeVnd,
+            TotalPrice = customerTotalVnd
         };
     }
 

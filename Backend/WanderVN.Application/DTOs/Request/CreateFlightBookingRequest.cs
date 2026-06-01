@@ -7,6 +7,8 @@ public class CreateFlightBookingRequest
     public int? UserId { get; set; }
     public string OfferId { get; set; } = string.Empty;
     public decimal TotalPrice { get; set; }
+    /// <summary>Phương thức thanh toán: "vnpay" | "zalopay". Mặc định "vnpay".</summary>
+    public string? PaymentMethod { get; set; } = "vnpay";
     public List<PassengerDto> Passengers { get; set; } = new();
 }
 

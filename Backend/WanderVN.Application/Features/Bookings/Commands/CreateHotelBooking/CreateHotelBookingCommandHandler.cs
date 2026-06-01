@@ -10,16 +10,18 @@ using WanderVN.Application.DTOs.Response;
 using WanderVN.Domain.Entities;
 using WanderVN.Domain.Enums;
 
+using WanderVN.Domain.Repositories;
+
 namespace WanderVN.Application.Features.Bookings.Commands.CreateHotelBooking;
 
 public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBookingCommand, HotelBookingResponse>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
 
-    public CreateHotelBookingCommandHandler(IApplicationDbContext dbContext, IEmailService emailService)
+    public CreateHotelBookingCommandHandler(IUnitOfWork unitOfWork, IEmailService emailService)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
         _emailService = emailService;
     }
 
@@ -36,17 +38,15 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
             throw new ArgumentException("Ngày nhận phòng phải trước ngày trả phòng");
 
         // Tìm loại phòng trong cơ sở dữ liệu
-        var roomType = await _dbContext.RoomTypes
-            .Include(rt => rt.Hotel)
-            .FirstOrDefaultAsync(rt => rt.Id == request.Request.RoomTypeId, cancellationToken);
+        var roomType = await _unitOfWork.RoomTypes
+            .FindFirstOrDefaultAsync(rt => rt.Id == request.Request.RoomTypeId, includeProperties: "Hotel", cancellationToken: cancellationToken);
 
         if (roomType == null)
             throw new KeyNotFoundException("Không tìm thấy loại phòng yêu cầu");
 
         // Tìm phòng trống thuộc loại phòng được chọn trước khi tiến hành đặt hàng để tránh lỗi tạo đơn hàng khi hết phòng
-        var room = await _dbContext.Rooms
-            .Where(r => r.RoomTypeId == request.Request.RoomTypeId && r.Status == "Available")
-            .FirstOrDefaultAsync(cancellationToken);
+        var room = await _unitOfWork.Rooms
+            .FindFirstOrDefaultAsync(r => r.RoomTypeId == request.Request.RoomTypeId && r.Status == "Available", cancellationToken: cancellationToken);
 
         if (room == null)
         {
@@ -90,11 +90,11 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
         room.Status = "Booked";
 
         // Thêm đơn hàng và chi tiết đặt phòng vào context
-        await _dbContext.Bookings.AddAsync(booking, cancellationToken);
-        await _dbContext.BookingHotels.AddAsync(bookingHotel, cancellationToken);
+        await _unitOfWork.Bookings.AddAsync(booking, cancellationToken);
+        await _unitOfWork.Repository<WanderVN.Domain.Entities.BookingHotels>().AddAsync(bookingHotel, cancellationToken);
 
         // Thực hiện lưu toàn bộ thay đổi xuống DB trong một transaction duy nhất
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Xác định email và tên người nhận xác nhận (ưu tiên thông tin guest, fallback sang user đã đăng nhập)
         string? recipientEmail = request.Request.Email;
@@ -102,7 +102,7 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
 
         if (string.IsNullOrEmpty(recipientEmail) && request.Request.UserId.HasValue)
         {
-            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == request.Request.UserId.Value, cancellationToken);
+            var user = await _unitOfWork.Users.FindFirstOrDefaultAsync(u => u.Id == request.Request.UserId.Value, cancellationToken: cancellationToken);
             if (user != null)
             {
                 recipientEmail = user.Email;
