@@ -35,6 +35,23 @@ public static class DependencyInjection
         services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
         services.AddSingleton<IMediaStorageService, CloudinaryMediaStorageService>();
 
+        // Cấu hình cache Redis cho kết quả tìm kiếm chuyến bay Duffel
+        services.Configure<FlightSearchCacheSettings>(configuration.GetSection("FlightSearchCache"));
+        var redisConnection = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConnection))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnection;
+                options.InstanceName = configuration["FlightSearchCache:RedisInstanceName"] ?? "WanderVN:";
+            });
+            services.AddScoped<IFlightSearchCacheService, FlightSearchCacheService>();
+        }
+        else
+        {
+            services.AddScoped<IFlightSearchCacheService, NoOpFlightSearchCacheService>();
+        }
+
         // Đăng ký Duffel Service với HttpClient
         services.AddHttpClient<IDuffelService, DuffelService>(c =>
         {
