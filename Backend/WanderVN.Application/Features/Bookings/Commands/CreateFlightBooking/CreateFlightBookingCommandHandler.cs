@@ -163,22 +163,204 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             await _unitOfWork.Bookings.AddAsync(booking, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Save passengers to BookingFlights
-            foreach (var pax in request.Passengers)
+            // Lưu thông tin chuyến bay, hãng hàng không, sân bay và hành khách (Hybrid Storage Pattern)
+            bool parsedSlicesAndSegments = false;
+            try
             {
-                var bookingFlight = new WanderVN.Domain.Entities.BookingFlights
+                if (root.TryGetProperty("data", out var dataProp) && 
+                    dataProp.TryGetProperty("slices", out var slicesProp) && 
+                    slicesProp.ValueKind == JsonValueKind.Array)
                 {
-                    BookingId = booking.Id,
-                    PassengerName = $"{pax.Title} {pax.GivenName} {pax.FamilyName}",
-                    PassportNumber = pax.PassportNumber,
-                    // FlightId is left null as we rely on Duffel for flight data (Option A)
-                    FlightId = null
-                };
+                    foreach (var slice in slicesProp.EnumerateArray())
+                    {
+                        if (slice.TryGetProperty("segments", out var segmentsProp) && 
+                            segmentsProp.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var segment in segmentsProp.EnumerateArray())
+                            {
+                                string segmentId = segment.TryGetProperty("id", out var segIdVal) ? (segIdVal.GetString() ?? "") : "";
 
-                await _unitOfWork.Repository<WanderVN.Domain.Entities.BookingFlights>().AddAsync(bookingFlight, cancellationToken);
+                                // Lấy thông tin Hãng hàng không (Operating hoặc Marketing)
+                                if (!segment.TryGetProperty("operating_carrier", out var carrier) || carrier.ValueKind != JsonValueKind.Object)
+                                {
+                                    segment.TryGetProperty("marketing_carrier", out carrier);
+                                }
+
+                                Airlines? airline = null;
+                                if (carrier.ValueKind == JsonValueKind.Object)
+                                {
+                                    var airlineName = carrier.TryGetProperty("name", out var nameVal) ? nameVal.GetString() : "Hãng hàng không";
+                                    var logoUrl = carrier.TryGetProperty("logo_symbol_url", out var logoSymbolVal) 
+                                        ? logoSymbolVal.GetString() 
+                                        : (carrier.TryGetProperty("logo_lockup_url", out var logoLockupVal) ? logoLockupVal.GetString() : null);
+
+                                    airline = await _unitOfWork.Repository<Airlines>().FindFirstOrDefaultAsync(a => a.Name == airlineName, cancellationToken: cancellationToken);
+                                    if (airline == null)
+                                    {
+                                        airline = new Airlines
+                                        {
+                                            Name = airlineName ?? "Hãng hàng không",
+                                            LogoUrl = logoUrl
+                                        };
+                                        await _unitOfWork.Repository<Airlines>().AddAsync(airline, cancellationToken);
+                                        await _unitOfWork.SaveChangesAsync(cancellationToken);
+                                    }
+                                }
+
+                                // Lấy thông tin Sân bay đi (Origin Airport)
+                                Airports? depAirport = null;
+                                if (segment.TryGetProperty("origin", out var originObj) && originObj.ValueKind == JsonValueKind.Object)
+                                {
+                                    var originIata = originObj.TryGetProperty("iata_code", out var iataVal) ? iataVal.GetString() : null;
+                                    if (!string.IsNullOrEmpty(originIata))
+                                    {
+                                        var originName = originObj.TryGetProperty("name", out var nameVal) ? nameVal.GetString() : null;
+                                        string? originCity = null;
+                                        if (originObj.TryGetProperty("city_name", out var cityVal))
+                                        {
+                                            originCity = cityVal.GetString();
+                                        }
+                                        else if (originObj.TryGetProperty("city", out var cityObjVal) && cityObjVal.ValueKind == JsonValueKind.Object)
+                                        {
+                                            if (cityObjVal.TryGetProperty("name", out var cityNameVal))
+                                            {
+                                                originCity = cityNameVal.GetString();
+                                            }
+                                        }
+
+                                        depAirport = await _unitOfWork.Repository<Airports>().FindFirstOrDefaultAsync(a => a.IataCode == originIata, cancellationToken: cancellationToken);
+                                        if (depAirport == null)
+                                        {
+                                            depAirport = new Airports
+                                            {
+                                                IataCode = originIata,
+                                                Name = originName,
+                                                City = originCity
+                                            };
+                                            await _unitOfWork.Repository<Airports>().AddAsync(depAirport, cancellationToken);
+                                            await _unitOfWork.SaveChangesAsync(cancellationToken);
+                                        }
+                                    }
+                                }
+
+                                // Lấy thông tin Sân bay đến (Destination Airport)
+                                Airports? arrAirport = null;
+                                if (segment.TryGetProperty("destination", out var destObj) && destObj.ValueKind == JsonValueKind.Object)
+                                {
+                                    var destIata = destObj.TryGetProperty("iata_code", out var iataVal) ? iataVal.GetString() : null;
+                                    if (!string.IsNullOrEmpty(destIata))
+                                    {
+                                        var destName = destObj.TryGetProperty("name", out var nameVal) ? nameVal.GetString() : null;
+                                        string? destCity = null;
+                                        if (destObj.TryGetProperty("city_name", out var cityVal))
+                                        {
+                                            destCity = cityVal.GetString();
+                                        }
+                                        else if (destObj.TryGetProperty("city", out var cityObjVal) && cityObjVal.ValueKind == JsonValueKind.Object)
+                                        {
+                                            if (cityObjVal.TryGetProperty("name", out var cityNameVal))
+                                            {
+                                                destCity = cityNameVal.GetString();
+                                            }
+                                        }
+
+                                        arrAirport = await _unitOfWork.Repository<Airports>().FindFirstOrDefaultAsync(a => a.IataCode == destIata, cancellationToken: cancellationToken);
+                                        if (arrAirport == null)
+                                        {
+                                            arrAirport = new Airports
+                                            {
+                                                IataCode = destIata,
+                                                Name = destName,
+                                                City = destCity
+                                            };
+                                            await _unitOfWork.Repository<Airports>().AddAsync(arrAirport, cancellationToken);
+                                            await _unitOfWork.SaveChangesAsync(cancellationToken);
+                                        }
+                                    }
+                                }
+
+                                // Tạo hoặc tìm Chuyến bay (Flights) làm lịch sử cache
+                                var flightNumber = segment.TryGetProperty("operating_carrier_flight_number", out var fnVal) 
+                                    ? fnVal.GetString() 
+                                    : (segment.TryGetProperty("marketing_carrier_flight_number", out var mfnVal) ? mfnVal.GetString() : "N/A");
+
+                                if (string.IsNullOrEmpty(flightNumber))
+                                {
+                                    flightNumber = "N/A";
+                                }
+
+                                var depTimeStr = segment.TryGetProperty("departing_at", out var depVal) ? depVal.GetString() : null;
+                                var arrTimeStr = segment.TryGetProperty("arriving_at", out var arrVal) ? arrVal.GetString() : null;
+
+                                DateTime depTime = !string.IsNullOrEmpty(depTimeStr) ? DateTime.Parse(depTimeStr) : DateTime.UtcNow;
+                                DateTime arrTime = !string.IsNullOrEmpty(arrTimeStr) ? DateTime.Parse(arrTimeStr) : DateTime.UtcNow;
+
+                                var flight = await _unitOfWork.Repository<WanderVN.Domain.Entities.Flights>().FindFirstOrDefaultAsync(
+                                    f => f.FlightNumber == flightNumber && f.DepTime == depTime,
+                                    cancellationToken: cancellationToken);
+
+                                if (flight == null)
+                                {
+                                    flight = new WanderVN.Domain.Entities.Flights
+                                    {
+                                        AirlineId = airline?.Id,
+                                        FlightNumber = flightNumber,
+                                        DepAirportId = depAirport?.Id,
+                                        ArrAirportId = arrAirport?.Id,
+                                        DepTime = depTime,
+                                        ArrTime = arrTime,
+                                        Price = 0m,
+                                        Status = "Scheduled"
+                                    };
+                                    await _unitOfWork.Repository<WanderVN.Domain.Entities.Flights>().AddAsync(flight, cancellationToken);
+                                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                                }
+
+                                // Lưu hành khách tương ứng với chặng bay này
+                                foreach (var pax in request.Passengers)
+                                {
+                                    var seatNumber = FindSeatNumber(root, pax.Id, segmentId);
+                                    
+                                    var bookingFlight = new WanderVN.Domain.Entities.BookingFlights
+                                    {
+                                        BookingId = booking.Id,
+                                        PassengerName = $"{pax.Title} {pax.GivenName} {pax.FamilyName}",
+                                        PassportNumber = pax.PassportNumber,
+                                        FlightId = flight.Id,
+                                        SeatNumber = seatNumber
+                                    };
+
+                                    await _unitOfWork.Repository<WanderVN.Domain.Entities.BookingFlights>().AddAsync(bookingFlight, cancellationToken);
+                                }
+                                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                            }
+                        }
+                    }
+                    parsedSlicesAndSegments = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Lỗi khi phân tích và lưu chặng bay: {ex.Message}. Sử dụng phương thức dự phòng.");
             }
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            // Phương án dự phòng: Nếu phân tích chặng bay thất bại, lưu thông tin tối thiểu
+            if (!parsedSlicesAndSegments)
+            {
+                foreach (var pax in request.Passengers)
+                {
+                    var bookingFlight = new WanderVN.Domain.Entities.BookingFlights
+                    {
+                        BookingId = booking.Id,
+                        PassengerName = $"{pax.Title} {pax.GivenName} {pax.FamilyName}",
+                        PassportNumber = pax.PassportNumber,
+                        FlightId = null
+                    };
+
+                    await _unitOfWork.Repository<WanderVN.Domain.Entities.BookingFlights>().AddAsync(bookingFlight, cancellationToken);
+                }
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
 
             // Xác định email người nhận xác nhận (ưu tiên guest info, fallback sang user đã đăng nhập)
             string? recipientEmail = guestEmail;
@@ -264,5 +446,99 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
     private string GenerateLocalBookingCode()
     {
         return "FL" + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+    }
+
+    private string? FindSeatNumber(JsonElement root, string passengerId, string segmentId)
+    {
+        // Kiểm tra phương án 1: Thông tin ghế lưu trong danh sách hành khách của Segment
+        if (root.TryGetProperty("data", out var data) && data.TryGetProperty("slices", out var slices))
+        {
+            foreach (var slice in slices.EnumerateArray())
+            {
+                if (slice.TryGetProperty("segments", out var segments))
+                {
+                    foreach (var segment in segments.EnumerateArray())
+                    {
+                        if (segment.TryGetProperty("id", out var segIdProp) && segIdProp.GetString() == segmentId)
+                        {
+                            if (segment.TryGetProperty("passengers", out var segmentPassengers))
+                            {
+                                foreach (var segPax in segmentPassengers.EnumerateArray())
+                                {
+                                    string? segPaxId = null;
+                                    if (segPax.TryGetProperty("passenger_id", out var paxIdProp))
+                                        segPaxId = paxIdProp.GetString();
+                                    else if (segPax.TryGetProperty("id", out var idProp))
+                                        segPaxId = idProp.GetString();
+
+                                    if (segPaxId == passengerId)
+                                    {
+                                        if (segPax.TryGetProperty("seat", out var seatObj) && seatObj.ValueKind == JsonValueKind.Object)
+                                        {
+                                            if (seatObj.TryGetProperty("designator", out var desProp))
+                                            {
+                                                return desProp.GetString();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Kiểm tra phương án 2: Thông tin dịch vụ chọn ghế ngoài phần slices
+        if (root.TryGetProperty("data", out var rootData) && rootData.TryGetProperty("services", out var services))
+        {
+            foreach (var svc in services.EnumerateArray())
+            {
+                if (svc.TryGetProperty("type", out var typeProp) && typeProp.GetString() == "seat")
+                {
+                    bool segmentMatches = false;
+                    if (svc.TryGetProperty("segment_ids", out var segIds))
+                    {
+                        foreach (var sId in segIds.EnumerateArray())
+                        {
+                            if (sId.GetString() == segmentId)
+                            {
+                                segmentMatches = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (segmentMatches)
+                    {
+                        bool passengerMatches = false;
+                        if (svc.TryGetProperty("passenger_ids", out var paxIds))
+                        {
+                            foreach (var pId in paxIds.EnumerateArray())
+                            {
+                                if (pId.GetString() == passengerId)
+                                {
+                                    passengerMatches = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (passengerMatches)
+                        {
+                            if (svc.TryGetProperty("metadata", out var meta) && meta.ValueKind == JsonValueKind.Object)
+                            {
+                                if (meta.TryGetProperty("designator", out var desProp))
+                                {
+                                    return desProp.GetString();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }

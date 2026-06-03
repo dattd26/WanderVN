@@ -7,8 +7,8 @@ using WanderVN.Application.DTOs.Request;
 using WanderVN.Application.DTOs.Response;
 using WanderVN.Application.Features.Bookings.Commands.CreateFlightBooking;
 using WanderVN.Application.Features.Bookings.Commands.CreateHotelBooking;
-using WanderVN.Application.Features.Bookings.Queries.GetHotelBookingHistory;
-using WanderVN.Application.Features.Bookings.Queries.GetHotelBookingDetail;
+using WanderVN.Application.Features.Bookings.Queries.GetBookingHistory;
+using WanderVN.Application.Features.Bookings.Queries.GetBookingDetail;
 using WanderVN.Application.Features.Bookings.Queries.LookupBooking;
 
 namespace WanderVN.API.Controllers;
@@ -43,23 +43,21 @@ public class BookingsController : ControllerBase
     }
 
     [HttpGet("{bookingId:int}")]
-    public async Task<IActionResult> GetHotelBookingDetail([FromRoute] int bookingId)
+    public async Task<IActionResult> GetBookingDetail([FromRoute] int bookingId)
     {
         try
         {
-            // Gửi Query qua MediatR để lấy chi tiết đơn đặt phòng từ Database
-            var query = new GetHotelBookingDetailQuery { BookingId = bookingId };
+            var query = new GetBookingDetailQuery { BookingId = bookingId };
             var result = await _mediator.Send(query);
 
             if (result == null)
             {
-                return NotFound(new ApiResponse<object>(false, "Không tìm thấy đơn đặt phòng hợp lệ.", 404, null));
+                return NotFound(new ApiResponse<object>(false, "Không tìm thấy đơn đặt chỗ hợp lệ.", 404, null));
             }
 
-            // Đổi thành ApiResponse<object> để sửa triệt để lỗi gạch đỏ anh nhé!
             var response = new ApiResponse<object>(
                 true,
-                "Lấy chi tiết đặt phòng thành công",
+                "Lấy chi tiết đặt phòng/vé máy bay thành công",
                 200,
                 result
             );
@@ -120,14 +118,14 @@ public class BookingsController : ControllerBase
     }
     [Authorize]
     [HttpGet("history")]
-    public async Task<IActionResult> GetHotelBookingHistory()
+    public async Task<IActionResult> GetBookingHistory()
     {
         try
         {
-            var query = new GetHotelBookingHistoryQuery();
+            var query = new GetBookingHistoryQuery();
             var result = await _mediator.Send(query);
 
-            var response = new ApiResponse<List<HotelBookingHistoryDto>>(
+            var response = new ApiResponse<List<BookingHistoryDto>>(
                 true,
                 "Lay lich su dat phong thanh cong",
                 200,
@@ -138,7 +136,7 @@ public class BookingsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(new ApiResponse<List<HotelBookingHistoryDto>>(
+            return Unauthorized(new ApiResponse<List<BookingHistoryDto>>(
                 false,
                 ex.Message,
                 401,
@@ -147,7 +145,7 @@ public class BookingsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new ApiResponse<List<HotelBookingHistoryDto>>(
+            return BadRequest(new ApiResponse<List<BookingHistoryDto>>(
                 false,
                 ex.Message,
                 500,
