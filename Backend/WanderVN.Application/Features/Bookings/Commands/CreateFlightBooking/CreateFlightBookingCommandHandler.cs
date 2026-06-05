@@ -33,6 +33,43 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
     {
         var request = command.Request;
 
+        // Lấy thông tin user đăng nhập sớm để làm fallback nếu thiếu thông tin liên hệ
+        WanderVN.Domain.Entities.Users? user = null;
+        if (request.UserId.HasValue)
+        {
+            user = await _unitOfWork.Users.FindFirstOrDefaultAsync(u => u.Id == request.UserId.Value, cancellationToken: cancellationToken);
+        }
+
+        // Trích xuất thông tin liên hệ từ hành khách đầu tiên
+        var primaryPax = request.Passengers.FirstOrDefault();
+        var guestEmail = primaryPax?.Email;
+        var guestName = primaryPax != null ? $"{primaryPax.GivenName} {primaryPax.FamilyName}".Trim() : null;
+        var guestPhone = primaryPax?.PhoneNumber;
+
+        if (string.IsNullOrWhiteSpace(guestEmail) && user != null)
+        {
+            guestEmail = user.Email;
+        }
+        if (string.IsNullOrWhiteSpace(guestPhone) && user != null)
+        {
+            guestPhone = user.PhoneNumber;
+        }
+
+        if (string.IsNullOrWhiteSpace(guestEmail))
+        {
+            throw new ArgumentException("Vui lòng cung cấp email liên hệ để đặt vé máy bay.");
+        }
+
+        if (string.IsNullOrWhiteSpace(guestPhone))
+        {
+            // Dự phòng sđt mặc định cho sandbox Duffel nếu người dùng không điền
+            guestPhone = "+84901234567";
+        }
+        else
+        {
+            guestPhone = NormalizePhoneNumber(guestPhone);
+        }
+
         // 1. Lấy chi tiết Offer gốc từ Duffel để trích xuất giá tiền thật (phục vụ thanh toán sandbox khớp 100%)
         string originalAmount = "1000.00";
         string originalCurrency = "USD";
@@ -66,8 +103,16 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         duffelRequest.Data.Type = "instant";
         duffelRequest.Data.SelectedOffers.Add(request.OfferId);
 
-        foreach (var pax in request.Passengers)
+        for (int i = 0; i < request.Passengers.Count; i++)
         {
+            var pax = request.Passengers[i];
+            var pEmail = pax.Email;
+            var pPhone = pax.PhoneNumber;
+
+            if (string.IsNullOrWhiteSpace(pEmail)) pEmail = guestEmail;
+            if (string.IsNullOrWhiteSpace(pPhone)) pPhone = guestPhone;
+            pPhone = NormalizePhoneNumber(pPhone);
+            Console.WriteLine(pPhone);
             duffelRequest.Data.Passengers.Add(new DuffelPassengerDto
             {
                 Id = pax.Id,
@@ -75,8 +120,8 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                 FamilyName = pax.FamilyName,
                 GivenName = pax.GivenName,
                 BornOn = pax.BornOn,
-                Email = pax.Email,
-                PhoneNumber = pax.PhoneNumber,
+                Email = pEmail,
+                PhoneNumber = pPhone,
                 Gender = pax.Gender
             });
         }
@@ -130,17 +175,6 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         decimal markupAmountVnd = Math.Round(duffelAmountVnd * markupPercent / 100m);
         decimal customerTotalVnd = duffelAmountVnd + markupAmountVnd + paymentFeeVnd;
 
-        // Trích xuất thông tin liên hệ từ hành khách đầu tiên
-        var primaryPax = request.Passengers.FirstOrDefault();
-        var guestEmail = primaryPax?.Email;
-        var guestName = primaryPax != null ? $"{primaryPax.GivenName} {primaryPax.FamilyName}".Trim() : null;
-        var guestPhone = primaryPax?.PhoneNumber;
-
-        if (request.UserId == null && string.IsNullOrWhiteSpace(guestEmail))
-        {
-            throw new ArgumentException("Vui lòng cung cấp email liên hệ để đặt vé máy bay.");
-        }
-
         var booking = new WanderVN.Domain.Entities.Bookings
         {
             UserId = request.UserId,
@@ -184,14 +218,10 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             string? recipientEmail = guestEmail;
             string recipientName = guestName ?? "Quý khách";
 
-            if (string.IsNullOrEmpty(recipientEmail) && request.UserId.HasValue)
+            if (string.IsNullOrEmpty(recipientEmail) && user != null)
             {
-                var user = await _unitOfWork.Users.FindFirstOrDefaultAsync(u => u.Id == request.UserId.Value, cancellationToken: cancellationToken);
-                if (user != null)
-                {
-                    recipientEmail = user.Email;
-                    recipientName = user.FullName ?? recipientName;
-                }
+                recipientEmail = user.Email;
+                recipientName = user.FullName ?? recipientName;
             }
 
             if (!string.IsNullOrEmpty(recipientEmail))
@@ -264,5 +294,31 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
     private string GenerateLocalBookingCode()
     {
         return "FL" + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+    }
+
+    private string NormalizePhoneNumber(string phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return "+84901234567";
+
+        var cleaned = new string(phone.Where(char.IsDigit).ToArray());
+
+        if (phone.StartsWith("+"))
+        {
+            return "+" + cleaned;
+        }
+
+        // Nếu bắt đầu bằng 84 và có độ dài hợp lý (từ 11 chữ số trở lên, vd: 84987564583)
+        if (cleaned.StartsWith("84") && cleaned.Length >= 11)
+        {
+            return "+" + cleaned;
+        }
+
+        // Nếu bắt đầu bằng số 0 (vd: 0987564583), chuyển thành +84
+        if (cleaned.StartsWith("0") && cleaned.Length > 1)
+        {
+            return "+84" + cleaned.Substring(1);
+        }
+
+        return "+84" + cleaned;
     }
 }
