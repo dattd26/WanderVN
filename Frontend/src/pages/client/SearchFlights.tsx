@@ -29,6 +29,9 @@ export const SearchFlights: React.FC = () => {
   const tripType = (searchParams.get('tripType') as 'round-trip' | 'one-way') || 'one-way';
   const cabinClass = (searchParams.get('cabinClass') as 'business' | 'economy') || 'business';
   const returnDate = searchParams.get('returnDate') || '';
+  const adults = parseInt(searchParams.get('adults') || '1', 10);
+  const children = parseInt(searchParams.get('children') || '0', 10);
+  const infants = parseInt(searchParams.get('infants') || '0', 10);
 
   const hasSearched = !!(searchParams.get('origin') && searchParams.get('destination') && searchParams.get('departureDate'));
 
@@ -73,19 +76,33 @@ export const SearchFlights: React.FC = () => {
   // Điều hướng sang checkout — reuse flow hiện có, truyền offer qua location.state
   const handleProceedToCheckout = (offer: FlightOfferDto) => {
     console.log('[SearchFlights] navigating to checkout with offer:', offer);
-    navigate('/flights/checkout', { state: { offer } });
+    navigate('/flights/checkout', { state: { offer, passengers: { adults, children, infants } } });
   };
 
-  const executeSearch = async (o: string, d: string, date: string, cabin: string, retDate?: string) => {
+  const executeSearch = async (
+    o: string,
+    d: string,
+    date: string,
+    cabin: string,
+    retDate?: string,
+    ads = 1,
+    chs = 0,
+    infs = 0
+  ) => {
     setLoading(true);
     setError(null);
     setSelectedOffer(null);
     try {
+      const paxList: { type: 'adult' | 'child' | 'infant_without_seat' }[] = [];
+      for (let i = 0; i < ads; i++) paxList.push({ type: 'adult' });
+      for (let i = 0; i < chs; i++) paxList.push({ type: 'child' });
+      for (let i = 0; i < infs; i++) paxList.push({ type: 'infant_without_seat' });
+
       const response = await flightService.searchFlights({
         origin: o,
         destination: d,
         departureDate: date,
-        passengerType: 'adult',
+        passengers: paxList,
         returnOffers: true,
         cabinClass: cabin,
         returnDate: retDate || undefined
@@ -112,10 +129,13 @@ export const SearchFlights: React.FC = () => {
     const dt = searchParams.get('departureDate');
     const cabin = searchParams.get('cabinClass') || 'business';
     const retDate = searchParams.get('returnDate') || undefined;
+    const ads = parseInt(searchParams.get('adults') || '1', 10);
+    const chs = parseInt(searchParams.get('children') || '0', 10);
+    const infs = parseInt(searchParams.get('infants') || '0', 10);
 
     if (o && d && dt) {
       const timer = setTimeout(() => {
-        executeSearch(o, d, dt, cabin, retDate);
+        executeSearch(o, d, dt, cabin, retDate, ads, chs, infs);
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -128,7 +148,8 @@ export const SearchFlights: React.FC = () => {
     newDate: string,
     newTripType: 'round-trip' | 'one-way',
     newCabinClass: 'business' | 'economy',
-    newReturnDate?: string
+    newReturnDate?: string,
+    newPassengers?: { adults: number; children: number; infants: number }
   ) => {
     const params: Record<string, string> = {
       origin: newOrigin,
@@ -140,6 +161,11 @@ export const SearchFlights: React.FC = () => {
     };
     if (newTripType === 'round-trip' && newReturnDate) {
       params.returnDate = newReturnDate;
+    }
+    if (newPassengers) {
+      params.adults = newPassengers.adults.toString();
+      params.children = newPassengers.children.toString();
+      params.infants = newPassengers.infants.toString();
     }
     setSearchParams(params);
   };
@@ -208,6 +234,7 @@ export const SearchFlights: React.FC = () => {
             initialReturnDate={returnDate}
             initialTripType={tripType}
             initialCabinClass={cabinClass}
+            initialPassengers={{ adults, children, infants }}
             onSearch={handleSearchSubmit}
           />
         </div>
@@ -219,6 +246,10 @@ export const SearchFlights: React.FC = () => {
           initialOrigin={origin}
           initialDestination={destination}
           initialDepartureDate={departureDate}
+          initialReturnDate={returnDate}
+          initialTripType={tripType}
+          initialCabinClass={cabinClass}
+          initialPassengers={{ adults, children, infants }}
           onSearch={handleSearchSubmit}
         />
       </div>
@@ -483,7 +514,7 @@ export const SearchFlights: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={() => navigate('/flights/checkout', { state: { offer: selectedOffer } })}
+            onClick={() => navigate('/flights/checkout', { state: { offer: selectedOffer, passengers: { adults, children, infants } } })}
             className="bg-secondary text-primary px-10 py-4 rounded-xl font-label-md text-label-md hover:bg-secondary-fixed transition-all duration-300 w-full sm:w-auto uppercase tracking-[0.15em] text-center select-none shadow-[0_10px_20px_rgba(212,175,55,0.2)] active:scale-95"
           >
             Đặt vé & Thanh toán

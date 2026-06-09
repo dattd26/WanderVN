@@ -5,6 +5,7 @@ export interface FlightSearchQuery {
   destination: string;
   departureDate: string;
   passengerType?: string;
+  passengers?: { type: 'adult' | 'child' | 'infant_without_seat' }[];
   returnOffers?: boolean;
   cabinClass?: string;
   returnDate?: string;
