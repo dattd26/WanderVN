@@ -1,6 +1,13 @@
 using System;
+using System.Collections.Generic;
 
 namespace WanderVN.Application.DTOs.Response;
+
+public class FlightOfferPassengerDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty; // adult, child, infant_without_seat
+}
 
 /// <summary>
 /// DTO tối giản đại diện cho một ưu đãi chuyến bay trả về từ C# Backend.
@@ -8,19 +15,14 @@ namespace WanderVN.Application.DTOs.Response;
 /// </summary>
 public class FlightOfferDto
 {
-    // ID của ưu đãi Duffel (ví dụ: off_...) dùng để đặt vé
     public string Id { get; set; } = string.Empty;
-
-    // Tổng chi phí (đã quy đổi/giả lập)
     public decimal TotalAmount { get; set; }
 
-    // Loại tiền tệ sử dụng (ví dụ: USD, VND)
     public string TotalCurrency { get; set; } = "USD";
 
-    // ID hành khách mock tương ứng để gửi yêu cầu đặt vé
+    [Obsolete("Use Passengers list instead")]
     public string PassengerId { get; set; } = string.Empty;
 
-    // Khoảng thời gian bay (được chuẩn hóa)
     public string Duration { get; set; } = string.Empty;
 
     // Mã IATA điểm khởi hành (ví dụ: HAN)
@@ -56,6 +58,13 @@ public class FlightOfferDto
     // ID của ưu đãi Duffel Airways chuyên dùng để đặt vé sandbox thành công 100%
     public string DuffelAirwaysOfferId { get; set; } = string.Empty;
 
+    [Obsolete("Use DuffelAirwaysPassengers list instead")]
     // ID hành khách tương ứng của ưu đãi Duffel Airways
     public string DuffelAirwaysPassengerId { get; set; } = string.Empty;
+
+    // Danh sách hành khách đi kèm (chứa ID và loại hành khách từ Duffel)
+    public List<FlightOfferPassengerDto> Passengers { get; set; } = new();
+
+    // Danh sách hành khách Duffel Airways sandbox tương ứng
+    public List<FlightOfferPassengerDto> DuffelAirwaysPassengers { get; set; } = new();
 }

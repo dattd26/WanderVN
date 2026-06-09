@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -91,14 +92,16 @@ public class FlightSearchCacheService : IFlightSearchCacheService
 
     private string BuildKey(DuffelOfferRequestDto request)
     {
+        var passengerKeyStr = request.Passengers != null && request.Passengers.Count > 0
+            ? string.Join(',', request.Passengers.Select(p => p.Type.ToLowerInvariant()))
+            : $"{request.AdultCount}-{request.ChildCount}-{request.InfantCount}";
+
         var canonical = string.Join('|',
             NormalizeCode(request.Origin),
             NormalizeCode(request.Destination),
             NormalizeDate(request.DepartureDate),
             NormalizeDate(request.ReturnDate),
-            request.AdultCount.ToString(),
-            request.ChildCount.ToString(),
-            request.InfantCount.ToString(),
+            passengerKeyStr,
             NormalizeLower(request.CabinClass, "business"),
             request.ReturnOffers ? "true" : "false");
 

@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
     - Thay thế tham số `PassengerType` (string) thành 3 tham số đếm: `AdultCount`, `ChildCount`, `InfantCount` trong DTO.
     - Cập nhật logic ánh xạ và sinh payload yêu cầu gửi sang Duffel API.
     - Sửa lại khóa (key) lưu cache trong Redis tương ứng với các thay đổi DTO.
+
+### Fixed
+- **Flight Search Cache Mismatch & DTO Compilation**: Sửa lỗi cache trả về dữ liệu cũ bị thiếu thông tin hành khách khi người dùng thay đổi dữ liệu/loại hành khách tìm kiếm.
+  - **Why it changed**: Cache key trước đây chỉ dựa vào số lượng hành khách mà không có danh sách chi tiết các loại hành khách, dẫn đến xung đột cache khi thay đổi loại hành khách. Ngoài ra sửa lỗi biên dịch DTO hành khách do nhầm lẫn giữa `FlightPassengerInfoDto` và `FlightOfferPassengerDto`.
+  - **Affected files**: `SearchFlightsQueryHandler.cs`, `DuffelOfferRequestDto.cs`, `DuffelService.cs`, `FlightSearchCacheService.cs`.
+  - **What changed**:
+    - Thêm `Passengers` list vào `DuffelOfferRequestDto` để giữ trọn vẹn danh sách hành khách đi kèm.
+    - Cập nhật hàm sinh cache key `BuildKey` để mã hóa chuỗi các loại hành khách thay vì chỉ các con số số lượng đơn giản.
+    - Sửa toàn bộ các tham chiếu `FlightPassengerInfoDto` lỗi biên dịch sang `FlightOfferPassengerDto` trong trình phân tích kết quả tìm kiếm.
+
 ### Refactored
 - **Flight Booking Data Persistence & Architecture**: Refactored the flight details parsing and database saving logic in `CreateFlightBookingCommandHandler` into a dedicated application service `FlightBookingDataPersister`.
   - **Why it changed**: To follow Clean Architecture principles, reduce code bloating in the handler, ensure transaction-safe and memory-cached storage of Airline, Airport, Flight, and passenger seat assignments, and prevent EF Core change tracker pollution.

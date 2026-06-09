@@ -26,9 +26,19 @@ public class DuffelService : IDuffelService
         var cabinClass = string.IsNullOrEmpty(request.CabinClass) ? "business" : request.CabinClass;
 
         var passengersList = new System.Collections.Generic.List<object>();
-        for (int i = 0; i < request.AdultCount; i++) passengersList.Add(new { type = "adult" });
-        for (int i = 0; i < request.ChildCount; i++) passengersList.Add(new { type = "child" });
-        for (int i = 0; i < request.InfantCount; i++) passengersList.Add(new { type = "infant_without_seat" });
+        if (request.Passengers != null && request.Passengers.Count > 0)
+        {
+            foreach (var p in request.Passengers)
+            {
+                passengersList.Add(new { type = p.Type });
+            }
+        }
+        else
+        {
+            for (int i = 0; i < request.AdultCount; i++) passengersList.Add(new { type = "adult" });
+            for (int i = 0; i < request.ChildCount; i++) passengersList.Add(new { type = "child" });
+            for (int i = 0; i < request.InfantCount; i++) passengersList.Add(new { type = "infant_without_seat" });
+        }
         if (passengersList.Count == 0) passengersList.Add(new { type = "adult" });
 
         object payload;
