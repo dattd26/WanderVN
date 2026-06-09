@@ -1,20 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { flightService, paymentService } from '../../services';
 import type { FlightOfferDto, PassengerDto } from '../../types';
 import {
   Plane,
-  CheckCircle,
   ArrowRight,
-  CreditCard,
   Shield,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle,
+  ChevronLeft,
+  Users,
+  Luggage,
+  Clock,
+  Info,
 } from 'lucide-react';
+import { PaymentSelector, type PaymentMethod } from '../../components/client/checkout/PaymentSelector';
+import { CheckoutTimer } from '../../components/client/checkout/CheckoutTimer';
 
-import momoLogo from '../../assets/images/momo.png';
-import zalopayLogo from '../../assets/images/zalopay.png';
-import vnpayLogo from '../../assets/images/vnpay.png';
+const SEAT_PREFERENCES = ['Tiêu chuẩn (Hãng quyết định)', 'Cửa sổ (Window)', 'Lối đi (Aisle)'];
+const MEAL_PREFERENCES = ['Mặc định', 'Chay (Vegetarian)', 'Đạo Hồi (Halal)', 'Thuần chay (Vegan)'];
+
+const formatTime = (timeStr: string): string => {
+  if (!timeStr) return '';
+  const date = new Date(timeStr);
+  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
+const formatDateShort = (timeStr: string): string => {
+  if (!timeStr) return '';
+  const date = new Date(timeStr);
+  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const formatDuration = (durationStr: string): string => {
+  if (!durationStr) return '';
+  const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!match) return durationStr;
+  const h = match[1] ? `${match[1]}h` : '';
+  const m = match[2] ? `${match[2]}m` : '';
+  return `${h} ${m}`.trim();
+};
 
 export const FlightCheckout: React.FC = () => {
   const location = useLocation();
@@ -23,7 +49,9 @@ export const FlightCheckout: React.FC = () => {
   const storedUserId = localStorage.getItem('userId') || localStorage.getItem('user_id');
   const currentUserId = storedUserId ? parseInt(storedUserId, 10) : null;
 
-  // Trạng thái vé máy bay đang được thanh toán - khôi phục đồng bộ trực tiếp từ state hoặc sessionStorage để tránh trễ render và vi phạm eslint
+  const storedUserStr = localStorage.getItem('user');
+  const storedUser = storedUserStr ? JSON.parse(storedUserStr) : {};
+
   const [offer] = useState<FlightOfferDto | null>(() => {
     const stateOffer = location.state?.offer as FlightOfferDto | undefined;
     if (stateOffer) {
@@ -34,53 +62,51 @@ export const FlightCheckout: React.FC = () => {
     if (cachedOffer) {
       try {
         return JSON.parse(cachedOffer) as FlightOfferDto;
-      } catch (e) {
-        console.error('Không thể parse dữ liệu vé đã lưu:', e);
+      } catch {
+        return null;
       }
     }
     return null;
   });
 
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'zalopay' | 'momo' | 'credit'>('vnpay');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('vnpay');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isExpired, setIsExpired] = useState(false);
 
-  // Form thông tin hành khách
-  const [passengerForm, setPassengerForm] = useState<Omit<PassengerDto, 'id'>>({
-    title: 'mr',
-    familyName: 'NGUYEN',
-    givenName: 'VAN A',
-    bornOn: '1995-05-20',
-    email: 'nguyenvana@example.com',
-    phoneNumber: '+84901234567',
-    gender: 'm',
-    passportNumber: 'B1234567'
+  // Thông tin người liên hệ nhận vé
+  const [contactForm, setContactForm] = useState({
+    email: storedUser.email || localStorage.getItem('email') || '',
+    phone: storedUser.phone || storedUser.phoneNumber || localStorage.getItem('phone') || '',
   });
 
-  // Định dạng thời gian
-  const formatTime = (timeStr: string) => {
-    if (!timeStr) return '';
-    const date = new Date(timeStr);
-    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
-  };
+  // Thông tin hành khách (Form cho mỗi hành khách — hiện tại 1 khách)
+  const [passengerForm, setPassengerForm] = useState<Omit<PassengerDto, 'id'>>({
+    title: 'mr',
+    familyName: '',
+    givenName: '',
+    bornOn: '',
+    email: storedUser.email || localStorage.getItem('email') || '',
+    phoneNumber: storedUser.phone || localStorage.getItem('phone') || '',
+    gender: 'm',
+    passportNumber: '',
+  });
 
-  // Định dạng khoảng thời gian bay
-  const formatDuration = (durationStr: string) => {
-    if (!durationStr) return '1h 30m';
-    const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
-    if (!match) return durationStr;
-    const hours = match[1] ? `${match[1]}h` : '';
-    const minutes = match[2] ? `${match[2]}m` : '';
-    return `${hours} ${minutes}`.trim() || '1h 20m';
-  };
+  const [seatPreference, setSeatPreference] = useState(SEAT_PREFERENCES[0]);
+  const [mealPreference, setMealPreference] = useState(MEAL_PREFERENCES[0]);
 
-  // Gửi đặt vé và thanh toán
+  const handleTimerExpire = useCallback(() => {
+    setIsExpired(true);
+  }, []);
+
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!offer) return;
+    if (!offer || isExpired) return;
 
     setBookingLoading(true);
+    setErrorMessage(null);
+
     try {
-      // Sử dụng ID đặt vé của hãng Duffel Airways (ZZ) để đảm bảo sandbox thành công 100%
       const finalOfferId = offer.duffelAirwaysOfferId || offer.id;
       const finalPassengerId = offer.duffelAirwaysPassengerId || offer.passengerId || 'pas_default';
 
@@ -91,43 +117,37 @@ export const FlightCheckout: React.FC = () => {
         passengers: [
           {
             id: finalPassengerId,
-            ...passengerForm
-          }
-        ]
+            ...passengerForm,
+            email: contactForm.email,
+            phoneNumber: contactForm.phone,
+          },
+        ],
       };
 
-      // 1. Tạo đặt vé trong cơ sở dữ liệu backend
       const result = await flightService.createBooking(bookingRequest);
-
-      // Xóa cache offer sau khi đã tạo booking thành công
       sessionStorage.removeItem(WANDER_SELECTED_OFFER);
 
-      // 2. Nếu phương thức thanh toán là VNPay, chuyển hướng sang sandbox
       if (paymentMethod === 'vnpay') {
         const paymentUrl = await paymentService.createVNPayUrl({ bookingId: result.bookingId });
         if (paymentUrl) {
-          // Chuyển hướng trình duyệt trực tiếp sang cổng thanh toán VNPay Sandbox
           window.location.href = paymentUrl;
           return;
         }
       }
 
-      // 3. Nếu phương thức thanh toán là ZaloPay, chuyển hướng sang sandbox
       if (paymentMethod === 'zalopay') {
         const paymentUrl = await paymentService.createZaloPayUrl({ bookingId: result.bookingId });
         if (paymentUrl) {
-          // Chuyển hướng trình duyệt trực tiếp sang cổng thanh toán ZaloPay Sandbox
           window.location.href = paymentUrl;
           return;
         }
       }
 
-      // 3. Với các phương thức khác, quay lại trang tìm kiếm và báo thành công
-      alert(`🎉 Đặt vé thành công! Mã đặt vé của bạn là: ${result.bookingCode}`);
+      alert(`Đặt vé thành công! Mã đặt vé: ${result.bookingCode}`);
       navigate('/flights');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Có lỗi xảy ra';
-      alert(`⚠️ Lỗi đặt vé & thanh toán: ${message}`);
+      const message = err instanceof Error ? err.message : 'Có lỗi xảy ra khi đặt vé.';
+      setErrorMessage(message);
     } finally {
       setBookingLoading(false);
     }
@@ -135,425 +155,467 @@ export const FlightCheckout: React.FC = () => {
 
   if (!offer) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center bg-background text-on-surface p-6">
-        <div className="max-w-md w-full text-center space-y-6 bg-surface-container-lowest border border-outline-variant/30 rounded-lg p-8 shadow-2xl limestone-shadow">
-          <div className="flex justify-center">
-            <AlertTriangle className="h-16 w-16 text-secondary animate-pulse" />
-          </div>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center bg-background px-6">
+        <div className="max-w-md w-full text-center space-y-6 bg-surface-container-lowest border border-outline-variant/30 rounded-lg p-8 shadow-xl limestone-shadow">
+          <AlertTriangle className="h-12 w-12 text-secondary mx-auto" />
           <h2 className="font-display-lg text-headline-md text-primary">Không Tìm Thấy Chuyến Bay</h2>
-          <p className="font-body-md text-on-surface-variant leading-relaxed">
-            Có vẻ như phiên giao dịch của quý khách đã hết hạn hoặc chưa có chuyến bay nào được lựa chọn để thanh toán.
+          <p className="text-sm text-on-surface-variant leading-relaxed">
+            Phiên giao dịch đã hết hạn hoặc chưa có chuyến bay nào được chọn để thanh toán.
           </p>
           <Link
             to="/flights"
-            className="w-full bg-primary text-on-primary py-3.5 font-label-md text-xs uppercase tracking-widest hover:bg-surface-tint transition-all flex items-center justify-center gap-2 rounded-md"
+            className="w-full bg-primary text-on-primary py-3.5 text-xs uppercase tracking-widest hover:bg-primary/95 transition-all flex items-center justify-center gap-2 rounded-lg font-semibold"
           >
-            Quay Lại Trang Tìm Kiếm
+            Quay Lại Tìm Kiếm
           </Link>
         </div>
       </div>
     );
   }
 
+  const duffelAmountVnd = offer.totalAmount * 26500;
+  const markupVnd = Math.round(duffelAmountVnd * 0.05);
+  const taxVnd = Math.round(duffelAmountVnd * 0.10);
+  const totalVnd = duffelAmountVnd + markupVnd + taxVnd;
+
   return (
-    <div className="min-h-screen bg-background text-on-surface py-12 px-margin-mobile md:px-margin-desktop relative">
-      <div className="max-w-6xl mx-auto">
-        {/* Tiêu đề giao diện Checkout */}
-        <div className="border-b border-outline-variant/20 pb-6 mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
-          <div>
-            <span className="font-label-md text-xs text-secondary uppercase tracking-widest">Thanh toán di sản</span>
-            <h1 className="font-display-lg text-headline-lg text-primary mt-1">Hoàn Tất Hành Trình Của Bạn</h1>
-            <p className="text-body-md text-on-surface-variant italic mt-1">
-              Kiểm tra lại thông tin chi tiết và xác nhận hành trình bay qua những địa danh tuyệt mỹ của Việt Nam.
-            </p>
-          </div>
-          <Link
-            to="/flights"
-            className="font-label-md text-xs uppercase tracking-widest text-on-surface-variant hover:text-primary transition-all py-2"
-          >
-            ← Quay lại tìm kiếm
-          </Link>
+    <div className="min-h-screen bg-background pb-24 pt-28 px-margin-mobile md:px-margin-desktop">
+      <div className="max-w-container-max mx-auto">
+
+        {/* Back link */}
+        <Link
+          to="/flights"
+          className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant hover:text-primary mb-8 transition-colors"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Quay lại tìm kiếm chuyến bay
+        </Link>
+
+        {/* Page header */}
+        <div className="mb-8">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-secondary">
+            Xác nhận đặt vé
+          </span>
+          <h1 className="font-display-lg text-4xl md:text-5xl text-primary mt-1 leading-tight">
+            Hoàn tất hành trình
+          </h1>
         </div>
 
-        <form onSubmit={handleBookingSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          {/* Cột trái: Thông tin hành khách & Phương thức thanh toán (Chiếm 7 phần) */}
-          <div className="lg:col-span-7 space-y-8">
-            {/* Khối 1: Thông tin hành khách */}
-            <div className="border border-outline-variant/30 p-6 md:p-8 bg-surface-container-lowest rounded-lg">
-              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-outline-variant/20">
-                <span className="font-headline-md text-headline-md text-outline">01</span>
-                <h2 className="font-headline-lg text-headline-md text-primary">Thông Tin Hành Khách</h2>
+        {/* Đồng hồ đếm ngược giữ giá vé */}
+        <div className="mb-8">
+          <CheckoutTimer
+            durationMinutes={15}
+            onExpire={handleTimerExpire}
+            label="Giá vé được giữ trong"
+          />
+        </div>
+
+        {/* Cảnh báo hết phiên */}
+        {isExpired && (
+          <div className="mb-6 p-4 border border-red-200 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-3">
+            <AlertTriangle className="h-4.5 w-4.5 shrink-0" />
+            <span>
+              Phiên giữ giá vé đã hết hạn. Vui lòng quay lại tìm kiếm để cập nhật giá mới nhất
+              trước khi tiếp tục đặt vé.
+            </span>
+          </div>
+        )}
+
+        {/* Error banner */}
+        {errorMessage && (
+          <div className="mb-6 p-4 border border-red-200 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-3">
+            <AlertTriangle className="h-4.5 w-4.5 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
+        <form
+          onSubmit={handleBookingSubmit}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start"
+        >
+          {/* === CỘT TRÁI === */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-8">
+
+            {/* BƯỚC 1: Thông tin người liên hệ nhận vé */}
+            <section className="border border-outline-variant/30 rounded-lg bg-surface-container-lowest overflow-hidden">
+              <div className="px-6 py-5 border-b border-outline-variant/20 flex items-center gap-4">
+                <span className="text-sm font-semibold text-outline tabular-nums">01</span>
+                <h2 className="text-base font-semibold text-primary tracking-tight">
+                  Người Nhận Vé & Liên Hệ
+                </h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">Danh xưng</label>
-                  <select
-                    value={passengerForm.title}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, title: e.target.value })}
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors cursor-pointer text-on-surface"
-                  >
-                    <option className="bg-surface text-on-surface" value="mr">Ông (Mr.)</option>
-                    <option className="bg-surface text-on-surface" value="ms">Bà (Ms.)</option>
-                    <option className="bg-surface text-on-surface" value="mrs">Cô/Chị (Mrs.)</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">Họ (Family Name)</label>
-                  <input
-                    type="text"
-                    required
-                    value={passengerForm.familyName}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, familyName: e.target.value.toUpperCase() })}
-                    placeholder="e.g. NGUYEN"
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 uppercase focus:border-b-primary transition-colors text-on-surface"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">Tên đệm &amp; Tên gọi (Given Name)</label>
-                  <input
-                    type="text"
-                    required
-                    value={passengerForm.givenName}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, givenName: e.target.value.toUpperCase() })}
-                    placeholder="e.g. VAN A"
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 uppercase focus:border-b-primary transition-colors text-on-surface"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">Địa chỉ Email</label>
+                  <label className="text-[10px] uppercase tracking-widest text-outline font-semibold">
+                    Email nhận e-ticket
+                  </label>
                   <input
                     type="email"
                     required
-                    value={passengerForm.email}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, email: e.target.value })}
-                    placeholder="e.g. nguyenvana@example.com"
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors text-on-surface"
+                    value={contactForm.email}
+                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                    placeholder="email@example.com"
+                    className="bg-transparent border-0 border-b border-outline-variant py-2 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-b-primary transition-colors"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">Số điện thoại</label>
+                  <label className="text-[10px] uppercase tracking-widest text-outline font-semibold">
+                    Số điện thoại liên hệ
+                  </label>
                   <input
                     type="tel"
                     required
-                    value={passengerForm.phoneNumber}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, phoneNumber: e.target.value })}
-                    placeholder="e.g. +84 901 234 567"
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors text-on-surface"
+                    value={contactForm.phone}
+                    onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                    placeholder="+84 901 234 567"
+                    className="bg-transparent border-0 border-b border-outline-variant py-2 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-b-primary transition-colors"
                   />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">Số Hộ Chiếu (Passport) / CCCD</label>
-                  <input
-                    type="text"
-                    required
-                    value={passengerForm.passportNumber}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, passportNumber: e.target.value.toUpperCase() })}
-                    placeholder="e.g. B1234567"
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 uppercase focus:border-b-primary transition-colors text-on-surface"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">Ngày sinh</label>
-                  <input
-                    type="date"
-                    required
-                    value={passengerForm.bornOn}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, bornOn: e.target.value })}
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors text-on-surface"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-caption uppercase tracking-wider text-outline text-[10px]">Giới tính</label>
-                  <select
-                    value={passengerForm.gender}
-                    onChange={(e) => setPassengerForm({ ...passengerForm, gender: e.target.value })}
-                    className="bg-transparent border-0 border-b border-outline-variant py-2 font-body-md text-body-md focus:ring-0 focus:border-b-primary transition-colors cursor-pointer text-on-surface"
-                  >
-                    <option className="bg-surface text-on-surface" value="m">Nam (Male)</option>
-                    <option className="bg-surface text-on-surface" value="f">Nữ (Female)</option>
-                  </select>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Khối 2: Phương thức thanh toán */}
-            <div className="border border-outline-variant/30 p-6 md:p-8 bg-surface-container-lowest rounded-lg">
-              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-outline-variant/20">
-                <span className="font-headline-md text-headline-md text-outline">02</span>
-                <h2 className="font-headline-lg text-headline-md text-primary">Chọn Phương Thức Thanh Toán</h2>
+            {/* BƯỚC 2: Thông tin hành khách */}
+            <section className="border border-outline-variant/30 rounded-lg bg-surface-container-lowest overflow-hidden">
+              <div className="px-6 py-5 border-b border-outline-variant/20 flex items-center gap-4">
+                <span className="text-sm font-semibold text-outline tabular-nums">02</span>
+                <h2 className="text-base font-semibold text-primary tracking-tight">
+                  Thông Tin Hành Khách
+                </h2>
+                <div className="ml-auto flex items-center gap-1.5 text-[10px] text-on-surface-variant">
+                  <Users className="h-3 w-3" />
+                  1 Người lớn
+                </div>
               </div>
-              <div className="space-y-4">
-                {/* VNPay */}
-                <label
-                  onClick={() => setPaymentMethod('vnpay')}
-                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${paymentMethod === 'vnpay'
-                    ? 'border-primary bg-surface shadow-md'
-                    : 'border-outline-variant/30 hover:border-primary bg-transparent'
-                    }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={paymentMethod === 'vnpay'}
-                      onChange={() => setPaymentMethod('vnpay')}
-                      className="text-primary focus:ring-primary w-4.5 h-4.5 cursor-pointer animate-none"
-                    />
-                    <div className="flex flex-col">
-                      <span className="font-label-md text-label-md">Cổng thanh toán VNPay (QR / Thẻ ATM / Quốc tế)</span>
-                      <span className="text-[11px] text-on-surface-variant opacity-75">Thanh toán qua ứng dụng ngân hàng hoặc thẻ nội địa/quốc tế</span>
-                    </div>
-                  </div>
-                  <div className="h-8 w-14 bg-white border border-outline-variant/20 rounded flex items-center justify-center p-1 shadow-sm transition-all group-hover:shadow-md">
-                    <img src={vnpayLogo} alt="VNPay" className="h-full w-full object-contain" />
-                  </div>
-                </label>
 
-                {/* Nhóm ví điện tử (ZaloPay & MoMo) */}
-                <div
-                  className={`border transition-all rounded-lg overflow-hidden ${paymentMethod === 'zalopay' || paymentMethod === 'momo'
-                    ? 'border-primary bg-surface shadow-md'
-                    : 'border-outline-variant/30 hover:border-primary bg-transparent'
-                    }`}
-                >
-                  {/* Hàng hiển thị chính của nhóm ví điện tử */}
-                  <div
-                    onClick={() => {
-                      if (paymentMethod !== 'zalopay' && paymentMethod !== 'momo') {
-                        setPaymentMethod('zalopay');
+              {/* Thẻ hành khách */}
+              <div className="p-6 space-y-5">
+                <div className="flex items-center gap-2 pb-4 border-b border-outline-variant/15">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-primary">1</span>
+                  </div>
+                  <span className="text-sm font-semibold text-on-surface">Hành khách người lớn</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest text-outline font-semibold">
+                      Danh xưng
+                    </label>
+                    <select
+                      value={passengerForm.title}
+                      onChange={(e) =>
+                        setPassengerForm({ ...passengerForm, title: e.target.value })
                       }
-                    }}
-                    className="group flex items-center justify-between p-5 cursor-pointer select-none"
-                  >
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="radio"
-                        name="payment"
-                        checked={paymentMethod === 'zalopay' || paymentMethod === 'momo'}
-                        onChange={() => setPaymentMethod('zalopay')}
-                        className="text-primary focus:ring-primary w-4.5 h-4.5 cursor-pointer animate-none"
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-label-md text-label-md">Ví điện tử (ZaloPay / MoMo)</span>
-                        <span className="text-[11px] text-on-surface-variant opacity-75">Thanh toán nhanh qua ví điện tử liên kết tại Việt Nam</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-14 bg-white border border-outline-variant/20 rounded flex items-center justify-center p-1 shadow-sm transition-all group-hover:shadow-md">
-                        <img src={zalopayLogo} alt="ZaloPay" className="h-full w-full object-contain" />
-                      </div>
-                      <div className="h-8 w-14 bg-white border border-outline-variant/20 rounded flex items-center justify-center p-1 shadow-sm transition-all group-hover:shadow-md opacity-70">
-                        <img src={momoLogo} alt="MoMo" className="h-full w-full object-contain rounded grayscale" />
-                      </div>
-                    </div>
+                      className="bg-transparent border-0 border-b border-outline-variant py-2 text-sm text-on-surface focus:outline-none focus:border-b-primary transition-colors cursor-pointer"
+                    >
+                      <option value="mr">Ông (Mr.)</option>
+                      <option value="ms">Bà (Ms.)</option>
+                      <option value="mrs">Cô/Chị (Mrs.)</option>
+                    </select>
                   </div>
 
-                  {/* Các tùy chọn chi tiết bên trong nhóm ví điện tử */}
-                  {(paymentMethod === 'zalopay' || paymentMethod === 'momo') && (
-                    <div className="px-5 pb-5 pt-2 border-t border-outline-variant/10 space-y-3 bg-surface-container-low/20">
-                      <p className="text-[10px] uppercase tracking-wider text-on-surface-variant/70 font-semibold mb-1">
-                        Vui lòng chọn ví điện tử thanh toán:
-                      </p>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest text-outline font-semibold">
+                      Giới tính
+                    </label>
+                    <select
+                      value={passengerForm.gender}
+                      onChange={(e) =>
+                        setPassengerForm({ ...passengerForm, gender: e.target.value })
+                      }
+                      className="bg-transparent border-0 border-b border-outline-variant py-2 text-sm text-on-surface focus:outline-none focus:border-b-primary transition-colors cursor-pointer"
+                    >
+                      <option value="m">Nam (Male)</option>
+                      <option value="f">Nữ (Female)</option>
+                    </select>
+                  </div>
 
-                      {/* Tùy chọn ví điện tử ZaloPay */}
-                      <div
-                        onClick={() => setPaymentMethod('zalopay')}
-                        className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all ${paymentMethod === 'zalopay'
-                          ? 'border-primary bg-surface shadow-sm'
-                          : 'border-outline-variant/20 hover:border-primary/50 bg-transparent'
-                          }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="sub-payment-wallet"
-                            checked={paymentMethod === 'zalopay'}
-                            onChange={() => setPaymentMethod('zalopay')}
-                            className="text-primary focus:ring-primary w-4 h-4 cursor-pointer"
-                          />
-                          <div className="h-8 w-14 bg-white border border-outline-variant/20 rounded flex items-center justify-center p-1 shadow-sm">
-                            <img src={zalopayLogo} alt="ZaloPay" className="h-full w-full object-contain" />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-label-md text-xs text-on-surface">Ví điện tử ZaloPay</span>
-                            <span className="text-[10px] text-on-surface-variant/80">Khuyên dùng, xử lý và phê duyệt ngay tức thì</span>
-                          </div>
-                        </div>
-                      </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest text-outline font-semibold">
+                      Họ (Family Name)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={passengerForm.familyName}
+                      onChange={(e) =>
+                        setPassengerForm({
+                          ...passengerForm,
+                          familyName: e.target.value.toUpperCase(),
+                        })
+                      }
+                      placeholder="VD: NGUYEN"
+                      className="bg-transparent border-0 border-b border-outline-variant py-2 text-sm uppercase font-mono text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-b-primary transition-colors"
+                    />
+                  </div>
 
-                      {/* Tùy chọn ví điện tử MoMo (Bị vô hiệu hóa) */}
-                      <div
-                        className="flex items-center justify-between p-3 border border-outline-variant/10 rounded-lg opacity-60 bg-outline-variant/5 cursor-not-allowed select-none relative"
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="sub-payment-wallet"
-                            disabled
-                            checked={paymentMethod === 'momo'}
-                            className="text-primary focus:ring-primary w-4 h-4 cursor-not-allowed"
-                          />
-                          <div className="h-8 w-14 bg-white border border-outline-variant/20 rounded flex items-center justify-center p-1 shadow-sm opacity-60">
-                            <img src={momoLogo} alt="MoMo" className="h-full w-full object-contain rounded grayscale" />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-label-md text-xs text-on-surface/85">Ví điện tử MoMo</span>
-                            <span className="text-[10px] text-on-surface-variant/60">Thanh toán bằng ví điện tử MoMo của bạn</span>
-                          </div>
-                        </div>
-                        {/* Nhãn trạng thái chưa hỗ trợ nổi bật với độ tương phản cao */}
-                        <div className="flex flex-col items-end gap-0.5">
-                          <span className="text-[10px] font-semibold text-red-700 dark:text-red-300 px-2 py-0.5 bg-red-100 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded select-none shadow-sm">
-                            Chưa hỗ trợ
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest text-outline font-semibold">
+                      Tên đệm & Tên (Given Name)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={passengerForm.givenName}
+                      onChange={(e) =>
+                        setPassengerForm({
+                          ...passengerForm,
+                          givenName: e.target.value.toUpperCase(),
+                        })
+                      }
+                      placeholder="VD: VAN A"
+                      className="bg-transparent border-0 border-b border-outline-variant py-2 text-sm uppercase font-mono text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-b-primary transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest text-outline font-semibold">
+                      Ngày sinh
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={passengerForm.bornOn}
+                      onChange={(e) =>
+                        setPassengerForm({ ...passengerForm, bornOn: e.target.value })
+                      }
+                      className="bg-transparent border-0 border-b border-outline-variant py-2 text-sm text-on-surface focus:outline-none focus:border-b-primary transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest text-outline font-semibold">
+                      Số Hộ Chiếu / CCCD
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={passengerForm.passportNumber}
+                      onChange={(e) =>
+                        setPassengerForm({
+                          ...passengerForm,
+                          passportNumber: e.target.value.toUpperCase(),
+                        })
+                      }
+                      placeholder="VD: B1234567"
+                      className="bg-transparent border-0 border-b border-outline-variant py-2 text-sm uppercase font-mono text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-b-primary transition-colors"
+                    />
+                  </div>
                 </div>
 
-                {/* Thẻ tín dụng */}
-                <label
-                  onClick={() => setPaymentMethod('credit')}
-                  className={`group flex items-center justify-between p-5 border transition-all cursor-pointer rounded-lg ${paymentMethod === 'credit'
-                    ? 'border-primary bg-surface shadow-md'
-                    : 'border-outline-variant/30 hover:border-primary bg-transparent'
-                    }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={paymentMethod === 'credit'}
-                      onChange={() => setPaymentMethod('credit')}
-                      className="text-primary focus:ring-primary w-4.5 h-4.5 cursor-pointer animate-none"
-                    />
-                    <div className="flex flex-col">
-                      <span className="font-label-md text-label-md">Thẻ tín dụng / Thẻ ghi nợ</span>
-                      <span className="text-[11px] text-on-surface-variant opacity-75">Hỗ trợ Visa, Mastercard, JCB, American Express</span>
-                    </div>
+                {/* Tùy chọn phụ */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-outline-variant/15">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest text-outline font-semibold">
+                      Ưu tiên chỗ ngồi
+                    </label>
+                    <select
+                      value={seatPreference}
+                      onChange={(e) => setSeatPreference(e.target.value)}
+                      className="bg-transparent border-0 border-b border-outline-variant py-2 text-sm text-on-surface focus:outline-none focus:border-b-primary transition-colors cursor-pointer"
+                    >
+                      {SEAT_PREFERENCES.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="flex gap-2 opacity-50 group-hover:opacity-80 transition-all text-on-surface">
-                    <CreditCard className="h-6 w-6" />
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest text-outline font-semibold">
+                      Suất ăn trên máy bay
+                    </label>
+                    <select
+                      value={mealPreference}
+                      onChange={(e) => setMealPreference(e.target.value)}
+                      className="bg-transparent border-0 border-b border-outline-variant py-2 text-sm text-on-surface focus:outline-none focus:border-b-primary transition-colors cursor-pointer"
+                    >
+                      {MEAL_PREFERENCES.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
                   </div>
-                </label>
-              </div>
-              <p className="mt-6 font-caption text-caption text-outline italic">
-                * Giao dịch được bảo mật tuyệt đối với công nghệ mã hóa AES-256. Giá vé đã bao gồm các loại thuế &amp; phí dịch vụ hàng không bắt buộc.
-              </p>
-            </div>
+                </div>
 
-            {/* Phân cảnh hình ảnh điện ảnh */}
-            <div className="w-full h-48 overflow-hidden border border-outline-variant/30 p-2 bg-surface-container-lowest rounded-lg">
-              <img
-                className="w-full h-full object-cover grayscale-[20%] brightness-90 hover:scale-105 transition-transform duration-[2000ms] rounded-sm"
-                alt="Lớp sương mờ trên vịnh di sản"
-                src="https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80"
-              />
-            </div>
+                <div className="flex items-start gap-2.5 p-3 bg-blue-50 border border-blue-200/60 rounded-lg">
+                  <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-blue-700 leading-relaxed">
+                    Tên phải khớp chính xác với hộ chiếu hoặc CCCD (không dấu, viết hoa). Không thể
+                    thay đổi sau khi đặt vé thành công.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* BƯỚC 3: Phương thức thanh toán */}
+            <section className="border border-outline-variant/30 rounded-lg bg-surface-container-lowest overflow-hidden">
+              <div className="px-6 py-5 border-b border-outline-variant/20 flex items-center gap-4">
+                <span className="text-sm font-semibold text-outline tabular-nums">03</span>
+                <h2 className="text-base font-semibold text-primary tracking-tight">
+                  Phương Thức Thanh Toán
+                </h2>
+              </div>
+              <div className="p-6">
+                <PaymentSelector value={paymentMethod} onChange={setPaymentMethod} />
+              </div>
+            </section>
           </div>
 
-          {/* Cột phải: Tóm tắt hành trình và thanh toán (Chiếm 5 phần) */}
-          <div className="lg:col-span-5 lg:sticky lg:top-4">
-            <div className="bg-surface-container-lowest border border-outline-variant/30 p-6 md:p-8 rounded-lg text-on-surface space-y-6">
-              <div>
-                <span className="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant opacity-80 block">Chuyến Bay Của Bạn</span>
-                <h3 className="font-display-lg text-headline-md mt-1 flex items-center gap-2">
-                  {offer.originName || offer.originCode}
-                  <ArrowRight className="h-4.5 w-4.5 text-outline" />
-                  {offer.destinationName || offer.destinationCode}
+          {/* === CỘT PHẢI: Tóm tắt chuyến bay (sticky) === */}
+          <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-6 space-y-5">
+            <div className="border border-outline-variant/30 bg-surface-container-lowest rounded-lg overflow-hidden limestone-shadow">
+
+              {/* Header tuyến bay */}
+              <div className="px-5 py-5 border-b border-outline-variant/15">
+                <p className="text-[9px] uppercase tracking-widest text-on-surface-variant/70 font-semibold mb-1.5">
+                  Chuyến Bay Của Bạn
+                </p>
+                <h3 className="text-lg font-bold text-primary flex items-center gap-2">
+                  {offer.originCode}
+                  <ArrowRight className="h-4 w-4 text-outline" />
+                  {offer.destinationCode}
                 </h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  {offer.originName || offer.originCode} đến {offer.destinationName || offer.destinationCode}
+                </p>
               </div>
 
-              {/* Chi tiết chuyến bay */}
-              <div className="border-t border-b border-outline-variant/20 py-5 space-y-4">
-                <div className="flex justify-between text-caption">
+              {/* Chi tiết hãng bay & thời gian bay */}
+              <div className="px-5 py-4 border-b border-outline-variant/15">
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-on-surface-variant uppercase text-[10px] tracking-widest">Hãng bay / Hạng vé</p>
-                    <p className="font-body-md text-primary font-medium mt-0.5">
-                      {offer.carrierName} • Phổ Thông (Economy)
+                    <p className="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-semibold">
+                      Hãng bay
                     </p>
+                    <p className="text-sm font-semibold text-on-surface mt-0.5">
+                      {offer.carrierName}
+                    </p>
+                    <p className="text-[10px] text-on-surface-variant">Phổ Thông (Economy)</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-on-surface-variant uppercase text-[10px] tracking-widest">Thời gian bay</p>
-                    <p className="font-body-md text-primary font-medium mt-0.5">{formatDuration(offer.duration)}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between bg-surface-container-low/40 p-4 rounded-md border border-outline-variant/10">
-                  <div className="text-left">
-                    <p className="font-headline-md text-lg text-primary">{formatTime(offer.departingAt)}</p>
-                    <p className="font-caption text-caption text-on-surface-variant">
-                      {offer.originCode}
+                    <p className="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-semibold">
+                      Thời gian bay
                     </p>
-                  </div>
-                  <div className="flex-1 px-4 flex flex-col items-center gap-1">
-                    <div className="w-full h-px bg-outline-variant/40 relative flex items-center justify-center">
-                      <Plane className="h-3 w-3 text-outline absolute rotate-90" />
+                    <div className="flex items-center gap-1 justify-end mt-0.5">
+                      <Clock className="h-3 w-3 text-on-surface-variant" />
+                      <p className="text-sm font-semibold text-on-surface">
+                        {formatDuration(offer.duration)}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-headline-md text-lg text-primary">
-                      {formatTime(offer.arrivingAt)}
-                    </p>
-                    <p className="font-caption text-caption text-on-surface-variant">
-                      {offer.destinationCode}
-                    </p>
+                </div>
+
+                {/* Timeline khởi hành / đến nơi */}
+                <div className="bg-surface-container-low/40 rounded-lg p-4 border border-outline-variant/10">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-primary tabular-nums">
+                        {formatTime(offer.departingAt)}
+                      </p>
+                      <p className="text-xs font-semibold text-on-surface mt-0.5">{offer.originCode}</p>
+                      <p className="text-[10px] text-on-surface-variant">
+                        {formatDateShort(offer.departingAt)}
+                      </p>
+                    </div>
+
+                    <div className="flex-1 flex flex-col items-center gap-1 px-2">
+                      <div className="w-full flex items-center gap-1">
+                        <div className="h-px flex-1 bg-outline-variant/40" />
+                        <Plane className="h-3.5 w-3.5 text-secondary" />
+                        <div className="h-px flex-1 bg-outline-variant/40" />
+                      </div>
+                      <p className="text-[9px] text-on-surface-variant/70">Bay thẳng</p>
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-primary tabular-nums">
+                        {formatTime(offer.arrivingAt)}
+                      </p>
+                      <p className="text-xs font-semibold text-on-surface mt-0.5">{offer.destinationCode}</p>
+                      <p className="text-[10px] text-on-surface-variant">
+                        {formatDateShort(offer.arrivingAt)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Chi tiết chi phí */}
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between text-on-surface-variant">
-                  <span>Giá vé cơ bản (1x Người lớn)</span>
-                  <span className="text-on-surface font-medium">${(offer.totalAmount * 0.85).toFixed(2)} USD</span>
+              {/* Hành lý bao gồm */}
+              <div className="px-5 py-4 border-b border-outline-variant/15 space-y-2">
+                <p className="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-semibold">
+                  Hành lý bao gồm
+                </p>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                  <span className="text-xs text-on-surface">Hành lý xách tay 7kg</span>
                 </div>
-                <div className="flex justify-between text-on-surface-variant">
-                  <span>Thuế &amp; Phụ phí sân bay</span>
-                  <span className="text-on-surface font-medium">${(offer.totalAmount * 0.15).toFixed(2)} USD</span>
-                </div>
-                <div className="flex justify-between text-on-surface-variant">
-                  <span>Hành lý ký gửi (30kg đã bao gồm)</span>
-                  <span className="text-emerald-600 font-medium">Miễn phí</span>
-                </div>
-                <div className="pt-4 border-t border-outline-variant/20 flex justify-between items-end">
-                  <span className="font-headline-md text-lg text-primary font-semibold">Tổng tiền</span>
-                  <div className="text-right">
-                    <span className="font-display-lg text-2xl text-secondary block font-bold">${offer.totalAmount.toFixed(2)} USD</span>
-                    <p className="font-caption text-[11px] text-on-surface-variant italic mt-0.5">
-                      ~ {(offer.totalAmount * 24500).toLocaleString('vi-VN')} VND
-                    </p>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Luggage className="h-3.5 w-3.5 text-secondary shrink-0" />
+                  <span className="text-xs text-on-surface">Hành lý ký gửi 30kg (đã bao gồm)</span>
                 </div>
               </div>
 
-              {/* Nút thao tác xác nhận */}
-              <div className="pt-4 space-y-3">
+              {/* Chính sách vé */}
+              <div className="px-5 py-3 border-b border-outline-variant/15 bg-amber-50/40">
+                <div className="flex items-start gap-2">
+                  <Info className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-amber-700 leading-relaxed">
+                    Vé không hoàn, hỗ trợ đổi trả theo chính sách hãng bay. Phụ phí đổi vé áp dụng
+                    sau khi xuất vé.
+                  </p>
+                </div>
+              </div>
+
+              {/* Chiết tính giá */}
+              <div className="px-5 py-4 space-y-2.5 border-b border-outline-variant/15">
+                <PriceRow
+                  label={`Giá vé gốc (1 người lớn)`}
+                  value={`$${offer.totalAmount.toFixed(2)} USD`}
+                />
+                <PriceRow
+                  label="Thuế & Phí sân bay (10%)"
+                  value={`${taxVnd.toLocaleString('vi-VN')} VND`}
+                />
+                <PriceRow
+                  label="Phí dịch vụ WanderVN (5%)"
+                  value={`${markupVnd.toLocaleString('vi-VN')} VND`}
+                />
+              </div>
+
+              {/* Tổng tiền */}
+              <div className="px-5 py-4 space-y-4">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm font-bold text-on-surface">Tổng thanh toán</span>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-red-600 tabular-nums">
+                      {totalVnd.toLocaleString('vi-VN')}
+                    </p>
+                    <p className="text-[10px] text-on-surface-variant">VND</p>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
-                  disabled={bookingLoading}
-                  className="w-full bg-primary text-on-primary py-4 font-label-md text-label-md uppercase tracking-widest hover:bg-surface-tint transition-all flex items-center justify-center gap-2 group rounded-md select-none"
+                  disabled={bookingLoading || isExpired}
+                  className="w-full py-4 bg-primary text-on-primary font-semibold text-xs uppercase tracking-widest rounded-lg shadow-md hover:bg-primary/95 active:scale-[0.99] flex items-center justify-center gap-2 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {bookingLoading ? (
                     <>
-                      <Loader2 className="h-4.5 w-4.5 animate-spin" />
-                      ĐANG XỬ LÝ THANH TOÁN...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Đang xử lý...
                     </>
                   ) : paymentMethod === 'vnpay' ? (
                     <>
-                      TIẾP TỤC THANH TOÁN VNPAY
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      Tiếp tục VNPay
+                      <ArrowRight className="h-4 w-4" />
                     </>
                   ) : paymentMethod === 'zalopay' ? (
                     <>
-                      TIẾP TỤC THANH TOÁN ZALOPAY
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      Tiếp tục ZaloPay
+                      <ArrowRight className="h-4 w-4" />
                     </>
                   ) : (
                     <>
-                      XÁC NHẬN ĐẶT VÉ
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      <Shield className="h-4 w-4 text-secondary" />
+                      Xác nhận đặt vé
                     </>
                   )}
                 </button>
@@ -562,22 +624,21 @@ export const FlightCheckout: React.FC = () => {
                   type="button"
                   onClick={() => navigate('/flights')}
                   disabled={bookingLoading}
-                  className="w-full border border-outline-variant/30 text-on-surface-variant hover:text-primary py-2.5 font-label-md text-xs uppercase tracking-widest hover:bg-surface-container-low transition-all text-center rounded-md select-none"
+                  className="w-full py-2.5 border border-outline-variant/30 text-on-surface-variant hover:text-primary text-xs uppercase tracking-widest rounded-lg transition-colors"
                 >
-                  QUAY LẠI TÌM KIẾM
+                  Quay lại tìm kiếm
                 </button>
-              </div>
 
-              {/* Chỉ số an toàn bảo mật */}
-              <div className="pt-4 flex items-center justify-center gap-5 text-on-surface-variant opacity-80 text-[11px] border-t border-outline-variant/10">
-                <div className="flex items-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5 text-secondary" />
-                  <span>Thanh toán bảo mật</span>
-                </div>
-                <span className="w-px h-3 bg-outline-variant/30"></span>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle className="h-3.5 w-3.5 text-secondary" />
-                  <span>Không phí ẩn</span>
+                <div className="flex items-center justify-center gap-4 text-on-surface-variant/60 text-[10px]">
+                  <span className="flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    PCI DSS
+                  </span>
+                  <span className="w-px h-3 bg-outline-variant/30" />
+                  <span className="flex items-center gap-1">
+                    <Plane className="h-3 w-3" />
+                    Vé xác nhận ngay
+                  </span>
                 </div>
               </div>
             </div>
@@ -587,5 +648,12 @@ export const FlightCheckout: React.FC = () => {
     </div>
   );
 };
+
+const PriceRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex justify-between items-baseline gap-3">
+    <span className="text-[11px] text-on-surface-variant leading-relaxed">{label}</span>
+    <span className="text-xs text-on-surface font-medium tabular-nums shrink-0">{value}</span>
+  </div>
+);
 
 export default FlightCheckout;
