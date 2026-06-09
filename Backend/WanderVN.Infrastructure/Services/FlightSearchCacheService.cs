@@ -96,7 +96,9 @@ public class FlightSearchCacheService : IFlightSearchCacheService
             NormalizeCode(request.Destination),
             NormalizeDate(request.DepartureDate),
             NormalizeDate(request.ReturnDate),
-            NormalizeLower(request.PassengerType, "adult"),
+            request.AdultCount.ToString(),
+            request.ChildCount.ToString(),
+            request.InfantCount.ToString(),
             NormalizeLower(request.CabinClass, "business"),
             request.ReturnOffers ? "true" : "false");
 

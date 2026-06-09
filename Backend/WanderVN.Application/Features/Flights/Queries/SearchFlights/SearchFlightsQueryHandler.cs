@@ -35,7 +35,9 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
             Origin = request.Origin,
             Destination = request.Destination,
             DepartureDate = request.DepartureDate,
-            PassengerType = request.PassengerType,
+            AdultCount = request.AdultCount,
+            ChildCount = request.ChildCount,
+            InfantCount = request.InfantCount,
             ReturnOffers = request.ReturnOffers,
             CabinClass = request.CabinClass,
             ReturnDate = request.ReturnDate
