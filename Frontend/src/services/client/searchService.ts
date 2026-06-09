@@ -1,7 +1,7 @@
 // Dịch vụ API xử lý tìm kiếm lưu trú và gợi ý tự động (Autocomplete)
 
 import { request } from '../shared/apiClient';
-import type { SearchHotelsDto, SearchHotelsQuery, SearchAutocompleteDto } from '../../types';
+import type { SearchHotelsDto, SearchHotelsQuery, SearchAutocompleteDto, AirportDto } from '../../types';
 
 export const searchService = {
   /**
@@ -27,5 +27,13 @@ export const searchService = {
   async getAutocomplete(keyword: string): Promise<SearchAutocompleteDto[]> {
     if (!keyword.trim()) return [];
     return request<SearchAutocompleteDto[]>(`/search/autocomplete?Keyword=${encodeURIComponent(keyword)}`);
+  },
+
+  /**
+   * Truy vấn danh sách sân bay cho form tìm kiếm chuyến bay
+   */
+  async getAirports(keyword?: string): Promise<AirportDto[]> {
+    const params = keyword?.trim() ? `?keyword=${encodeURIComponent(keyword.trim())}` : '';
+    return request<AirportDto[]>(`/search/airports${params}`);
   }
 };

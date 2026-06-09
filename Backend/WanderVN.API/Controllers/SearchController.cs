@@ -7,6 +7,7 @@ using WanderVN.Application.DTOs.Response;
 using WanderVN.Application.Features.Flights.Queries.SearchFlights;
 using WanderVN.Application.Features.Hotels.Queries.SearchHotels;
 using WanderVN.Application.Features.Hotels.Queries.SearchAutocomplete;
+using WanderVN.Application.Features.Flights.Queries.GetAirports;
 
 namespace WanderVN.API.Controllers;
 
@@ -62,6 +63,19 @@ public class SearchController : ControllerBase
             200,
             data
         );
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// GET: api/v1/search/airports
+    /// Gợi ý tự động sân bay cho form tìm kiếm chuyến bay.
+    /// </summary>
+    [HttpGet("airports")]
+    public async Task<IActionResult> GetAirports([FromQuery] GetAirportsQuery query)
+    {
+        var data = await _mediator.Send(query);
+        
+        var response = new ApiResponse<List<AirportDto>>(true, "Lấy danh sách sân bay thành công!", 200, data);
         return Ok(response);
     }
 }
