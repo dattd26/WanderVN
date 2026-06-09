@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WanderVN.Application.Common.Interfaces;
 using WanderVN.Application.Common.Models;
+using WanderVN.Application.Features.Bookings.Commands.CreateFlightBooking;
 using WanderVN.Domain.Repositories;
 using WanderVN.Infrastructure.Data;
 using WanderVN.Infrastructure.Repositories;
@@ -86,6 +87,7 @@ public static class DependencyInjection
         services.AddScoped<IPartnerRepository, PartnerRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IAirportRepository, AirportRepository>();
+        services.AddScoped<IFlightBookingDataPersister, FlightBookingDataPersister>();
 
         // Register ChatBot Service
         services.AddScoped<IChatLogsRepository, ChatLogsRepository>();
