@@ -62,14 +62,12 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
 
         if (string.IsNullOrWhiteSpace(guestPhone))
         {
-            // Dự phòng sđt mặc định cho sandbox Duffel nếu người dùng không điền
-            guestPhone = "+84901234567";
-        }
-        else
-        {
-            guestPhone = NormalizePhoneNumber(guestPhone);
+            throw new ArgumentException("Vui lòng cung cấp số điện thoại liên hệ để đặt vé máy bay.");
         }
 
+        guestPhone = NormalizePhoneNumber(guestPhone);
+        Console.WriteLine("Guest Email: " + guestEmail);
+        Console.WriteLine("Guest Phone: " + guestPhone);
         // 1. Lấy chi tiết Offer gốc từ Duffel để trích xuất giá tiền thật (phục vụ thanh toán sandbox khớp 100%)
         string originalAmount = "1000.00";
         string originalCurrency = "USD";
@@ -94,11 +92,10 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         }
         catch (Exception ex)
         {
-            // Dự phòng trong trường hợp không lấy được thông tin chi tiết Offer gốc
             Console.WriteLine($"⚠️ Lỗi khi lấy chi tiết Offer gốc từ Duffel: {ex.Message}");
+            throw new ArgumentException("Offer không tồn tại hoặc đã hết hạn.");
         }
 
-        // 2. Thiết lập đối tượng Yêu cầu Đặt vé gửi sang Duffel (Map to Duffel Request)
         var duffelRequest = new DuffelOrderRequestDto();
         duffelRequest.Data.Type = "instant";
         duffelRequest.Data.SelectedOffers.Add(request.OfferId);
@@ -112,7 +109,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             if (string.IsNullOrWhiteSpace(pEmail)) pEmail = guestEmail;
             if (string.IsNullOrWhiteSpace(pPhone)) pPhone = guestPhone;
             pPhone = NormalizePhoneNumber(pPhone);
-            Console.WriteLine(pPhone);
+
             duffelRequest.Data.Passengers.Add(new DuffelPassengerDto
             {
                 Id = pax.Id,
@@ -138,7 +135,6 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             }
         };
 
-        // 3. Gọi Duffel API để tạo đặt vé
         var duffelResponseJson = await _duffelService.CreateOrderAsync(duffelRequest);
 
         // Parse Duffel Response to get Order ID
@@ -298,27 +294,25 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
 
     private string NormalizePhoneNumber(string phone)
     {
-        if (string.IsNullOrWhiteSpace(phone)) return "+84901234567";
+        if (string.IsNullOrWhiteSpace(phone))
+            throw new ArgumentException("Số điện thoại không được để trống.");
 
-        var cleaned = new string(phone.Where(char.IsDigit).ToArray());
+        var trimmed = phone.Trim();
+        var hasPlus = trimmed.StartsWith("+");
+        var digits = new string(trimmed.Where(char.IsDigit).ToArray());
 
-        if (phone.StartsWith("+"))
-        {
-            return "+" + cleaned;
-        }
+        if (string.IsNullOrEmpty(digits))
+            throw new ArgumentException("Số điện thoại không hợp lệ.");
 
-        // Nếu bắt đầu bằng 84 và có độ dài hợp lý (từ 11 chữ số trở lên, vd: 84987564583)
-        if (cleaned.StartsWith("84") && cleaned.Length >= 11)
-        {
-            return "+" + cleaned;
-        }
+        if (hasPlus)
+            return "+" + digits;
 
-        // Nếu bắt đầu bằng số 0 (vd: 0987564583), chuyển thành +84
-        if (cleaned.StartsWith("0") && cleaned.Length > 1)
-        {
-            return "+84" + cleaned.Substring(1);
-        }
+        if (digits.StartsWith("84") && digits.Length >= 11)
+            return "+" + digits;
 
-        return "+84" + cleaned;
+        if (digits.StartsWith("0") && digits.Length >= 10 && digits.Length <= 11)
+            return "+84" + digits.Substring(1);
+
+        throw new ArgumentException("Số điện thoại không hợp lệ. Vui lòng bao gồm mã quốc gia (VD: +84...).");
     }
 }
