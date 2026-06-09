@@ -73,6 +73,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         // 1. Lấy chi tiết Offer gốc từ Duffel để trích xuất giá tiền thật (phục vụ thanh toán sandbox khớp 100%)
         string originalAmount = "1000.00";
         string originalCurrency = "USD";
+        var passengerTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         try
         {
@@ -90,6 +91,19 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                 {
                     originalCurrency = currencyProp.GetString() ?? originalCurrency;
                 }
+
+                if (dataProp.TryGetProperty("passengers", out var passengersProp) && passengersProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var p in passengersProp.EnumerateArray())
+                    {
+                        var pId = p.TryGetProperty("id", out var idVal) ? idVal.GetString() : null;
+                        var pType = p.TryGetProperty("type", out var typeVal) ? typeVal.GetString() : null;
+                        if (!string.IsNullOrEmpty(pId) && !string.IsNullOrEmpty(pType))
+                        {
+                            passengerTypes[pId] = pType;
+                        }
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -102,6 +116,18 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         duffelRequest.Data.Type = "instant";
         duffelRequest.Data.SelectedOffers.Add(request.OfferId);
 
+        var infantPassengerIds = new List<string>();
+        foreach (var pax in request.Passengers)
+        {
+            if (passengerTypes.TryGetValue(pax.Id, out var type) && type.Equals("infant_without_seat", StringComparison.OrdinalIgnoreCase))
+            {
+                infantPassengerIds.Add(pax.Id);
+            }
+        }
+
+        var duffelPassengersList = new List<DuffelPassengerDto>();
+        var adultPassengers = new List<DuffelPassengerDto>();
+
         for (int i = 0; i < request.Passengers.Count; i++)
         {
             var pax = request.Passengers[i];
@@ -112,7 +138,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             if (string.IsNullOrWhiteSpace(pPhone)) pPhone = guestPhone;
             pPhone = NormalizePhoneNumber(pPhone);
 
-            duffelRequest.Data.Passengers.Add(new DuffelPassengerDto
+            var duffelPax = new DuffelPassengerDto
             {
                 Id = pax.Id,
                 Title = pax.Title,
@@ -122,8 +148,26 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                 Email = pEmail,
                 PhoneNumber = pPhone,
                 Gender = pax.Gender
-            });
+            };
+
+            duffelPassengersList.Add(duffelPax);
+
+            if (passengerTypes.TryGetValue(pax.Id, out var type) && type.Equals("adult", StringComparison.OrdinalIgnoreCase))
+            {
+                adultPassengers.Add(duffelPax);
+            }
         }
+
+        // Link infant passengers to their accompanying adult passengers
+        for (int idx = 0; idx < infantPassengerIds.Count; idx++)
+        {
+            if (idx < adultPassengers.Count)
+            {
+                adultPassengers[idx].InfantPassengerId = infantPassengerIds[idx];
+            }
+        }
+
+        duffelRequest.Data.Passengers.AddRange(duffelPassengersList);
 
         // Thiết lập thông tin thanh toán cho vé máy bay (bắt buộc đối với loại đặt vé "instant")
         // Sử dụng giá trị gốc (originalAmount/originalCurrency) của Duffel để vượt qua kiểm tra Sandbox
