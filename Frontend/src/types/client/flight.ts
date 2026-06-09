@@ -130,3 +130,9 @@ export interface FlightOfferDetailDto {
   // Passthrough for booking
   passengerId: string;
 }
+
+export interface AirportDto {
+  iataCode: string;
+  name: string;
+  city: string;
+}

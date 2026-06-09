@@ -85,6 +85,7 @@ public static class DependencyInjection
         services.AddScoped<ISearchAutocompleteRepository, SearchAutocompleteRepository>();
         services.AddScoped<IPartnerRepository, PartnerRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IAirportRepository, AirportRepository>();
 
         // Register ChatBot Service
         services.AddScoped<IChatLogsRepository, ChatLogsRepository>();

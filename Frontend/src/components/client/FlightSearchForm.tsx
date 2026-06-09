@@ -18,14 +18,8 @@ interface FlightSearchFormProps {
   ) => void;
 }
 
-// Danh sách các sân bay tiêu biểu tại Việt Nam phục vụ việc chọn nhanh
-const VIETNAMESE_AIRPORTS = [
-  { code: 'HAN', city: 'Hà Nội', name: 'Sân bay Quốc tế Nội Bài' },
-  { code: 'SGN', city: 'TP. Hồ Chí Minh', name: 'Sân bay Quốc tế Tân Sơn Nhất' },
-  { code: 'DAD', city: 'Đà Nẵng', name: 'Sân bay Quốc tế Đà Nẵng' },
-  { code: 'CXR', city: 'Nha Trang', name: 'Sân bay Quốc tế Cam Ranh' },
-  { code: 'PQC', city: 'Phú Quốc', name: 'Sân bay Quốc tế Phú Quốc' }
-];
+import { searchService } from '../../services/client/searchService';
+import type { AirportDto } from '../../types';
 
 export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
   initialOrigin = 'HAN',
@@ -39,8 +33,11 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
   const [tripType, setTripType] = useState<'round-trip' | 'one-way'>(initialTripType);
   const [cabinClass, setCabinClass] = useState<'business' | 'economy'>(initialCabinClass);
 
-  const [origin, setOrigin] = useState(initialOrigin);
-  const [destination, setDestination] = useState(initialDestination);
+  const [origin, setOrigin] = useState<AirportDto | null>(null);
+  const [destination, setDestination] = useState<AirportDto | null>(null);
+  const [airports, setAirports] = useState<AirportDto[]>([]);
+  const [originSearch, setOriginSearch] = useState('');
+  const [destSearch, setDestSearch] = useState('');
   const [departureDate, setDepartureDate] = useState(() => {
     if (initialDepartureDate) return initialDepartureDate;
     const futureDate = new Date();
@@ -81,9 +78,49 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Fetch initial default airports (all)
+  useEffect(() => {
+    searchService.getAirports().then(data => {
+      setAirports(data);
+      // Set initial origin/destination based on props if found
+      if (initialOrigin) {
+        const found = data.find(a => a.iataCode === initialOrigin);
+        if (found) setOrigin(found);
+      }
+      if (initialDestination) {
+        const found = data.find(a => a.iataCode === initialDestination);
+        if (found) setDestination(found);
+      }
+    }).catch(console.error);
+  }, [initialOrigin, initialDestination]);
+
+  // Debounced search for origin
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isOriginOpen) {
+        searchService.getAirports(originSearch).then(setAirports).catch(console.error);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [originSearch, isOriginOpen]);
+
+  // Debounced search for destination
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isDestinationOpen) {
+        searchService.getAirports(destSearch).then(setAirports).catch(console.error);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [destSearch, isDestinationOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (origin === destination) {
+    if (!origin || !destination) {
+      alert('⚠️ Vui lòng chọn điểm xuất phát và điểm đến.');
+      return;
+    }
+    if (origin.iataCode === destination.iataCode) {
       alert('⚠️ Điểm xuất phát và điểm đến không được trùng nhau.');
       return;
     }
@@ -91,7 +128,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
       alert('⚠️ Ngày trở về phải sau ngày khởi hành.');
       return;
     }
-    onSearch(origin, destination, departureDate, tripType, cabinClass, tripType === 'round-trip' ? returnDate : undefined);
+    onSearch(origin.iataCode, destination.iataCode, departureDate, tripType, cabinClass, tripType === 'round-trip' ? returnDate : undefined);
   };
 
   return (
@@ -193,17 +230,35 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
           </label>
           <div
             onClick={() => {
-              setIsOriginOpen(!isOriginOpen);
+              if (!isOriginOpen) {
+                setIsOriginOpen(true);
+                // Trigger re-fetch of default list if search was not empty
+                if (originSearch) searchService.getAirports().then(setAirports).catch(console.error);
+              } else {
+                setIsOriginOpen(false);
+              }
               setIsDestinationOpen(false);
               setIsGuestsOpen(false);
             }}
             className="flex items-center justify-between border-b border-white/20 pb-3 cursor-pointer group focus-within:border-secondary transition-colors duration-300"
           >
-            <div className="flex items-center gap-3 w-full truncate">
+            <div className="flex items-center gap-3 w-full">
               <PlaneTakeoff className="text-white/40 h-5 w-5 shrink-0 group-hover:text-secondary transition-colors" />
-              <div className="text-white font-body-md text-body-md select-none truncate">
-                {VIETNAMESE_AIRPORTS.find(ap => ap.code === origin)?.city} ({origin})
-              </div>
+              {isOriginOpen ? (
+                <input
+                  type="text"
+                  autoFocus
+                  value={originSearch}
+                  onChange={(e) => setOriginSearch(e.target.value)}
+                  placeholder="Tìm sân bay, thành phố..."
+                  className="bg-transparent border-none p-0 text-white focus:ring-0 w-full font-body-md text-body-md outline-none placeholder:text-white/30"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <div className="text-white font-body-md text-body-md select-none truncate">
+                  {origin ? `${origin.city} (${origin.iataCode})` : 'Chọn điểm đi'}
+                </div>
+              )}
             </div>
             <ChevronDown className="text-white/30 h-4 w-4 shrink-0 transition-transform duration-300 group-hover:text-white" style={{ transform: isOriginOpen ? 'rotate(180deg)' : 'none' }} />
           </div>
@@ -211,19 +266,24 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
           {/* Custom Dropdown List */}
           {isOriginOpen && (
             <div className="absolute left-0 top-full mt-2 w-full min-w-[280px] bg-[#161616] border border-white/10 rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] z-50 py-2 max-h-60 overflow-y-auto">
-              {VIETNAMESE_AIRPORTS.map((ap) => (
-                <div
-                  key={ap.code}
-                  onClick={() => {
-                    setOrigin(ap.code);
-                    setIsOriginOpen(false);
-                  }}
-                  className={`px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors flex flex-col ${origin === ap.code ? 'bg-secondary/10 text-secondary' : 'text-white'}`}
-                >
-                  <span className="font-medium font-body-md text-body-md">{ap.city} ({ap.code})</span>
-                  <span className="text-[11px] text-white/40">{ap.name}</span>
-                </div>
-              ))}
+              {airports.length === 0 ? (
+                <div className="px-4 py-3 text-white/50 text-sm">Không tìm thấy sân bay nào</div>
+              ) : (
+                airports.map((ap) => (
+                  <div
+                    key={ap.iataCode}
+                    onClick={() => {
+                      setOrigin(ap);
+                      setOriginSearch('');
+                      setIsOriginOpen(false);
+                    }}
+                    className={`px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors flex flex-col ${origin?.iataCode === ap.iataCode ? 'bg-secondary/10 text-secondary' : 'text-white'}`}
+                  >
+                    <span className="font-medium font-body-md text-body-md">{ap.city} ({ap.iataCode})</span>
+                    <span className="text-[11px] text-white/40">{ap.name}</span>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
@@ -235,17 +295,34 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
           </label>
           <div
             onClick={() => {
-              setIsDestinationOpen(!isDestinationOpen);
+              if (!isDestinationOpen) {
+                setIsDestinationOpen(true);
+                if (destSearch) searchService.getAirports().then(setAirports).catch(console.error);
+              } else {
+                setIsDestinationOpen(false);
+              }
               setIsOriginOpen(false);
               setIsGuestsOpen(false);
             }}
             className="flex items-center justify-between border-b border-white/20 pb-3 cursor-pointer group focus-within:border-secondary transition-colors duration-300"
           >
-            <div className="flex items-center gap-3 w-full truncate">
+            <div className="flex items-center gap-3 w-full">
               <PlaneLanding className="text-white/40 h-5 w-5 shrink-0 group-hover:text-secondary transition-colors" />
-              <div className="text-white font-body-md text-body-md select-none truncate">
-                {VIETNAMESE_AIRPORTS.find(ap => ap.code === destination)?.city} ({destination})
-              </div>
+              {isDestinationOpen ? (
+                <input
+                  type="text"
+                  autoFocus
+                  value={destSearch}
+                  onChange={(e) => setDestSearch(e.target.value)}
+                  placeholder="Tìm sân bay, thành phố..."
+                  className="bg-transparent border-none p-0 text-white focus:ring-0 w-full font-body-md text-body-md outline-none placeholder:text-white/30"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <div className="text-white font-body-md text-body-md select-none truncate">
+                  {destination ? `${destination.city} (${destination.iataCode})` : 'Chọn điểm đến'}
+                </div>
+              )}
             </div>
             <ChevronDown className="text-white/30 h-4 w-4 shrink-0 transition-transform duration-300 group-hover:text-white" style={{ transform: isDestinationOpen ? 'rotate(180deg)' : 'none' }} />
           </div>
@@ -253,19 +330,24 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
           {/* Custom Dropdown List */}
           {isDestinationOpen && (
             <div className="absolute left-0 top-full mt-2 w-full min-w-[280px] bg-[#161616] border border-white/10 rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] z-50 py-2 max-h-60 overflow-y-auto">
-              {VIETNAMESE_AIRPORTS.map((ap) => (
-                <div
-                  key={ap.code}
-                  onClick={() => {
-                    setDestination(ap.code);
-                    setIsDestinationOpen(false);
-                  }}
-                  className={`px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors flex flex-col ${destination === ap.code ? 'bg-secondary/10 text-secondary' : 'text-white'}`}
-                >
-                  <span className="font-medium font-body-md text-body-md">{ap.city} ({ap.code})</span>
-                  <span className="text-[11px] text-white/40">{ap.name}</span>
-                </div>
-              ))}
+              {airports.length === 0 ? (
+                <div className="px-4 py-3 text-white/50 text-sm">Không tìm thấy sân bay nào</div>
+              ) : (
+                airports.map((ap) => (
+                  <div
+                    key={ap.iataCode}
+                    onClick={() => {
+                      setDestination(ap);
+                      setDestSearch('');
+                      setIsDestinationOpen(false);
+                    }}
+                    className={`px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors flex flex-col ${destination?.iataCode === ap.iataCode ? 'bg-secondary/10 text-secondary' : 'text-white'}`}
+                  >
+                    <span className="font-medium font-body-md text-body-md">{ap.city} ({ap.iataCode})</span>
+                    <span className="text-[11px] text-white/40">{ap.name}</span>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
