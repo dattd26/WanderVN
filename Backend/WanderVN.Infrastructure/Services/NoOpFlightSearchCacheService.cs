@@ -19,4 +19,9 @@ public class NoOpFlightSearchCacheService : IFlightSearchCacheService
     {
         return Task.CompletedTask;
     }
+
+    public Task InvalidateByOfferIdAsync(string offerId, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
 }

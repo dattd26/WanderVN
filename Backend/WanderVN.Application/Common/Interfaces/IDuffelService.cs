@@ -22,4 +22,9 @@ public interface IDuffelService
     /// Lấy chi tiết thông tin một Offer bằng ID (phục vụ đồng bộ giá sandbox).
     /// </summary>
     Task<string> GetOfferAsync(string offerId);
+
+    /// <summary>
+    /// Gửi request thanh toán cho Order (dùng khi Order đang ở trạng thái hold)
+    /// </summary>
+    Task<string> PayOrderAsync(string orderId, string paymentAmount, string paymentCurrency);
 }

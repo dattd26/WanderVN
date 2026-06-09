@@ -22,13 +22,15 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
     private readonly IDuffelService _duffelService;
     private readonly IEmailService _emailService;
     private readonly IFlightBookingDataPersister _flightBookingDataPersister;
+    private readonly IFlightSearchCacheService _flightSearchCacheService;
 
-    public CreateFlightBookingCommandHandler(IUnitOfWork unitOfWork, IDuffelService duffelService, IEmailService emailService, IFlightBookingDataPersister flightBookingDataPersister)
+    public CreateFlightBookingCommandHandler(IUnitOfWork unitOfWork, IDuffelService duffelService, IEmailService emailService, IFlightBookingDataPersister flightBookingDataPersister, IFlightSearchCacheService flightSearchCacheService)
     {
         _unitOfWork = unitOfWork;
         _duffelService = duffelService;
         _emailService = emailService;
         _flightBookingDataPersister = flightBookingDataPersister;
+        _flightSearchCacheService = flightSearchCacheService;
     }
 
     public async Task<FlightBookingResponse> Handle(CreateFlightBookingCommand command, CancellationToken cancellationToken)
@@ -113,7 +115,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         }
 
         var duffelRequest = new DuffelOrderRequestDto();
-        duffelRequest.Data.Type = "instant";
+        duffelRequest.Data.Type = "hold";
         duffelRequest.Data.SelectedOffers.Add(request.OfferId);
 
         var infantPassengerIds = new List<string>();
@@ -169,19 +171,19 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
 
         duffelRequest.Data.Passengers.AddRange(duffelPassengersList);
 
-        // Thiết lập thông tin thanh toán cho vé máy bay (bắt buộc đối với loại đặt vé "instant")
-        // Sử dụng giá trị gốc (originalAmount/originalCurrency) của Duffel để vượt qua kiểm tra Sandbox
-        duffelRequest.Data.Payments = new List<DuffelPaymentDto>
-        {
-            new DuffelPaymentDto
-            {
-                Type = "balance",
-                Amount = originalAmount,
-                Currency = originalCurrency
-            }
-        };
+        // Vô hiệu hóa cache kết quả tìm kiếm chuyến bay để tránh lỗi offer_request_already_booked
+        // khi những người dùng khác cố gắng đặt chung một OfferRequest (do Duffel quy định mỗi Request chỉ được đặt 1 lần).
+        await _flightSearchCacheService.InvalidateByOfferIdAsync(request.OfferId, cancellationToken);
 
-        var duffelResponseJson = await _duffelService.CreateOrderAsync(duffelRequest);
+        string duffelResponseJson;
+        try
+        {
+            duffelResponseJson = await _duffelService.CreateOrderAsync(duffelRequest);
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("offer_request_already_booked"))
+        {
+            throw new ArgumentException("Chuyến bay này đã được đặt hoặc không còn khả dụng, vui lòng tìm kiếm lại.", ex);
+        }
 
         // Parse Duffel Response to get Order ID
         var jsonDoc = JsonDocument.Parse(duffelResponseJson);

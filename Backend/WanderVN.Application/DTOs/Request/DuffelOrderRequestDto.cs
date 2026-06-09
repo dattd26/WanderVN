@@ -23,6 +23,7 @@ public class DuffelOrderDataDto
 
     // Thông tin thanh toán (bắt buộc khi chọn type là "instant")
     [JsonPropertyName("payments")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<DuffelPaymentDto>? Payments { get; set; }
 }
 

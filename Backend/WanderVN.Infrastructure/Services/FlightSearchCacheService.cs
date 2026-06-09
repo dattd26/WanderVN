@@ -82,11 +82,44 @@ public class FlightSearchCacheService : IFlightSearchCacheService
                 new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = ttl },
                 cancellationToken);
 
+            foreach (var offer in offers)
+            {
+                if (!string.IsNullOrEmpty(offer.Id))
+                {
+                    await _cache.SetStringAsync(
+                        $"{_settings.KeyPrefix}:offer_to_key:{offer.Id}",
+                        key,
+                        new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = ttl },
+                        cancellationToken);
+                }
+            }
+
             _logger.LogInformation("Flight search cache stored for {CacheKey} with TTL {TtlSeconds}s", key, (int)ttl.TotalSeconds);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Flight search cache write failed. Search response will still be returned.");
+        }
+    }
+
+    public async Task InvalidateByOfferIdAsync(string offerId, CancellationToken cancellationToken = default)
+    {
+        if (!_settings.Enabled || string.IsNullOrWhiteSpace(offerId)) return;
+
+        var mappingKey = $"{_settings.KeyPrefix}:offer_to_key:{offerId}";
+        try
+        {
+            var searchCacheKey = await _cache.GetStringAsync(mappingKey, cancellationToken);
+            if (!string.IsNullOrEmpty(searchCacheKey))
+            {
+                await _cache.RemoveAsync(searchCacheKey, cancellationToken);
+                await _cache.RemoveAsync(mappingKey, cancellationToken);
+                _logger.LogInformation("Flight search cache invalidated for OfferId: {OfferId}, SearchKey: {SearchKey}", offerId, searchCacheKey);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to invalidate flight search cache for OfferId: {OfferId}", offerId);
         }
     }
 

@@ -20,12 +20,14 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
     private readonly IUnitOfWork _unitOfWork;
     private readonly IVNPayService _vnpayService;
     private readonly IEmailService _emailService;
+    private readonly IDuffelService _duffelService;
 
-    public ProcessVNPayIpnCommandHandler(IUnitOfWork unitOfWork, IVNPayService vnpayService, IEmailService emailService)
+    public ProcessVNPayIpnCommandHandler(IUnitOfWork unitOfWork, IVNPayService vnpayService, IEmailService emailService, IDuffelService duffelService)
     {
         _unitOfWork = unitOfWork;
         _vnpayService = vnpayService;
         _emailService = emailService;
+        _duffelService = duffelService;
     }
 
     /// <summary>
@@ -102,6 +104,20 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
             // 6. Xử lý trạng thái thanh toán dựa trên vnp_ResponseCode ("00" là thành công)
             if (responseCode == "00")
             {
+                if (booking.ServiceType == BookingServiceType.Flight && !string.IsNullOrEmpty(booking.BookingCode))
+                {
+                    try
+                    {
+                        decimal duffelAmountUsd = WanderVN.Application.Common.Utils.CurrencyConverter.ConvertVndToUsd(booking.DuffelAmountVnd.GetValueOrDefault(0m));
+                        await _duffelService.PayOrderAsync(booking.BookingCode, duffelAmountUsd.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), "USD");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"⚠️ Lỗi khi thanh toán Duffel Order: {ex.Message}");
+                        // Lưu ý: Nếu Duffel lỗi, thanh toán nội bộ vẫn được ghi nhận để đối soát (refund thủ công).
+                    }
+                }
+
                 booking.PaymentStatus = BookingPaymentStatus.Paid;
                 booking.Status = BookingStatus.Confirmed;
 

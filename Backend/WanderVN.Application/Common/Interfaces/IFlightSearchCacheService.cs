@@ -16,4 +16,6 @@ public interface IFlightSearchCacheService
         IReadOnlyCollection<FlightOfferDto> offers,
         string duffelResponseJson,
         CancellationToken cancellationToken = default);
+
+    Task InvalidateByOfferIdAsync(string offerId, CancellationToken cancellationToken = default);
 }

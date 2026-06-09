@@ -21,12 +21,14 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
     private readonly IUnitOfWork _unitOfWork;
     private readonly IZaloPayService _zalopayService;
     private readonly IEmailService _emailService;
+    private readonly IDuffelService _duffelService;
 
-    public ProcessZaloPayCallbackCommandHandler(IUnitOfWork unitOfWork, IZaloPayService zalopayService, IEmailService emailService)
+    public ProcessZaloPayCallbackCommandHandler(IUnitOfWork unitOfWork, IZaloPayService zalopayService, IEmailService emailService, IDuffelService duffelService)
     {
         _unitOfWork = unitOfWork;
         _zalopayService = zalopayService;
         _emailService = emailService;
+        _duffelService = duffelService;
     }
 
     /// <summary>
@@ -104,6 +106,19 @@ public class ProcessZaloPayCallbackCommandHandler : IRequestHandler<ProcessZaloP
             }
 
             // 7. Cập nhật trạng thái thanh toán thành công
+            if (booking.ServiceType == BookingServiceType.Flight && !string.IsNullOrEmpty(booking.BookingCode))
+            {
+                try
+                {
+                    decimal duffelAmountUsd = WanderVN.Application.Common.Utils.CurrencyConverter.ConvertVndToUsd(booking.DuffelAmountVnd.GetValueOrDefault(0m));
+                    await _duffelService.PayOrderAsync(booking.BookingCode, duffelAmountUsd.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), "USD");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"⚠️ Lỗi khi thanh toán Duffel Order: {ex.Message}");
+                }
+            }
+
             booking.PaymentStatus = BookingPaymentStatus.Paid;
             booking.Status = BookingStatus.Confirmed;
 

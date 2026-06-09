@@ -32,7 +32,14 @@ namespace WanderVN.API.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                if (ex is ArgumentException || ex is UnauthorizedAccessException || ex is KeyNotFoundException)
+                {
+                    _logger.LogWarning("Business exception: {Message}", ex.Message);
+                }
+                else
+                {
+                    _logger.LogError(ex, "Unhandled system exception: {Message}", ex.Message);
+                }
 
                 await HandleExceptionAsync(context, ex);
             }
