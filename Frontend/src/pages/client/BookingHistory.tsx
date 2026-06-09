@@ -1,38 +1,35 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { hotelService } from '../../services/client/hotelService'; 
-import type { HotelBookingHistoryDto } from '../../types'; 
+import type { BookingHistoryDto } from '../../types'; 
 import {
-  Calendar,
   Clock,
   CheckCircle2,
   XCircle,
   AlertCircle,
-  MapPin,
-  ChevronRight,
   Loader2,
   ShoppingBag,
   LogIn,
   RefreshCw
 } from 'lucide-react';
+import { HotelBookingCard } from './components/HotelBookingCard';
+import { FlightBookingCard } from './components/FlightBookingCard';
 
 type TabStatus = 'all' | 'upcoming' | 'completed' | 'cancelled';
 
 export const BookingHistory: React.FC = () => {
-  const [bookings, setBookings] = useState<HotelBookingHistoryDto[]>([]);
+  const [bookings, setBookings] = useState<BookingHistoryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabStatus>('all');
   const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0); // Dùng để click tải lại dữ liệu nhanh
+  const [refreshKey, setRefreshKey] = useState(0); 
   
   const navigate = useNavigate();
 
-  // Lấy userId an toàn từ localStorage (Đảm bảo ép chuẩn kiểu số nguyên)
   const userIdRaw = localStorage.getItem('userId');
   const currentUserId = userIdRaw ? parseInt(userIdRaw, 10) : null;
 
   useEffect(() => {
-    // 1. Kiểm tra xem người dùng đã đăng nhập chưa
     if (!currentUserId) return;
 
     const loadBookings = async () => {
@@ -48,7 +45,7 @@ export const BookingHistory: React.FC = () => {
           return;
         }
 
-        console.log("Danh sách đơn đặt phòng tải về thành công:", data);
+        console.log("Danh sách đơn đặt hàng tải về thành công:", data);
 
         const sortedData = [...data].sort((a, b) => {
           const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -59,7 +56,8 @@ export const BookingHistory: React.FC = () => {
         setBookings(sortedData);
       } catch (err) {
         console.error('Lỗi kết nối API lấy lịch sử đặt phòng:', err);
-        setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc Server Backend C#.');
+        const message = err instanceof Error ? err.message : 'Không thể tải lịch sử đơn đặt.';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -68,24 +66,39 @@ export const BookingHistory: React.FC = () => {
     loadBookings();
   }, [currentUserId, refreshKey]);
 
+  // Helper getters to resolve checkIn/checkOut date nested structure
+  const getCheckInDate = (b: BookingHistoryDto): string => {
+    return b.serviceType === 'Flight' ? b.flightDetails?.depTime || '' : b.hotelDetails?.checkInDate || '';
+  };
+
+  const getCheckOutDate = (b: BookingHistoryDto): string => {
+    return b.serviceType === 'Flight' ? b.flightDetails?.arrTime || '' : b.hotelDetails?.checkOutDate || '';
+  };
+
   // Bộ lọc Tab phân loại trạng thái hành trình theo thời gian thực tế
   const filteredBookings = useMemo(() => {
     const today = new Date().setHours(0, 0, 0, 0);
     const safeBookings = Array.isArray(bookings) ? bookings : [];
 
     if (activeTab === 'upcoming') {
-      return safeBookings.filter(b =>
-        b.status !== 'Cancelled' &&
-        b.checkInDate &&
-        new Date(b.checkInDate).getTime() >= today
-      );
+      return safeBookings.filter(b => {
+        const checkIn = getCheckInDate(b);
+        return (
+          b.status !== 'Cancelled' &&
+          checkIn &&
+          new Date(checkIn).getTime() >= today
+        );
+      });
     }
 
     if (activeTab === 'completed') {
-      return safeBookings.filter(b =>
-        b.status === 'Completed' ||
-        (b.status === 'Confirmed' && b.checkOutDate && new Date(b.checkOutDate).getTime() < today)
-      );
+      return safeBookings.filter(b => {
+        const checkOut = getCheckOutDate(b);
+        return (
+          b.status === 'Completed' ||
+          (b.status === 'Confirmed' && checkOut && new Date(checkOut).getTime() < today)
+        );
+      });
     }
 
     if (activeTab === 'cancelled') {
@@ -94,6 +107,19 @@ export const BookingHistory: React.FC = () => {
 
     return safeBookings;
   }, [activeTab, bookings]);
+
+  // Pre-calculate counts for tabs
+  const tabCounts = useMemo(() => {
+    const today = new Date().setHours(0, 0, 0, 0);
+    const safeBookings = Array.isArray(bookings) ? bookings : [];
+    
+    return {
+      all: safeBookings.length,
+      upcoming: safeBookings.filter(b => b.status !== 'Cancelled' && getCheckInDate(b) && new Date(getCheckInDate(b)).getTime() >= today).length,
+      completed: safeBookings.filter(b => b.status === 'Completed' || (b.status === 'Confirmed' && getCheckOutDate(b) && new Date(getCheckOutDate(b)).getTime() < today)).length,
+      cancelled: safeBookings.filter(b => b.status === 'Cancelled').length
+    };
+  }, [bookings]);
 
   // Hàm helper định dạng trạng thái Badge trực quan
   const renderStatusBadge = (status: string | undefined, checkInDate: string) => {
@@ -197,7 +223,6 @@ export const BookingHistory: React.FC = () => {
 
         <div className="flex border-b border-outline-variant/30 mb-8 overflow-x-auto scrollbar-none">
           {(['all', 'upcoming', 'completed', 'cancelled'] as TabStatus[]).map((tab) => {
-            const safeBookings = Array.isArray(bookings) ? bookings : [];
             return (
               <button
                 key={tab}
@@ -213,10 +238,7 @@ export const BookingHistory: React.FC = () => {
                 {tab === 'completed' && 'Đã trải nghiệm'}
                 {tab === 'cancelled' && 'Đã hủy bỏ'}
                 <span className="ml-2 text-[10px] opacity-70 bg-outline-variant/40 px-1.5 py-0.5 rounded-full">
-                  {tab === 'all' && safeBookings.length}
-                  {tab === 'upcoming' && safeBookings.filter(b => b.status !== 'Cancelled' && b.checkInDate && new Date(b.checkInDate).getTime() >= new Date().setHours(0,0,0,0)).length}
-                  {tab === 'completed' && safeBookings.filter(b => b.status === 'Completed' || (b.status === 'Confirmed' && b.checkOutDate && new Date(b.checkOutDate).getTime() < new Date().setHours(0,0,0,0))).length}
-                  {tab === 'cancelled' && safeBookings.filter(b => b.status === 'Cancelled').length}
+                  {tabCounts[tab]}
                 </span>
               </button>
             );
@@ -235,76 +257,19 @@ export const BookingHistory: React.FC = () => {
         ) : (
           <div className="space-y-6">
             {filteredBookings.map((booking, index) => (
-              <div 
-                key={booking.bookingId || index}
-                className="group border border-outline-variant/30 bg-surface-container-lowest hover:border-primary/40 transition-all duration-300 rounded-lg overflow-hidden grid grid-cols-1 md:grid-cols-12 limestone-shadow"
-              >
-                <div className="md:col-span-3 h-48 md:h-full overflow-hidden relative bg-surface-container-low">
-                  <img 
-                    src={booking.hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80'} 
-                    alt={booking.hotelName || 'Khách sạn WanderVN'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80';
-                    }}
-                  />
-                </div>
-
-                <div className="md:col-span-6 p-6 flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {renderStatusBadge(booking.status, booking.checkInDate)}
-                      <span className="text-[11px] font-mono font-bold text-on-surface-variant/80 px-2 py-0.5 bg-neutral-100 border rounded">
-                        Mã đơn: {booking.bookingCode || 'N/A'}
-                      </span>
-                    </div>
-                    
-                    <h3 className="font-bold text-lg text-primary leading-snug group-hover:text-secondary transition-colors">
-                      {booking.hotelName || 'Hệ thống Khách sạn Cao Cấp'}
-                    </h3>
-
-                    <p className="text-xs text-on-surface-variant flex items-center gap-1 text-neutral-500">
-                      <MapPin className="h-3.5 w-3.5 shrink-0 text-[#B59A5A]" /> {booking.hotelAddress || 'Địa chỉ đang được cập nhật'}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-3 border-t border-neutral-100 text-xs">
-                    <div className="space-y-0.5">
-                      <span className="text-neutral-500 block">Ngày nhận phòng:</span>
-                      <span className="font-semibold text-on-surface flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5 text-secondary" /> {booking.checkInDate || 'Chưa định ngày'}
-                      </span>
-                    </div>
-                    <div className="space-y-0.5">
-                      <span className="text-neutral-500 block">Ngày trả phòng:</span>
-                      <span className="font-semibold text-on-surface flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5 text-secondary" /> {booking.checkOutDate || 'Chưa định ngày'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="md:col-span-3 p-6 bg-neutral-50/50 border-t md:border-t-0 md:border-l border-neutral-100 flex flex-row md:flex-col justify-between md:justify-center md:items-center items-baseline gap-4">
-                  <div className="md:text-center space-y-0.5 w-full">
-                    <span className="text-[11px] text-neutral-500 block uppercase tracking-wider font-bold">
-                      Hạng phòng: <span className="text-neutral-800 normal-case font-semibold">{booking.roomTypeName || 'Tiêu chuẩn'}</span>
-                    </span>
-                    <span className="text-[10px] text-neutral-400 block mt-2">Tổng chi phí chuyến đi:</span>
-                    <div className="text-xl font-bold text-red-600">
-                      {booking.totalPrice ? booking.totalPrice.toLocaleString('vi-VN') : '0'} VND
-                    </div>
-                  </div>
-
-                  {/* 🔔 THAY ĐỔI TẠI ĐÂY: Chuyển sang nút "XEM CHI TIẾT" và trỏ link chuẩn */}
-                  <Link
-                    to={`/booking-history/${booking.bookingId}`}
-                    className="md:w-full py-2.5 px-4 bg-white hover:bg-primary hover:text-white border border-primary text-primary font-semibold text-xs tracking-wider uppercase rounded flex items-center justify-center gap-1 transition-all whitespace-nowrap"
-                  >
-                    Xem chi tiết <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </div>
-
-              </div>
+              booking.serviceType === 'Flight' ? (
+                <FlightBookingCard 
+                  key={booking.bookingId || index}
+                  booking={booking}
+                  renderStatusBadge={renderStatusBadge}
+                />
+              ) : (
+                <HotelBookingCard 
+                  key={booking.bookingId || index}
+                  booking={booking}
+                  renderStatusBadge={renderStatusBadge}
+                />
+              )
             ))}
           </div> 
         )}

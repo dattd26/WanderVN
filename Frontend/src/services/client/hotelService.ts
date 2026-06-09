@@ -1,5 +1,6 @@
 import { request } from '../shared/apiClient';
-import type { HotelDetailDto, CreateHotelBookingRequest, HotelBookingResponse ,HotelBookingHistoryDto} from '../../types';
+import type { HotelDetailDto, CreateHotelBookingRequest, HotelBookingResponse ,BookingHistoryDto} from '../../types';
+import { normalizeBookingData, type RawBookingData } from '../../utils/bookingUtils';
 
 export const hotelService = {
   /**
@@ -19,8 +20,9 @@ export const hotelService = {
       body: JSON.stringify(bookingRequest),
     });
   },
-  async getMyHotelBookings(): Promise<HotelBookingHistoryDto[]> {
-    return request<HotelBookingHistoryDto[]>('/bookings/history');
+  async getMyHotelBookings(): Promise<BookingHistoryDto[]> {
+    const data = await request<RawBookingData[]>('/bookings/history');
+    return data.map(normalizeBookingData);
   }
   
 };
