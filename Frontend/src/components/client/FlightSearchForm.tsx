@@ -18,8 +18,8 @@ interface FlightSearchFormProps {
   ) => void;
 }
 
-import { searchService } from '../../../services/client/searchService';
-import type { AirportDto } from '../../../types';
+import { searchService } from '../../services/client/searchService';
+import type { AirportDto } from '../../types';
 
 export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
   initialOrigin = 'HAN',
