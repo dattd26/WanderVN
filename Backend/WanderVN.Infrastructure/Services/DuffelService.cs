@@ -25,6 +25,22 @@ public class DuffelService : IDuffelService
         var isRoundTrip = !string.IsNullOrEmpty(request.ReturnDate);
         var cabinClass = string.IsNullOrEmpty(request.CabinClass) ? "business" : request.CabinClass;
 
+        var passengersList = new System.Collections.Generic.List<object>();
+        if (request.Passengers != null && request.Passengers.Count > 0)
+        {
+            foreach (var p in request.Passengers)
+            {
+                passengersList.Add(new { type = p.Type });
+            }
+        }
+        else
+        {
+            for (int i = 0; i < request.AdultCount; i++) passengersList.Add(new { type = "adult" });
+            for (int i = 0; i < request.ChildCount; i++) passengersList.Add(new { type = "child" });
+            for (int i = 0; i < request.InfantCount; i++) passengersList.Add(new { type = "infant_without_seat" });
+        }
+        if (passengersList.Count == 0) passengersList.Add(new { type = "adult" });
+
         object payload;
         if (isRoundTrip)
         {
@@ -37,7 +53,7 @@ public class DuffelService : IDuffelService
                         new { origin = request.Origin, destination = request.Destination, departure_date = request.DepartureDate },
                         new { origin = request.Destination, destination = request.Origin, departure_date = request.ReturnDate }
                     },
-                    passengers = new[] { new { type = request.PassengerType } },
+                    passengers = passengersList,
                     cabin_class = cabinClass,
                     return_offers = request.ReturnOffers
                 }
@@ -53,7 +69,7 @@ public class DuffelService : IDuffelService
                     {
                         new { origin = request.Origin, destination = request.Destination, departure_date = request.DepartureDate }
                     },
-                    passengers = new[] { new { type = request.PassengerType } },
+                    passengers = passengersList,
                     cabin_class = cabinClass,
                     return_offers = request.ReturnOffers
                 }

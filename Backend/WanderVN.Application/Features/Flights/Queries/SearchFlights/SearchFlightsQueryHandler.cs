@@ -29,13 +29,48 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
 
     public async Task<List<FlightOfferDto>> Handle(SearchFlightsQuery request, CancellationToken cancellationToken)
     {
+        int adults = 0;
+        int children = 0;
+        int infants = 0;
+
+        if (request.Passengers != null && request.Passengers.Count > 0)
+        {
+            foreach (var p in request.Passengers)
+            {
+                if (string.Equals(p.Type, "adult", StringComparison.OrdinalIgnoreCase))
+                    adults++;
+                else if (string.Equals(p.Type, "child", StringComparison.OrdinalIgnoreCase))
+                    children++;
+                else if (string.Equals(p.Type, "infant_without_seat", StringComparison.OrdinalIgnoreCase))
+                    infants++;
+            }
+        }
+        else
+        {
+            adults = request.AdultCount;
+            children = request.ChildCount;
+            infants = request.InfantCount;
+        }
+
+        var passengersDtoList = new List<DuffelPassengerRequestDto>();
+        if (request.Passengers != null)
+        {
+            foreach (var p in request.Passengers)
+            {
+                passengersDtoList.Add(new DuffelPassengerRequestDto { Type = p.Type });
+            }
+        }
+
         // Chuyển đổi Query thành DTO của service bao gồm cấu hình return_offers
         var duffelRequest = new DuffelOfferRequestDto
         {
             Origin = request.Origin,
             Destination = request.Destination,
             DepartureDate = request.DepartureDate,
-            PassengerType = request.PassengerType,
+            AdultCount = adults,
+            ChildCount = children,
+            InfantCount = infants,
+            Passengers = passengersDtoList,
             ReturnOffers = request.ReturnOffers,
             CabinClass = request.CabinClass,
             ReturnDate = request.ReturnDate
@@ -104,6 +139,7 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
             // 1. Quét tìm Offer của hãng Duffel Airways (mã ZZ) chuyên dùng cho việc đặt vé
             string duffelAirwaysOfferId = string.Empty;
             string duffelAirwaysPassengerId = string.Empty;
+            var duffelAirwaysPassengers = new List<FlightOfferPassengerDto>();
 
             foreach (var offer in offersProp.EnumerateArray())
             {
@@ -115,15 +151,18 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                     currentOfferId = idProp.GetString() ?? string.Empty;
                 }
 
-                string currentPassengerId = string.Empty;
-                if (offer.TryGetProperty("passengers", out var passengersProp) && passengersProp.ValueKind == JsonValueKind.Array && passengersProp.GetArrayLength() > 0)
+                var currentPassengers = new List<FlightOfferPassengerDto>();
+                if (offer.TryGetProperty("passengers", out var passengersProp) && passengersProp.ValueKind == JsonValueKind.Array)
                 {
-                    var firstPassenger = passengersProp[0];
-                    if (firstPassenger.ValueKind == JsonValueKind.Object && firstPassenger.TryGetProperty("id", out var passIdProp) && passIdProp.ValueKind == JsonValueKind.String)
+                    foreach (var passenger in passengersProp.EnumerateArray())
                     {
-                        currentPassengerId = passIdProp.GetString() ?? string.Empty;
+                        string pId = passenger.TryGetProperty("id", out var passIdProp) && passIdProp.ValueKind == JsonValueKind.String ? (passIdProp.GetString() ?? string.Empty) : string.Empty;
+                        string pType = passenger.TryGetProperty("type", out var typeProp) && typeProp.ValueKind == JsonValueKind.String ? (typeProp.GetString() ?? string.Empty) : string.Empty;
+                        currentPassengers.Add(new FlightOfferPassengerDto { Id = pId, Type = pType });
                     }
                 }
+
+                string currentPassengerId = currentPassengers.Count > 0 ? currentPassengers[0].Id : string.Empty;
 
                 bool isDuffelAirways = false;
                 if (offer.TryGetProperty("slices", out var slicesProp) && slicesProp.ValueKind == JsonValueKind.Array && slicesProp.GetArrayLength() > 0)
@@ -149,6 +188,7 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                 {
                     duffelAirwaysOfferId = currentOfferId;
                     duffelAirwaysPassengerId = currentPassengerId;
+                    duffelAirwaysPassengers = currentPassengers;
                     break;
                 }
             }
@@ -163,12 +203,17 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                     {
                         duffelAirwaysOfferId = idProp.GetString() ?? string.Empty;
                     }
-                    if (firstOffer.TryGetProperty("passengers", out var passengersProp) && passengersProp.ValueKind == JsonValueKind.Array && passengersProp.GetArrayLength() > 0)
+                    if (firstOffer.TryGetProperty("passengers", out var passengersProp) && passengersProp.ValueKind == JsonValueKind.Array)
                     {
-                        var firstPassenger = passengersProp[0];
-                        if (firstPassenger.ValueKind == JsonValueKind.Object && firstPassenger.TryGetProperty("id", out var passIdProp) && passIdProp.ValueKind == JsonValueKind.String)
+                        foreach (var passenger in passengersProp.EnumerateArray())
                         {
-                            duffelAirwaysPassengerId = passIdProp.GetString() ?? string.Empty;
+                            string pId = passenger.TryGetProperty("id", out var passIdProp) && passIdProp.ValueKind == JsonValueKind.String ? (passIdProp.GetString() ?? string.Empty) : string.Empty;
+                            string pType = passenger.TryGetProperty("type", out var typeProp) && typeProp.ValueKind == JsonValueKind.String ? (typeProp.GetString() ?? string.Empty) : string.Empty;
+                            duffelAirwaysPassengers.Add(new FlightOfferPassengerDto { Id = pId, Type = pType });
+                        }
+                        if (duffelAirwaysPassengers.Count > 0)
+                        {
+                            duffelAirwaysPassengerId = duffelAirwaysPassengers[0].Id;
                         }
                     }
                 }
@@ -189,6 +234,7 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                 // Gắn kèm các ID của hãng Duffel Airways để hỗ trợ Frontend gửi lên lúc đặt chỗ
                 dto.DuffelAirwaysOfferId = duffelAirwaysOfferId;
                 dto.DuffelAirwaysPassengerId = duffelAirwaysPassengerId;
+                dto.DuffelAirwaysPassengers = duffelAirwaysPassengers;
 
                 // Trích xuất giá cả thực tế từ Duffel
                 if (offer.TryGetProperty("total_amount", out var amountProp) && amountProp.ValueKind == JsonValueKind.String)
@@ -204,13 +250,18 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                     dto.TotalCurrency = currencyProp.GetString() ?? "USD";
                 }
 
-                // Trích xuất ID Hành khách tương ứng
-                if (offer.TryGetProperty("passengers", out var passengersProp) && passengersProp.ValueKind == JsonValueKind.Array && passengersProp.GetArrayLength() > 0)
+                // Trích xuất danh sách hành khách thực tế
+                if (offer.TryGetProperty("passengers", out var offerPassengersProp) && offerPassengersProp.ValueKind == JsonValueKind.Array)
                 {
-                    var firstPassenger = passengersProp[0];
-                    if (firstPassenger.ValueKind == JsonValueKind.Object && firstPassenger.TryGetProperty("id", out var passIdProp) && passIdProp.ValueKind == JsonValueKind.String)
+                    foreach (var passenger in offerPassengersProp.EnumerateArray())
                     {
-                        dto.PassengerId = passIdProp.GetString() ?? string.Empty;
+                        string pId = passenger.TryGetProperty("id", out var passIdProp) && passIdProp.ValueKind == JsonValueKind.String ? (passIdProp.GetString() ?? string.Empty) : string.Empty;
+                        string pType = passenger.TryGetProperty("type", out var typeProp) && typeProp.ValueKind == JsonValueKind.String ? (typeProp.GetString() ?? string.Empty) : string.Empty;
+                        dto.Passengers.Add(new FlightOfferPassengerDto { Id = pId, Type = pType });
+                    }
+                    if (dto.Passengers.Count > 0)
+                    {
+                        dto.PassengerId = dto.Passengers[0].Id;
                     }
                 }
 

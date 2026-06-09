@@ -21,12 +21,14 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
     private readonly IUnitOfWork _unitOfWork;
     private readonly IDuffelService _duffelService;
     private readonly IEmailService _emailService;
+    private readonly IFlightBookingDataPersister _flightBookingDataPersister;
 
-    public CreateFlightBookingCommandHandler(IUnitOfWork unitOfWork, IDuffelService duffelService, IEmailService emailService)
+    public CreateFlightBookingCommandHandler(IUnitOfWork unitOfWork, IDuffelService duffelService, IEmailService emailService, IFlightBookingDataPersister flightBookingDataPersister)
     {
         _unitOfWork = unitOfWork;
         _duffelService = duffelService;
         _emailService = emailService;
+        _flightBookingDataPersister = flightBookingDataPersister;
     }
 
     public async Task<FlightBookingResponse> Handle(CreateFlightBookingCommand command, CancellationToken cancellationToken)
@@ -71,6 +73,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         // 1. Lấy chi tiết Offer gốc từ Duffel để trích xuất giá tiền thật (phục vụ thanh toán sandbox khớp 100%)
         string originalAmount = "1000.00";
         string originalCurrency = "USD";
+        var passengerTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         try
         {
@@ -88,6 +91,19 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                 {
                     originalCurrency = currencyProp.GetString() ?? originalCurrency;
                 }
+
+                if (dataProp.TryGetProperty("passengers", out var passengersProp) && passengersProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var p in passengersProp.EnumerateArray())
+                    {
+                        var pId = p.TryGetProperty("id", out var idVal) ? idVal.GetString() : null;
+                        var pType = p.TryGetProperty("type", out var typeVal) ? typeVal.GetString() : null;
+                        if (!string.IsNullOrEmpty(pId) && !string.IsNullOrEmpty(pType))
+                        {
+                            passengerTypes[pId] = pType;
+                        }
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -100,6 +116,18 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         duffelRequest.Data.Type = "instant";
         duffelRequest.Data.SelectedOffers.Add(request.OfferId);
 
+        var infantPassengerIds = new List<string>();
+        foreach (var pax in request.Passengers)
+        {
+            if (passengerTypes.TryGetValue(pax.Id, out var type) && type.Equals("infant_without_seat", StringComparison.OrdinalIgnoreCase))
+            {
+                infantPassengerIds.Add(pax.Id);
+            }
+        }
+
+        var duffelPassengersList = new List<DuffelPassengerDto>();
+        var adultPassengers = new List<DuffelPassengerDto>();
+
         for (int i = 0; i < request.Passengers.Count; i++)
         {
             var pax = request.Passengers[i];
@@ -110,7 +138,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             if (string.IsNullOrWhiteSpace(pPhone)) pPhone = guestPhone;
             pPhone = NormalizePhoneNumber(pPhone);
 
-            duffelRequest.Data.Passengers.Add(new DuffelPassengerDto
+            var duffelPax = new DuffelPassengerDto
             {
                 Id = pax.Id,
                 Title = pax.Title,
@@ -120,8 +148,26 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                 Email = pEmail,
                 PhoneNumber = pPhone,
                 Gender = pax.Gender
-            });
+            };
+
+            duffelPassengersList.Add(duffelPax);
+
+            if (passengerTypes.TryGetValue(pax.Id, out var type) && type.Equals("adult", StringComparison.OrdinalIgnoreCase))
+            {
+                adultPassengers.Add(duffelPax);
+            }
         }
+
+        // Link infant passengers to their accompanying adult passengers
+        for (int idx = 0; idx < infantPassengerIds.Count; idx++)
+        {
+            if (idx < adultPassengers.Count)
+            {
+                adultPassengers[idx].InfantPassengerId = infantPassengerIds[idx];
+            }
+        }
+
+        duffelRequest.Data.Passengers.AddRange(duffelPassengersList);
 
         // Thiết lập thông tin thanh toán cho vé máy bay (bắt buộc đối với loại đặt vé "instant")
         // Sử dụng giá trị gốc (originalAmount/originalCurrency) của Duffel để vượt qua kiểm tra Sandbox
@@ -194,189 +240,15 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // Lưu thông tin chuyến bay, hãng hàng không, sân bay và hành khách (Hybrid Storage Pattern)
-            bool parsedSlicesAndSegments = false;
             try
             {
-                if (root.TryGetProperty("data", out var dataProp) &&
-                    dataProp.TryGetProperty("slices", out var slicesProp) &&
-                    slicesProp.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var slice in slicesProp.EnumerateArray())
-                    {
-                        if (slice.TryGetProperty("segments", out var segmentsProp) &&
-                            segmentsProp.ValueKind == JsonValueKind.Array)
-                        {
-                            foreach (var segment in segmentsProp.EnumerateArray())
-                            {
-                                string segmentId = segment.TryGetProperty("id", out var segIdVal) ? (segIdVal.GetString() ?? "") : "";
-
-                                // Lấy thông tin Hãng hàng không (Operating hoặc Marketing)
-                                if (!segment.TryGetProperty("operating_carrier", out var carrier) || carrier.ValueKind != JsonValueKind.Object)
-                                {
-                                    segment.TryGetProperty("marketing_carrier", out carrier);
-                                }
-
-                                Airlines? airline = null;
-                                if (carrier.ValueKind == JsonValueKind.Object)
-                                {
-                                    var airlineName = carrier.TryGetProperty("name", out var nameVal) ? nameVal.GetString() : "Hãng hàng không";
-                                    var logoUrl = carrier.TryGetProperty("logo_symbol_url", out var logoSymbolVal)
-                                        ? logoSymbolVal.GetString()
-                                        : (carrier.TryGetProperty("logo_lockup_url", out var logoLockupVal) ? logoLockupVal.GetString() : null);
-
-                                    airline = await _unitOfWork.Repository<Airlines>().FindFirstOrDefaultAsync(a => a.Name == airlineName, cancellationToken: cancellationToken);
-                                    if (airline == null)
-                                    {
-                                        airline = new Airlines
-                                        {
-                                            Name = airlineName ?? "Hãng hàng không",
-                                            LogoUrl = logoUrl
-                                        };
-                                        await _unitOfWork.Repository<Airlines>().AddAsync(airline, cancellationToken);
-                                        await _unitOfWork.SaveChangesAsync(cancellationToken);
-                                    }
-                                }
-
-                                // Lấy thông tin Sân bay đi (Origin Airport)
-                                Airports? depAirport = null;
-                                if (segment.TryGetProperty("origin", out var originObj) && originObj.ValueKind == JsonValueKind.Object)
-                                {
-                                    var originIata = originObj.TryGetProperty("iata_code", out var iataVal) ? iataVal.GetString() : null;
-                                    if (!string.IsNullOrEmpty(originIata))
-                                    {
-                                        var originName = originObj.TryGetProperty("name", out var nameVal) ? nameVal.GetString() : null;
-                                        string? originCity = null;
-                                        if (originObj.TryGetProperty("city_name", out var cityVal))
-                                        {
-                                            originCity = cityVal.GetString();
-                                        }
-                                        else if (originObj.TryGetProperty("city", out var cityObjVal) && cityObjVal.ValueKind == JsonValueKind.Object)
-                                        {
-                                            if (cityObjVal.TryGetProperty("name", out var cityNameVal))
-                                            {
-                                                originCity = cityNameVal.GetString();
-                                            }
-                                        }
-
-                                        depAirport = await _unitOfWork.Repository<Airports>().FindFirstOrDefaultAsync(a => a.IataCode == originIata, cancellationToken: cancellationToken);
-                                        if (depAirport == null)
-                                        {
-                                            depAirport = new Airports
-                                            {
-                                                IataCode = originIata,
-                                                Name = originName,
-                                                City = originCity
-                                            };
-                                            await _unitOfWork.Repository<Airports>().AddAsync(depAirport, cancellationToken);
-                                            await _unitOfWork.SaveChangesAsync(cancellationToken);
-                                        }
-                                    }
-                                }
-
-                                // Lấy thông tin Sân bay đến (Destination Airport)
-                                Airports? arrAirport = null;
-                                if (segment.TryGetProperty("destination", out var destObj) && destObj.ValueKind == JsonValueKind.Object)
-                                {
-                                    var destIata = destObj.TryGetProperty("iata_code", out var iataVal) ? iataVal.GetString() : null;
-                                    if (!string.IsNullOrEmpty(destIata))
-                                    {
-                                        var destName = destObj.TryGetProperty("name", out var nameVal) ? nameVal.GetString() : null;
-                                        string? destCity = null;
-                                        if (destObj.TryGetProperty("city_name", out var cityVal))
-                                        {
-                                            destCity = cityVal.GetString();
-                                        }
-                                        else if (destObj.TryGetProperty("city", out var cityObjVal) && cityObjVal.ValueKind == JsonValueKind.Object)
-                                        {
-                                            if (cityObjVal.TryGetProperty("name", out var cityNameVal))
-                                            {
-                                                destCity = cityNameVal.GetString();
-                                            }
-                                        }
-
-                                        arrAirport = await _unitOfWork.Repository<Airports>().FindFirstOrDefaultAsync(a => a.IataCode == destIata, cancellationToken: cancellationToken);
-                                        if (arrAirport == null)
-                                        {
-                                            arrAirport = new Airports
-                                            {
-                                                IataCode = destIata,
-                                                Name = destName,
-                                                City = destCity
-                                            };
-                                            await _unitOfWork.Repository<Airports>().AddAsync(arrAirport, cancellationToken);
-                                            await _unitOfWork.SaveChangesAsync(cancellationToken);
-                                        }
-                                    }
-                                }
-
-                                // Tạo hoặc tìm Chuyến bay (Flights) làm lịch sử cache
-                                var flightNumber = segment.TryGetProperty("operating_carrier_flight_number", out var fnVal)
-                                    ? fnVal.GetString()
-                                    : (segment.TryGetProperty("marketing_carrier_flight_number", out var mfnVal) ? mfnVal.GetString() : "N/A");
-
-                                if (string.IsNullOrEmpty(flightNumber))
-                                {
-                                    flightNumber = "N/A";
-                                }
-
-                                var depTimeStr = segment.TryGetProperty("departing_at", out var depVal) ? depVal.GetString() : null;
-                                var arrTimeStr = segment.TryGetProperty("arriving_at", out var arrVal) ? arrVal.GetString() : null;
-
-                                DateTime depTime = !string.IsNullOrEmpty(depTimeStr) ? DateTime.Parse(depTimeStr) : DateTime.UtcNow;
-                                DateTime arrTime = !string.IsNullOrEmpty(arrTimeStr) ? DateTime.Parse(arrTimeStr) : DateTime.UtcNow;
-
-                                var flight = await _unitOfWork.Repository<WanderVN.Domain.Entities.Flights>().FindFirstOrDefaultAsync(
-                                    f => f.FlightNumber == flightNumber && f.DepTime == depTime,
-                                    cancellationToken: cancellationToken);
-
-                                if (flight == null)
-                                {
-                                    flight = new WanderVN.Domain.Entities.Flights
-                                    {
-                                        AirlineId = airline?.Id,
-                                        FlightNumber = flightNumber,
-                                        DepAirportId = depAirport?.Id,
-                                        ArrAirportId = arrAirport?.Id,
-                                        DepTime = depTime,
-                                        ArrTime = arrTime,
-                                        Price = 0m,
-                                        Status = "Scheduled"
-                                    };
-                                    await _unitOfWork.Repository<WanderVN.Domain.Entities.Flights>().AddAsync(flight, cancellationToken);
-                                    await _unitOfWork.SaveChangesAsync(cancellationToken);
-                                }
-
-                                // Lưu hành khách tương ứng với chặng bay này
-                                foreach (var pax in request.Passengers)
-                                {
-                                    // var seatNumber = FindSeatNumber(root, pax.Id, segmentId);
-
-                                    var bookingFlight = new WanderVN.Domain.Entities.BookingFlights
-                                    {
-                                        BookingId = booking.Id,
-                                        PassengerName = $"{pax.Title} {pax.GivenName} {pax.FamilyName}",
-                                        PassportNumber = pax.PassportNumber,
-                                        FlightId = flight.Id,
-                                        // SeatNumber = seatNumber
-                                    };
-
-                                    await _unitOfWork.Repository<WanderVN.Domain.Entities.BookingFlights>().AddAsync(bookingFlight, cancellationToken);
-                                }
-                                await _unitOfWork.SaveChangesAsync(cancellationToken);
-                            }
-                        }
-                    }
-                    parsedSlicesAndSegments = true;
-                }
+                await _flightBookingDataPersister.PersistFlightDataAsync(booking, jsonDoc, request.Passengers, cancellationToken);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"⚠️ Lỗi khi phân tích và lưu chặng bay: {ex.Message}. Sử dụng phương thức dự phòng.");
-            }
 
-            // Phương án dự phòng: Nếu phân tích chặng bay thất bại, lưu thông tin tối thiểu
-            if (!parsedSlicesAndSegments)
-            {
+                // Phương án dự phòng: Nếu phân tích chặng bay thất bại, lưu thông tin tối thiểu
                 foreach (var pax in request.Passengers)
                 {
                     var bookingFlight = new WanderVN.Domain.Entities.BookingFlights

@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PlaneTakeoff, PlaneLanding, Calendar, User, Search, ChevronDown } from 'lucide-react';
 
+export interface PassengerCounts {
+  adults: number;
+  children: number;
+  infants: number;
+}
+
 interface FlightSearchFormProps {
   initialOrigin?: string;
   initialDestination?: string;
@@ -8,13 +14,15 @@ interface FlightSearchFormProps {
   initialReturnDate?: string;
   initialTripType?: 'round-trip' | 'one-way';
   initialCabinClass?: 'business' | 'economy';
+  initialPassengers?: PassengerCounts;
   onSearch: (
     origin: string,
     destination: string,
     departureDate: string,
     tripType: 'round-trip' | 'one-way',
     cabinClass: 'business' | 'economy',
-    returnDate?: string
+    returnDate?: string,
+    passengers?: PassengerCounts
   ) => void;
 }
 
@@ -28,6 +36,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
   initialReturnDate = '',
   initialTripType = 'one-way',
   initialCabinClass = 'business',
+  initialPassengers,
   onSearch
 }) => {
   const [tripType, setTripType] = useState<'round-trip' | 'one-way'>(initialTripType);
@@ -50,7 +59,9 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
     futureDate.setDate(futureDate.getDate() + 10);
     return futureDate.toISOString().split('T')[0];
   });
-  const [guests, setGuests] = useState('1 Người');
+  const [passengers, setPassengers] = useState<PassengerCounts>(() => {
+    return initialPassengers || { adults: 1, children: 0, infants: 0 };
+  });
 
   // Custom Dropdown Open States
   const [isOriginOpen, setIsOriginOpen] = useState(false);
@@ -128,7 +139,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
       alert('⚠️ Ngày trở về phải sau ngày khởi hành.');
       return;
     }
-    onSearch(origin.iataCode, destination.iataCode, departureDate, tripType, cabinClass, tripType === 'round-trip' ? returnDate : undefined);
+    onSearch(origin.iataCode, destination.iataCode, departureDate, tripType, cabinClass, tripType === 'round-trip' ? returnDate : undefined, passengers);
   };
 
   return (
@@ -396,7 +407,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
         </div>
 
         {/* Hành khách (Guests) */}
-        <div className="space-y-2 relative flex-[1.5_1.5_0%] w-full min-w-[120px]" ref={guestsRef}>
+        <div className="space-y-2 relative flex-[1.5_1.5_0%] w-full min-w-[150px]" ref={guestsRef}>
           <label className="text-[10px] text-white/50 block font-medium uppercase tracking-[0.2em] whitespace-nowrap">
             Hành khách
           </label>
@@ -411,27 +422,110 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
             <div className="flex items-center gap-3 w-full truncate">
               <User className="text-white/40 h-5 w-5 shrink-0 group-hover:text-secondary transition-colors" />
               <div className="text-white font-body-md text-body-md select-none truncate">
-                {guests}
+                {passengers.adults + passengers.children + passengers.infants === 1
+                  ? `${passengers.adults} Người lớn`
+                  : `${passengers.adults} NL${passengers.children > 0 ? `, ${passengers.children} TE` : ''}${passengers.infants > 0 ? `, ${passengers.infants} EB` : ''}`
+                }
               </div>
             </div>
             <ChevronDown className="text-white/30 h-4 w-4 shrink-0 transition-transform duration-300 group-hover:text-white" style={{ transform: isGuestsOpen ? 'rotate(180deg)' : 'none' }} />
           </div>
 
-          {/* Custom Dropdown List */}
+          {/* Custom Popover Counter List */}
           {isGuestsOpen && (
-            <div className="absolute right-0 top-full mt-2 w-full min-w-[160px] bg-[#161616] border border-white/10 rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] z-50 py-2">
-              {['1 Người', '2 Người', '3 Người', '4 Người'].map((gOption) => (
-                <div
-                  key={gOption}
-                  onClick={() => {
-                    setGuests(gOption);
-                    setIsGuestsOpen(false);
-                  }}
-                  className={`px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors font-body-md text-body-md ${guests === gOption ? 'bg-secondary/10 text-secondary' : 'text-white'}`}
-                >
-                  {gOption}
+            <div className="absolute right-0 top-full mt-2 w-[280px] bg-[#161616] border border-white/10 rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] z-50 p-4 space-y-4">
+              {/* Adults Counter */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-white text-sm font-medium">Người lớn</div>
+                  <div className="text-white/40 text-[10px]">&gt; 12 tuổi</div>
                 </div>
-              ))}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPassengers(prev => ({ ...prev, adults: Math.max(1, prev.adults - 1) }));
+                    }}
+                    className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/5 active:scale-90 transition-all font-mono"
+                  >
+                    -
+                  </button>
+                  <span className="text-white text-sm font-semibold w-4 text-center select-none">{passengers.adults}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPassengers(prev => ({ ...prev, adults: Math.min(9, prev.adults + 1) }));
+                    }}
+                    className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/5 active:scale-90 transition-all font-mono"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Children Counter */}
+              <div className="flex items-center justify-between border-t border-white/5 pt-3">
+                <div>
+                  <div className="text-white text-sm font-medium">Trẻ em</div>
+                  <div className="text-white/40 text-[10px]">2 - 12 tuổi</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPassengers(prev => ({ ...prev, children: Math.max(0, prev.children - 1) }));
+                    }}
+                    className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/5 active:scale-90 transition-all font-mono"
+                  >
+                    -
+                  </button>
+                  <span className="text-white text-sm font-semibold w-4 text-center select-none">{passengers.children}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPassengers(prev => ({ ...prev, children: Math.min(9, prev.children + 1) }));
+                    }}
+                    className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/5 active:scale-90 transition-all font-mono"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Infants Counter */}
+              <div className="flex items-center justify-between border-t border-white/5 pt-3">
+                <div>
+                  <div className="text-white text-sm font-medium">Em bé</div>
+                  <div className="text-white/40 text-[10px]">&lt; 2 tuổi</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPassengers(prev => ({ ...prev, infants: Math.max(0, prev.infants - 1) }));
+                    }}
+                    className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/5 active:scale-90 transition-all font-mono"
+                  >
+                    -
+                  </button>
+                  <span className="text-white text-sm font-semibold w-4 text-center select-none">{passengers.infants}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPassengers(prev => ({ ...prev, infants: Math.min(prev.adults, prev.infants + 1) })); // Số em bé không vượt quá số người lớn
+                    }}
+                    className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/5 active:scale-90 transition-all font-mono"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

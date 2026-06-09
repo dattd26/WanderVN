@@ -5,9 +5,15 @@ export interface FlightSearchQuery {
   destination: string;
   departureDate: string;
   passengerType?: string;
+  passengers?: { type: 'adult' | 'child' | 'infant_without_seat' }[];
   returnOffers?: boolean;
   cabinClass?: string;
   returnDate?: string;
+}
+
+export interface FlightOfferPassengerDto {
+  id: string;
+  type: string; // adult, child, infant_without_seat
 }
 
 export interface FlightOfferDto {
@@ -28,6 +34,8 @@ export interface FlightOfferDto {
   aircraftName: string; // Dòng máy bay
   duffelAirwaysOfferId: string; // ID Duffel Airways Offer dùng để đặt vé sandbox thành công 100%
   duffelAirwaysPassengerId: string; // ID hành khách tương ứng của Duffel Airways
+  passengers?: FlightOfferPassengerDto[];
+  duffelAirwaysPassengers?: FlightOfferPassengerDto[];
 }
 
 export interface PassengerDto {

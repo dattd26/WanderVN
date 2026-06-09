@@ -51,6 +51,10 @@ public class DuffelPassengerDto
 
     [JsonPropertyName("gender")]
     public string Gender { get; set; } = string.Empty;
+
+    [JsonPropertyName("infant_passenger_id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? InfantPassengerId { get; set; }
 }
 
 public class DuffelPaymentDto
