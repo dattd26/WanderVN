@@ -84,8 +84,8 @@ const PATH_LENGTH = approximateBezierLength();
 const SVG_PATH_D = `M ${BZ.x0} ${BZ.y0} Q ${BZ.cx} ${BZ.cy} ${BZ.x1} ${BZ.y1}`;
 
 export const JourneyRevealHero: React.FC = () => {
-  // Chỉ lưu trữ duy nhất 1 index chỉ số ảnh đang hiển thị
-  // Giúp giảm số lượng phần tử img trong DOM xuống tối đa 2 (1 ảnh hiện tại, 1 ảnh kế tiếp)
+  // Render sẵn 4 thẻ img trong DOM nhưng chỉ hiển thị 1 ảnh bằng opacity
+  // Giúp tránh việc trình duyệt gọi lại network (gây nháy hoặc log liên tục) mỗi khi đổi src
   const [activeIndex, setActiveIndex] = useState(0);
   const [revealIndex, setRevealIndex] = useState(1); // Chỉ số ảnh của lớp Reveal Layer quét phía trên
 
@@ -95,9 +95,9 @@ export const JourneyRevealHero: React.FC = () => {
   const [textKey, setTextKey] = useState(0);
 
   // DOM Refs phục vụ thay đổi trực tiếp (bypass React render giúp đạt 60fps mượt mà)
-  const baseImgRef = useRef<HTMLImageElement>(null);
+  const baseImgRef = useRef<HTMLDivElement>(null);
   const revealLayerRef = useRef<HTMLDivElement>(null);
-  const revealImgRef = useRef<HTMLImageElement>(null);
+  const revealImgRef = useRef<HTMLDivElement>(null);
   const airplaneRef = useRef<HTMLDivElement>(null);
   const flightLineRef = useRef<SVGPathElement>(null);
   const flightLineGlowRef = useRef<SVGPathElement>(null); // Ref đường bay phát sáng mờ phía dưới
@@ -109,9 +109,6 @@ export const JourneyRevealHero: React.FC = () => {
 
   // Lấy ra ảnh hiện tại và ảnh kế tiếp trong chu kỳ
   const nextIndex = (activeIndex + 1) % DESTINATIONS.length;
-  const currentDest = DESTINATIONS[activeIndex];
-  const nextDest = DESTINATIONS[revealIndex];
-
   // Animation Loop chạy liên tục qua requestAnimationFrame (sử dụng Ref để tránh lặp render hoặc lỗi closure/dependency)
   const tickRef = useRef<(ts: number) => void>(() => { });
 
@@ -258,15 +255,19 @@ export const JourneyRevealHero: React.FC = () => {
   return (
     <header className="relative min-h-[90vh] md:h-screen w-full flex items-center justify-center overflow-visible">
 
-      {/* ── Layer 1: Background chính phía dưới (Tĩnh + Ken Burns, chỉ dùng 1 thẻ img) ── */}
+      {/* ── Layer 1: Background chính phía dưới (Tĩnh + Ken Burns, render sẵn 4 thẻ img) ── */}
       <div className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-none">
-        <img
-          ref={baseImgRef}
-          src={currentDest.image}
-          alt={currentDest.name}
-          className="absolute inset-0 w-full h-full object-cover object-center"
-          style={{ willChange: 'transform', transform: 'scale3d(1.08, 1.08, 1)' }}
-        />
+        <div ref={baseImgRef} className="absolute inset-0 w-full h-full" style={{ willChange: 'transform', transform: 'scale3d(1.08, 1.08, 1)' }}>
+          {DESTINATIONS.map((dest, i) => (
+            <img
+              key={`base-${dest.id}`}
+              src={dest.image}
+              alt={dest.name}
+              className="absolute inset-0 w-full h-full object-cover object-center"
+              style={{ opacity: i === activeIndex ? 1 : 0 }}
+            />
+          ))}
+        </div>
         {/* Lớp phủ màu di sản tối ấm áp */}
         <div
           className="absolute inset-0 z-[1]"
@@ -284,7 +285,7 @@ export const JourneyRevealHero: React.FC = () => {
         style={{ background: 'radial-gradient(ellipse at right center, rgba(214,168,79,0.06) 0%, transparent 70%)' }}
       />
 
-      {/* ── Layer 4: Reveal Layer (Chỉ chứa duy nhất 1 thẻ ảnh tiếp theo) ── */}
+      {/* ── Layer 4: Reveal Layer (Chứa các thẻ ảnh tiếp theo để tránh re-load) ── */}
       <div
         ref={revealLayerRef}
         className="absolute inset-0 z-[4] overflow-hidden select-none pointer-events-none"
@@ -295,13 +296,17 @@ export const JourneyRevealHero: React.FC = () => {
           willChange: 'mask-image, -webkit-mask-image, opacity'
         }}
       >
-        <img
-          ref={revealImgRef}
-          src={nextDest.image}
-          alt={nextDest.name}
-          className="absolute inset-0 w-full h-full object-cover object-center"
-          style={{ willChange: 'transform', transform: 'scale3d(1.08, 1.08, 1)' }}
-        />
+        <div ref={revealImgRef} className="absolute inset-0 w-full h-full" style={{ willChange: 'transform', transform: 'scale3d(1.08, 1.08, 1)' }}>
+          {DESTINATIONS.map((dest, i) => (
+            <img
+              key={`reveal-${dest.id}`}
+              src={dest.image}
+              alt={dest.name}
+              className="absolute inset-0 w-full h-full object-cover object-center"
+              style={{ opacity: i === revealIndex ? 1 : 0 }}
+            />
+          ))}
+        </div>
         <div
           className="absolute inset-0"
           style={{ background: 'linear-gradient(to top, rgba(17,16,14,0.9) 0%, rgba(17,16,14,0.3) 50%, rgba(17,16,14,0.2) 100%)' }}
