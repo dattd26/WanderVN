@@ -115,7 +115,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         }
 
         var duffelRequest = new DuffelOrderRequestDto();
-        duffelRequest.Data.Type = "instant";
+        duffelRequest.Data.Type = "hold";
         duffelRequest.Data.SelectedOffers.Add(request.OfferId);
 
         var infantPassengerIds = new List<string>();
@@ -170,18 +170,6 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         }
 
         duffelRequest.Data.Passengers.AddRange(duffelPassengersList);
-
-        // Thiết lập thông tin thanh toán cho vé máy bay (bắt buộc đối với loại đặt vé "instant")
-        // Sử dụng giá trị gốc (originalAmount/originalCurrency) của Duffel để vượt qua kiểm tra Sandbox
-        duffelRequest.Data.Payments = new List<DuffelPaymentDto>
-        {
-            new DuffelPaymentDto
-            {
-                Type = "balance",
-                Amount = originalAmount,
-                Currency = originalCurrency
-            }
-        };
 
         // Vô hiệu hóa cache kết quả tìm kiếm chuyến bay để tránh lỗi offer_request_already_booked
         // khi những người dùng khác cố gắng đặt chung một OfferRequest (do Duffel quy định mỗi Request chỉ được đặt 1 lần).

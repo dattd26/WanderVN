@@ -14,6 +14,15 @@ All notable changes to this project will be documented in this file.
     - Sửa lại khóa (key) lưu cache trong Redis tương ứng với các thay đổi DTO.
 
 ### Fixed
+- **Lỗi Duffel Order "Confirmed" khi đơn hàng chưa được thanh toán**: Sửa lỗi xuất vé ngay lập tức khi tạo đơn đặt chuyến bay trên Duffel API.
+  - **Why it changed**: Trước đây hệ thống gửi yêu cầu tạo order `type = "instant"` và thanh toán luôn bằng balance của Duffel khi user vừa mới khởi tạo booking. Việc này khiến vé được xuất và Duffel trừ tiền ngay lập tức dù user vẫn chưa trả tiền qua VNPay / ZaloPay.
+  - **Affected files**: `CreateFlightBookingCommandHandler.cs`, `ProcessVNPayIpnCommandHandler.cs`, `ProcessZaloPayCallbackCommandHandler.cs`, `IDuffelService.cs`, `DuffelService.cs`.
+  - **What changed**:
+    - Thay đổi quá trình tạo đơn hàng Duffel thành `type = "hold"` và gỡ bỏ phần `payments`.
+    - Bổ sung hàm `PayOrderAsync` vào `IDuffelService` để gọi API `/air/payments` của Duffel.
+    - Chèn logic gọi `PayOrderAsync` vào các Webhook Callback (`ProcessVNPayIpnCommandHandler` và `ProcessZaloPayCallbackCommandHandler`) ngay khi thanh toán qua ví điện tử VNPay/ZaloPay báo thành công, lúc này mới chính thức thanh toán cho Duffel để xuất vé.
+
+### Fixed
 - **Lỗi Duffel 422 Unprocessable Entity khi đặt vé cho nhiều hành khách (Passenger date of birth mismatch & Infant accompanying adult)**: Sửa lỗi khi gửi thông tin đặt vé cho nhiều hành khách khác loại (Người lớn, Trẻ em, Em bé) bị Duffel API từ chối do trùng lặp ID hành khách hoặc em bé thiếu liên kết với người lớn đồng hành.
   - **Why it changed**: 
     1. Khi khởi tạo danh sách hành khách ở trang Checkout phía Frontend, việc sử dụng vòng lặp từ 0 khiến các hành khách đầu tiên của từng nhóm (Người lớn, Trẻ em, Em bé) đều nhận chỉ số `index === 0`, dẫn đến việc bị gán cùng một `basePassengerId` của người lớn đầu tiên. Duffel API nhận diện trùng ID và lỗi lệch ngày sinh so với loại hành khách tương ứng trong Offer.
