@@ -349,7 +349,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                                 // Lưu hành khách tương ứng với chặng bay này
                                 foreach (var pax in request.Passengers)
                                 {
-                                    var seatNumber = FindSeatNumber(root, pax.Id, segmentId);
+                                    // var seatNumber = FindSeatNumber(root, pax.Id, segmentId);
 
                                     var bookingFlight = new WanderVN.Domain.Entities.BookingFlights
                                     {
@@ -357,7 +357,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                                         PassengerName = $"{pax.Title} {pax.GivenName} {pax.FamilyName}",
                                         PassportNumber = pax.PassportNumber,
                                         FlightId = flight.Id,
-                                        SeatNumber = seatNumber
+                                        // SeatNumber = seatNumber
                                     };
 
                                     await _unitOfWork.Repository<WanderVN.Domain.Entities.BookingFlights>().AddAsync(bookingFlight, cancellationToken);

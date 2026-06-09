@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { hotelService } from '../../services/client/hotelService'; 
 import type { BookingHistoryDto } from '../../types'; 
 import {
-  Calendar,
   Clock,
   CheckCircle2,
   XCircle,
@@ -57,7 +56,8 @@ export const BookingHistory: React.FC = () => {
         setBookings(sortedData);
       } catch (err) {
         console.error('Lỗi kết nối API lấy lịch sử đặt phòng:', err);
-        setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc Server Backend C#.');
+        const message = err instanceof Error ? err.message : 'Không thể tải lịch sử đơn đặt.';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -107,6 +107,19 @@ export const BookingHistory: React.FC = () => {
 
     return safeBookings;
   }, [activeTab, bookings]);
+
+  // Pre-calculate counts for tabs
+  const tabCounts = useMemo(() => {
+    const today = new Date().setHours(0, 0, 0, 0);
+    const safeBookings = Array.isArray(bookings) ? bookings : [];
+    
+    return {
+      all: safeBookings.length,
+      upcoming: safeBookings.filter(b => b.status !== 'Cancelled' && getCheckInDate(b) && new Date(getCheckInDate(b)).getTime() >= today).length,
+      completed: safeBookings.filter(b => b.status === 'Completed' || (b.status === 'Confirmed' && getCheckOutDate(b) && new Date(getCheckOutDate(b)).getTime() < today)).length,
+      cancelled: safeBookings.filter(b => b.status === 'Cancelled').length
+    };
+  }, [bookings]);
 
   // Hàm helper định dạng trạng thái Badge trực quan
   const renderStatusBadge = (status: string | undefined, checkInDate: string) => {
@@ -210,7 +223,6 @@ export const BookingHistory: React.FC = () => {
 
         <div className="flex border-b border-outline-variant/30 mb-8 overflow-x-auto scrollbar-none">
           {(['all', 'upcoming', 'completed', 'cancelled'] as TabStatus[]).map((tab) => {
-            const safeBookings = Array.isArray(bookings) ? bookings : [];
             return (
               <button
                 key={tab}
@@ -226,10 +238,7 @@ export const BookingHistory: React.FC = () => {
                 {tab === 'completed' && 'Đã trải nghiệm'}
                 {tab === 'cancelled' && 'Đã hủy bỏ'}
                 <span className="ml-2 text-[10px] opacity-70 bg-outline-variant/40 px-1.5 py-0.5 rounded-full">
-                  {tab === 'all' && safeBookings.length}
-                  {tab === 'upcoming' && safeBookings.filter(b => b.status !== 'Cancelled' && getCheckInDate(b) && new Date(getCheckInDate(b)).getTime() >= new Date().setHours(0,0,0,0)).length}
-                  {tab === 'completed' && safeBookings.filter(b => b.status === 'Completed' || (b.status === 'Confirmed' && getCheckOutDate(b) && new Date(getCheckOutDate(b)).getTime() < new Date().setHours(0,0,0,0))).length}
-                  {tab === 'cancelled' && safeBookings.filter(b => b.status === 'Cancelled').length}
+                  {tabCounts[tab]}
                 </span>
               </button>
             );

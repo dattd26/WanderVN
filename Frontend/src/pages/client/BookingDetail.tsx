@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plane, Clock, User, Calendar, MapPin, CreditCard, ChevronLeft } from 'lucide-react';
+import { Plane, Clock, User, Calendar, CreditCard, ChevronLeft } from 'lucide-react';
 import type { BookingHistoryDto } from '../../types';
+import { request } from '../../services/shared/apiClient';
+import { normalizeBookingData, type RawBookingData } from '../../utils/bookingUtils';
 
 export default function BookingDetail() {
   const { bookingId } = useParams(); 
@@ -11,44 +13,24 @@ export default function BookingDetail() {
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5096/api/v1';
-  console.log("API URL thực tế hệ thống nhận được:", apiUrl);
-  const token = localStorage.getItem('token');
-
   useEffect(() => {
     if (!bookingId) return;
 
     const fetchBookingDetail = async () => {
       try {
-        const response = await fetch(`${apiUrl}/bookings/${bookingId}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`Lỗi hệ thống: mã trạng thái ${response.status}`);
-        }
-
-        const resData = await response.json();
-
-        if (resData.success) {
-          setBooking(resData.data);
-        } else {
-          setError(resData.message || "Không thể tải thông tin đơn đặt hàng.");
-        }
+        setLoading(true);
+        const data = await request<RawBookingData>(`/bookings/${bookingId}`);
+        setBooking(normalizeBookingData(data));
       } catch (error) {
         console.error("Lỗi lấy chi tiết:", error);
-        setError("Không thể kết nối đến máy chủ Back-end. Anh hãy kiểm tra xem API đã bật chưa nhé!");
+        setError(error instanceof Error ? error.message : "Không thể tải thông tin đơn đặt hàng.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchBookingDetail();
-  }, [bookingId, apiUrl, token]);
+  }, [bookingId]);
 
   const handleCancelBooking = async () => {
     const serviceName = booking?.serviceType === 'Flight' ? 'vé máy bay' : 'phòng khách sạn';
@@ -56,25 +38,12 @@ export default function BookingDetail() {
     
     try {
       setIsProcessing(true);
-      const response = await fetch(`${apiUrl}/bookings/${bookingId}/cancel`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const resData = await response.json();
-
-      if (response.ok && resData.success) {
-        setBooking(prev => prev ? { ...prev, status: 'Cancelled' } : null);
-        alert(`Hủy ${serviceName} thành công!`);
-      } else {
-        alert(resData.message || "Có lỗi xảy ra khi hủy đơn.");
-      }
-    } catch (error: unknown) {
+      await request(`/bookings/${bookingId}/cancel`, { method: 'PUT' });
+      setBooking(prev => prev ? { ...prev, status: 'Cancelled' } : null);
+      alert(`Hủy ${serviceName} thành công!`);
+    } catch (error) {
       console.error("Lỗi hủy đơn:", error);
-      alert("Không thể kết nối đến máy chủ.");
+      alert(error instanceof Error ? error.message : "Không thể kết nối đến máy chủ.");
     } finally {
       setIsProcessing(false);
     }
@@ -85,25 +54,12 @@ export default function BookingDetail() {
     
     try {
       setIsProcessing(true);
-      const response = await fetch(`${apiUrl}/bookings/${bookingId}/checkout`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const resData = await response.json();
-
-      if (response.ok && resData.success) {
-        setBooking(prev => prev ? { ...prev, status: 'Completed' } : null);
-        alert("Xác nhận trả phòng thành công!");
-      } else {
-        alert(resData.message || "Có lỗi xảy ra khi xác nhận trả phòng.");
-      }
-    } catch (error: unknown) {
+      await request(`/bookings/${bookingId}/checkout`, { method: 'PUT' });
+      setBooking(prev => prev ? { ...prev, status: 'Completed' } : null);
+      alert("Xác nhận trả phòng thành công!");
+    } catch (error) {
       console.error("Lỗi xác nhận trả phòng:", error);
-      alert("Không thể kết nối đến máy chủ.");
+      alert(error instanceof Error ? error.message : "Không thể kết nối đến máy chủ.");
     } finally {
       setIsProcessing(false);
     }
