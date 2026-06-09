@@ -33,6 +33,41 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
     {
         var request = command.Request;
 
+        // Lấy thông tin user đăng nhập sớm để làm fallback nếu thiếu thông tin liên hệ
+        WanderVN.Domain.Entities.Users? user = null;
+        if (request.UserId.HasValue)
+        {
+            user = await _unitOfWork.Users.FindFirstOrDefaultAsync(u => u.Id == request.UserId.Value, cancellationToken: cancellationToken);
+        }
+
+        // Trích xuất thông tin liên hệ từ hành khách đầu tiên
+        var primaryPax = request.Passengers.FirstOrDefault();
+        var guestEmail = primaryPax?.Email;
+        var guestName = primaryPax != null ? $"{primaryPax.GivenName} {primaryPax.FamilyName}".Trim() : null;
+        var guestPhone = primaryPax?.PhoneNumber;
+
+        if (string.IsNullOrWhiteSpace(guestEmail) && user != null)
+        {
+            guestEmail = user.Email;
+        }
+        if (string.IsNullOrWhiteSpace(guestPhone) && user != null)
+        {
+            guestPhone = user.PhoneNumber;
+        }
+
+        if (string.IsNullOrWhiteSpace(guestEmail))
+        {
+            throw new ArgumentException("Vui lòng cung cấp email liên hệ để đặt vé máy bay.");
+        }
+
+        if (string.IsNullOrWhiteSpace(guestPhone))
+        {
+            throw new ArgumentException("Vui lòng cung cấp số điện thoại liên hệ để đặt vé máy bay.");
+        }
+
+        guestPhone = NormalizePhoneNumber(guestPhone);
+        Console.WriteLine("Guest Email: " + guestEmail);
+        Console.WriteLine("Guest Phone: " + guestPhone);
         // 1. Lấy chi tiết Offer gốc từ Duffel để trích xuất giá tiền thật (phục vụ thanh toán sandbox khớp 100%)
         string originalAmount = "1000.00";
         string originalCurrency = "USD";
@@ -57,17 +92,24 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         }
         catch (Exception ex)
         {
-            // Dự phòng trong trường hợp không lấy được thông tin chi tiết Offer gốc
             Console.WriteLine($"⚠️ Lỗi khi lấy chi tiết Offer gốc từ Duffel: {ex.Message}");
+            throw new ArgumentException("Offer không tồn tại hoặc đã hết hạn.");
         }
 
-        // 2. Thiết lập đối tượng Yêu cầu Đặt vé gửi sang Duffel (Map to Duffel Request)
         var duffelRequest = new DuffelOrderRequestDto();
         duffelRequest.Data.Type = "instant";
         duffelRequest.Data.SelectedOffers.Add(request.OfferId);
 
-        foreach (var pax in request.Passengers)
+        for (int i = 0; i < request.Passengers.Count; i++)
         {
+            var pax = request.Passengers[i];
+            var pEmail = pax.Email;
+            var pPhone = pax.PhoneNumber;
+
+            if (string.IsNullOrWhiteSpace(pEmail)) pEmail = guestEmail;
+            if (string.IsNullOrWhiteSpace(pPhone)) pPhone = guestPhone;
+            pPhone = NormalizePhoneNumber(pPhone);
+
             duffelRequest.Data.Passengers.Add(new DuffelPassengerDto
             {
                 Id = pax.Id,
@@ -75,8 +117,8 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                 FamilyName = pax.FamilyName,
                 GivenName = pax.GivenName,
                 BornOn = pax.BornOn,
-                Email = pax.Email,
-                PhoneNumber = pax.PhoneNumber,
+                Email = pEmail,
+                PhoneNumber = pPhone,
                 Gender = pax.Gender
             });
         }
@@ -93,7 +135,6 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             }
         };
 
-        // 3. Gọi Duffel API để tạo đặt vé
         var duffelResponseJson = await _duffelService.CreateOrderAsync(duffelRequest);
 
         // Parse Duffel Response to get Order ID
@@ -130,17 +171,6 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         decimal markupAmountVnd = Math.Round(duffelAmountVnd * markupPercent / 100m);
         decimal customerTotalVnd = duffelAmountVnd + markupAmountVnd + paymentFeeVnd;
 
-        // Trích xuất thông tin liên hệ từ hành khách đầu tiên
-        var primaryPax = request.Passengers.FirstOrDefault();
-        var guestEmail = primaryPax?.Email;
-        var guestName = primaryPax != null ? $"{primaryPax.GivenName} {primaryPax.FamilyName}".Trim() : null;
-        var guestPhone = primaryPax?.PhoneNumber;
-
-        if (request.UserId == null && string.IsNullOrWhiteSpace(guestEmail))
-        {
-            throw new ArgumentException("Vui lòng cung cấp email liên hệ để đặt vé máy bay.");
-        }
-
         var booking = new WanderVN.Domain.Entities.Bookings
         {
             UserId = request.UserId,
@@ -167,13 +197,13 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             bool parsedSlicesAndSegments = false;
             try
             {
-                if (root.TryGetProperty("data", out var dataProp) && 
-                    dataProp.TryGetProperty("slices", out var slicesProp) && 
+                if (root.TryGetProperty("data", out var dataProp) &&
+                    dataProp.TryGetProperty("slices", out var slicesProp) &&
                     slicesProp.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var slice in slicesProp.EnumerateArray())
                     {
-                        if (slice.TryGetProperty("segments", out var segmentsProp) && 
+                        if (slice.TryGetProperty("segments", out var segmentsProp) &&
                             segmentsProp.ValueKind == JsonValueKind.Array)
                         {
                             foreach (var segment in segmentsProp.EnumerateArray())
@@ -190,8 +220,8 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                                 if (carrier.ValueKind == JsonValueKind.Object)
                                 {
                                     var airlineName = carrier.TryGetProperty("name", out var nameVal) ? nameVal.GetString() : "Hãng hàng không";
-                                    var logoUrl = carrier.TryGetProperty("logo_symbol_url", out var logoSymbolVal) 
-                                        ? logoSymbolVal.GetString() 
+                                    var logoUrl = carrier.TryGetProperty("logo_symbol_url", out var logoSymbolVal)
+                                        ? logoSymbolVal.GetString()
                                         : (carrier.TryGetProperty("logo_lockup_url", out var logoLockupVal) ? logoLockupVal.GetString() : null);
 
                                     airline = await _unitOfWork.Repository<Airlines>().FindFirstOrDefaultAsync(a => a.Name == airlineName, cancellationToken: cancellationToken);
@@ -280,8 +310,8 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                                 }
 
                                 // Tạo hoặc tìm Chuyến bay (Flights) làm lịch sử cache
-                                var flightNumber = segment.TryGetProperty("operating_carrier_flight_number", out var fnVal) 
-                                    ? fnVal.GetString() 
+                                var flightNumber = segment.TryGetProperty("operating_carrier_flight_number", out var fnVal)
+                                    ? fnVal.GetString()
                                     : (segment.TryGetProperty("marketing_carrier_flight_number", out var mfnVal) ? mfnVal.GetString() : "N/A");
 
                                 if (string.IsNullOrEmpty(flightNumber))
@@ -320,7 +350,7 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
                                 foreach (var pax in request.Passengers)
                                 {
                                     var seatNumber = FindSeatNumber(root, pax.Id, segmentId);
-                                    
+
                                     var bookingFlight = new WanderVN.Domain.Entities.BookingFlights
                                     {
                                         BookingId = booking.Id,
@@ -366,14 +396,10 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
             string? recipientEmail = guestEmail;
             string recipientName = guestName ?? "Quý khách";
 
-            if (string.IsNullOrEmpty(recipientEmail) && request.UserId.HasValue)
+            if (string.IsNullOrEmpty(recipientEmail) && user != null)
             {
-                var user = await _unitOfWork.Users.FindFirstOrDefaultAsync(u => u.Id == request.UserId.Value, cancellationToken: cancellationToken);
-                if (user != null)
-                {
-                    recipientEmail = user.Email;
-                    recipientName = user.FullName ?? recipientName;
-                }
+                recipientEmail = user.Email;
+                recipientName = user.FullName ?? recipientName;
             }
 
             if (!string.IsNullOrEmpty(recipientEmail))
@@ -448,97 +474,27 @@ public class CreateFlightBookingCommandHandler : IRequestHandler<CreateFlightBoo
         return "FL" + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
     }
 
-    private string? FindSeatNumber(JsonElement root, string passengerId, string segmentId)
+    private string NormalizePhoneNumber(string phone)
     {
-        // Kiểm tra phương án 1: Thông tin ghế lưu trong danh sách hành khách của Segment
-        if (root.TryGetProperty("data", out var data) && data.TryGetProperty("slices", out var slices))
-        {
-            foreach (var slice in slices.EnumerateArray())
-            {
-                if (slice.TryGetProperty("segments", out var segments))
-                {
-                    foreach (var segment in segments.EnumerateArray())
-                    {
-                        if (segment.TryGetProperty("id", out var segIdProp) && segIdProp.GetString() == segmentId)
-                        {
-                            if (segment.TryGetProperty("passengers", out var segmentPassengers))
-                            {
-                                foreach (var segPax in segmentPassengers.EnumerateArray())
-                                {
-                                    string? segPaxId = null;
-                                    if (segPax.TryGetProperty("passenger_id", out var paxIdProp))
-                                        segPaxId = paxIdProp.GetString();
-                                    else if (segPax.TryGetProperty("id", out var idProp))
-                                        segPaxId = idProp.GetString();
+        if (string.IsNullOrWhiteSpace(phone))
+            throw new ArgumentException("Số điện thoại không được để trống.");
 
-                                    if (segPaxId == passengerId)
-                                    {
-                                        if (segPax.TryGetProperty("seat", out var seatObj) && seatObj.ValueKind == JsonValueKind.Object)
-                                        {
-                                            if (seatObj.TryGetProperty("designator", out var desProp))
-                                            {
-                                                return desProp.GetString();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        var trimmed = phone.Trim();
+        var hasPlus = trimmed.StartsWith("+");
+        var digits = new string(trimmed.Where(char.IsDigit).ToArray());
 
-        // Kiểm tra phương án 2: Thông tin dịch vụ chọn ghế ngoài phần slices
-        if (root.TryGetProperty("data", out var rootData) && rootData.TryGetProperty("services", out var services))
-        {
-            foreach (var svc in services.EnumerateArray())
-            {
-                if (svc.TryGetProperty("type", out var typeProp) && typeProp.GetString() == "seat")
-                {
-                    bool segmentMatches = false;
-                    if (svc.TryGetProperty("segment_ids", out var segIds))
-                    {
-                        foreach (var sId in segIds.EnumerateArray())
-                        {
-                            if (sId.GetString() == segmentId)
-                            {
-                                segmentMatches = true;
-                                break;
-                            }
-                        }
-                    }
+        if (string.IsNullOrEmpty(digits))
+            throw new ArgumentException("Số điện thoại không hợp lệ.");
 
-                    if (segmentMatches)
-                    {
-                        bool passengerMatches = false;
-                        if (svc.TryGetProperty("passenger_ids", out var paxIds))
-                        {
-                            foreach (var pId in paxIds.EnumerateArray())
-                            {
-                                if (pId.GetString() == passengerId)
-                                {
-                                    passengerMatches = true;
-                                    break;
-                                }
-                            }
-                        }
+        if (hasPlus)
+            return "+" + digits;
 
-                        if (passengerMatches)
-                        {
-                            if (svc.TryGetProperty("metadata", out var meta) && meta.ValueKind == JsonValueKind.Object)
-                            {
-                                if (meta.TryGetProperty("designator", out var desProp))
-                                {
-                                    return desProp.GetString();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        if (digits.StartsWith("84") && digits.Length >= 11)
+            return "+" + digits;
 
-        return null;
+        if (digits.StartsWith("0") && digits.Length >= 10 && digits.Length <= 11)
+            return "+84" + digits.Substring(1);
+
+        throw new ArgumentException("Số điện thoại không hợp lệ. Vui lòng bao gồm mã quốc gia (VD: +84...).");
     }
 }
