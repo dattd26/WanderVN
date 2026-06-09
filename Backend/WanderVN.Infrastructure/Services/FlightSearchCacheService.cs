@@ -2,6 +2,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -19,15 +20,28 @@ public class FlightSearchCacheService : IFlightSearchCacheService
     private readonly IDistributedCache _cache;
     private readonly FlightSearchCacheSettings _settings;
     private readonly ILogger<FlightSearchCacheService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public FlightSearchCacheService(
         IDistributedCache cache,
         IOptions<FlightSearchCacheSettings> settings,
-        ILogger<FlightSearchCacheService> logger)
+        ILogger<FlightSearchCacheService> logger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _cache = cache;
         _settings = settings.Value;
         _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    private string? GetSessionId()
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext != null && httpContext.Request.Headers.TryGetValue("X-Session-ID", out var sessionIdValues))
+        {
+            return sessionIdValues.ToString();
+        }
+        return null;
     }
 
     public async Task<List<FlightOfferDto>?> GetAsync(DuffelOfferRequestDto request, CancellationToken cancellationToken = default)
@@ -129,7 +143,10 @@ public class FlightSearchCacheService : IFlightSearchCacheService
             ? string.Join(',', request.Passengers.Select(p => p.Type.ToLowerInvariant()))
             : $"{request.AdultCount}-{request.ChildCount}-{request.InfantCount}";
 
+        var sessionId = GetSessionId();
+
         var canonical = string.Join('|',
+            sessionId ?? string.Empty,
             NormalizeCode(request.Origin),
             NormalizeCode(request.Destination),
             NormalizeDate(request.DepartureDate),
