@@ -2,6 +2,20 @@ import type { ApiResponse } from '../../types';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5096/api/v1';
 
+function getOrCreateSessionId(): string {
+  if (typeof window === 'undefined') return '';
+  let sessionId = sessionStorage.getItem('flight_session_id');
+  if (!sessionId) {
+    sessionId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+    sessionStorage.setItem('flight_session_id', sessionId);
+  }
+  return sessionId;
+}
+
 export async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${BASE_URL}${endpoint}`;
   const token = localStorage.getItem('token');
@@ -11,6 +25,11 @@ export async function request<T>(endpoint: string, options?: RequestInit): Promi
 
   // Khởi tạo đối tượng headers trống
   const headers: Record<string, string> = {};
+
+  const sessionId = getOrCreateSessionId();
+  if (sessionId) {
+    headers['X-Session-ID'] = sessionId;
+  }
 
   // Chỉ cấu hình Content-Type là JSON nếu dữ liệu gửi đi không phải là FormData
   if (!isFormData) {
