@@ -67,12 +67,40 @@ export const FlightCheckoutProvider: React.FC<ProviderProps> = ({
     const list: CheckoutPassenger[] = [];
     const basePassengerId = initialOffer?.duffelAirwaysPassengerId || initialOffer?.passengerId || 'pas_default';
 
+    const availableDuffelPassengers = initialOffer?.duffelAirwaysPassengers || initialOffer?.passengers || [];
+    const adultIds = availableDuffelPassengers.filter(p => p.type === 'adult').map(p => p.id);
+    const childIds = availableDuffelPassengers.filter(p => p.type === 'child').map(p => p.id);
+    const infantIds = availableDuffelPassengers.filter(p => p.type === 'infant_without_seat' || p.type === 'infant').map(p => p.id);
+
+    let adultIndex = 0;
+    let childIndex = 0;
+    let infantIndex = 0;
+
+    const getPassengerId = (type: 'adult' | 'child' | 'infant', index: number): string => {
+      if (type === 'adult') {
+        if (adultIndex < adultIds.length) {
+          return adultIds[adultIndex++];
+        }
+        return index === 0 ? basePassengerId : `${basePassengerId}_adult_${index}`;
+      } else if (type === 'child') {
+        if (childIndex < childIds.length) {
+          return childIds[childIndex++];
+        }
+        return `${basePassengerId}_child_${index}`;
+      } else {
+        if (infantIndex < infantIds.length) {
+          return infantIds[infantIndex++];
+        }
+        return `${basePassengerId}_infant_${index}`;
+      }
+    };
+
     // Helper tạo passenger trắng
     const createEmptyPassenger = (type: 'adult' | 'child' | 'infant', index: number): CheckoutPassenger => {
       // Nếu là người lớn đầu tiên và có thông tin đăng nhập, tự điền nhanh
       const isFirstAdult = type === 'adult' && index === 0;
       return {
-        id: index === 0 ? basePassengerId : `${basePassengerId}_${type}_${index}`,
+        id: getPassengerId(type, index),
         title: type === 'adult' ? 'mr' : type === 'child' ? 'mr' : 'mr', // danh xưng mặc định
         familyName: isFirstAdult ? (storedUser.lastName || '').toUpperCase() : '',
         givenName: isFirstAdult ? (storedUser.firstName || '').toUpperCase() : '',

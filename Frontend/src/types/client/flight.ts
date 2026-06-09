@@ -11,6 +11,11 @@ export interface FlightSearchQuery {
   returnDate?: string;
 }
 
+export interface FlightOfferPassengerDto {
+  id: string;
+  type: string; // adult, child, infant_without_seat
+}
+
 export interface FlightOfferDto {
   id: string; // ID của ưu đãi Duffel (off_...)
   totalAmount: number; // Tổng chi phí đã quy đổi
@@ -29,6 +34,8 @@ export interface FlightOfferDto {
   aircraftName: string; // Dòng máy bay
   duffelAirwaysOfferId: string; // ID Duffel Airways Offer dùng để đặt vé sandbox thành công 100%
   duffelAirwaysPassengerId: string; // ID hành khách tương ứng của Duffel Airways
+  passengers?: FlightOfferPassengerDto[];
+  duffelAirwaysPassengers?: FlightOfferPassengerDto[];
 }
 
 export interface PassengerDto {

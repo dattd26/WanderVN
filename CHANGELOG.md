@@ -14,6 +14,13 @@ All notable changes to this project will be documented in this file.
     - Sửa lại khóa (key) lưu cache trong Redis tương ứng với các thay đổi DTO.
 
 ### Fixed
+- **Lỗi Duffel 422 Unprocessable Entity khi đặt vé cho nhiều hành khách (Passenger date of birth mismatch)**: Sửa lỗi khi gửi thông tin đặt vé cho nhiều hành khách khác loại (Người lớn, Trẻ em, Em bé) bị Duffel API từ chối do trùng lặp ID hành khách.
+  - **Why it changed**: Khi khởi tạo danh sách hành khách ở trang Checkout phía Frontend, việc sử dụng vòng lặp từ 0 khiến các hành khách đầu tiên của từng nhóm (Người lớn, Trẻ em, Em bé) đều nhận chỉ số `index === 0`, dẫn đến việc bị gán cùng một `basePassengerId` của người lớn đầu tiên. Duffel API nhận diện trùng ID và lỗi lệch ngày sinh so với loại hành khách tương ứng trong Offer.
+  - **Affected files**: [flight.ts](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/types/client/flight.ts), [FlightCheckoutContext.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/client/checkout/FlightCheckoutContext.tsx).
+  - **What changed**:
+    - Cập nhật định nghĩa TypeScript `FlightOfferDto` và bổ sung `FlightOfferPassengerDto` để chứa danh sách hành khách trả về từ Backend.
+    - Sửa logic khởi tạo hành khách trong `FlightCheckoutContext.tsx`: Ánh xạ động từng hành khách nhập vào với đúng ID hành khách tương ứng theo loại từ danh sách hành khách của ưu đãi Duffel (`duffelAirwaysPassengers` / `passengers`), tránh bị trùng lặp ID hoặc sai lệch loại hành khách.
+
 - **Flight Search Cache Mismatch & DTO Compilation**: Sửa lỗi cache trả về dữ liệu cũ bị thiếu thông tin hành khách khi người dùng thay đổi dữ liệu/loại hành khách tìm kiếm.
   - **Why it changed**: Cache key trước đây chỉ dựa vào số lượng hành khách mà không có danh sách chi tiết các loại hành khách, dẫn đến xung đột cache khi thay đổi loại hành khách. Ngoài ra sửa lỗi biên dịch DTO hành khách do nhầm lẫn giữa `FlightPassengerInfoDto` và `FlightOfferPassengerDto`.
   - **Affected files**: `SearchFlightsQueryHandler.cs`, `DuffelOfferRequestDto.cs`, `DuffelService.cs`, `FlightSearchCacheService.cs`.
