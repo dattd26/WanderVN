@@ -138,7 +138,6 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
 
             // 1. Quét tìm Offer của hãng Duffel Airways (mã ZZ) chuyên dùng cho việc đặt vé
             string duffelAirwaysOfferId = string.Empty;
-            string duffelAirwaysPassengerId = string.Empty;
             var duffelAirwaysPassengers = new List<FlightOfferPassengerDto>();
 
             foreach (var offer in offersProp.EnumerateArray())
@@ -161,8 +160,6 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                         currentPassengers.Add(new FlightOfferPassengerDto { Id = pId, Type = pType });
                     }
                 }
-
-                string currentPassengerId = currentPassengers.Count > 0 ? currentPassengers[0].Id : string.Empty;
 
                 bool isDuffelAirways = false;
                 if (offer.TryGetProperty("slices", out var slicesProp) && slicesProp.ValueKind == JsonValueKind.Array && slicesProp.GetArrayLength() > 0)
@@ -187,7 +184,6 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                 if (isDuffelAirways && !string.IsNullOrEmpty(currentOfferId))
                 {
                     duffelAirwaysOfferId = currentOfferId;
-                    duffelAirwaysPassengerId = currentPassengerId;
                     duffelAirwaysPassengers = currentPassengers;
                     break;
                 }
@@ -211,10 +207,6 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                             string pType = passenger.TryGetProperty("type", out var typeProp) && typeProp.ValueKind == JsonValueKind.String ? (typeProp.GetString() ?? string.Empty) : string.Empty;
                             duffelAirwaysPassengers.Add(new FlightOfferPassengerDto { Id = pId, Type = pType });
                         }
-                        if (duffelAirwaysPassengers.Count > 0)
-                        {
-                            duffelAirwaysPassengerId = duffelAirwaysPassengers[0].Id;
-                        }
                     }
                 }
             }
@@ -233,7 +225,6 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
 
                 // Gắn kèm các ID của hãng Duffel Airways để hỗ trợ Frontend gửi lên lúc đặt chỗ
                 dto.DuffelAirwaysOfferId = duffelAirwaysOfferId;
-                dto.DuffelAirwaysPassengerId = duffelAirwaysPassengerId;
                 dto.DuffelAirwaysPassengers = duffelAirwaysPassengers;
 
                 // Trích xuất giá cả thực tế từ Duffel
@@ -258,10 +249,6 @@ public class SearchFlightsQueryHandler : IRequestHandler<SearchFlightsQuery, Lis
                         string pId = passenger.TryGetProperty("id", out var passIdProp) && passIdProp.ValueKind == JsonValueKind.String ? (passIdProp.GetString() ?? string.Empty) : string.Empty;
                         string pType = passenger.TryGetProperty("type", out var typeProp) && typeProp.ValueKind == JsonValueKind.String ? (typeProp.GetString() ?? string.Empty) : string.Empty;
                         dto.Passengers.Add(new FlightOfferPassengerDto { Id = pId, Type = pType });
-                    }
-                    if (dto.Passengers.Count > 0)
-                    {
-                        dto.PassengerId = dto.Passengers[0].Id;
                     }
                 }
 

@@ -43,6 +43,15 @@ All notable changes to this project will be documented in this file.
     - Sửa toàn bộ các tham chiếu `FlightPassengerInfoDto` lỗi biên dịch sang `FlightOfferPassengerDto` trong trình phân tích kết quả tìm kiếm.
 
 ### Refactored
+- **Flight Offer Obsolete Properties Cleanup**: Completely removed deprecated properties `PassengerId` and `DuffelAirwaysPassengerId` from the flight offer DTO.
+  - **Why it changed**: These fields were marked obsolete because the system now supports multiple passengers and maps details via the list properties `Passengers` and `DuffelAirwaysPassengers`. Removing them eliminates compilation warnings and keeps the API contract clean.
+  - **Affected files**: [FlightOfferDto.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/DTOs/Response/FlightOfferDto.cs), [SearchFlightsQueryHandler.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Features/Flights/Queries/SearchFlights/SearchFlightsQueryHandler.cs), [flight.ts](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/types/client/flight.ts), [FlightCheckoutContext.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/client/checkout/FlightCheckoutContext.tsx), [FlightDetailModal.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/client/flight/FlightDetailModal.tsx).
+  - **What changed**:
+    - Deleted properties `PassengerId` and `DuffelAirwaysPassengerId` from `FlightOfferDto` (both backend C# and frontend TypeScript definitions).
+    - Removed their assignments and related unused local variable `currentPassengerId` in `SearchFlightsQueryHandler.cs`.
+    - Updated `FlightCheckoutContext.tsx` to resolve `basePassengerId` using the first element of the list of passengers.
+    - Updated `FlightDetailModal.tsx` mapping to resolve `passengerId` from the passengers list.
+
 - **Flight Booking Data Persistence & Architecture**: Refactored the flight details parsing and database saving logic in `CreateFlightBookingCommandHandler` into a dedicated application service `FlightBookingDataPersister`.
   - **Why it changed**: To follow Clean Architecture principles, reduce code bloating in the handler, ensure transaction-safe and memory-cached storage of Airline, Airport, Flight, and passenger seat assignments, and prevent EF Core change tracker pollution.
   - **Affected files**: [IFlightBookingDataPersister.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Common/Interfaces/IFlightBookingDataPersister.cs), [FlightBookingDataPersister.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Features/Bookings/Commands/CreateFlightBooking/FlightBookingDataPersister.cs), [CreateFlightBookingCommandHandler.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Features/Bookings/Commands/CreateFlightBooking/CreateFlightBookingCommandHandler.cs), [DependencyInjection.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/DependencyInjection.cs).

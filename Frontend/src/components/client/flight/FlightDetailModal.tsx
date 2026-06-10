@@ -103,7 +103,7 @@ export const FlightDetailModal: React.FC<FlightDetailModalProps> = ({
     mealInfo: 'Bao gồm bữa ăn tiêu chuẩn',
     wifiAvailable: false,
     seatInfo: 'Ghế tiêu chuẩn',
-    passengerId: offer.passengerId,
+    passengerId: offer.passengers?.[0]?.id || '',
     slices: [
       {
         origin: offer.originName,

@@ -20,7 +20,6 @@ export interface FlightOfferDto {
   id: string; // ID của ưu đãi Duffel (off_...)
   totalAmount: number; // Tổng chi phí đã quy đổi
   totalCurrency: string; // Đồng tiền thanh toán (ví dụ: USD, VND)
-  passengerId: string; // ID hành khách mock
   duration: string; // Thời lượng bay (ví dụ: PT2H15M)
   originCode: string; // Mã sân bay đi (ví dụ: HAN)
   originName: string; // Tên sân bay đi
@@ -33,7 +32,6 @@ export interface FlightOfferDto {
   carrierLogoUrl: string; // URL Logo thương gia
   aircraftName: string; // Dòng máy bay
   duffelAirwaysOfferId: string; // ID Duffel Airways Offer dùng để đặt vé sandbox thành công 100%
-  duffelAirwaysPassengerId: string; // ID hành khách tương ứng của Duffel Airways
   passengers?: FlightOfferPassengerDto[];
   duffelAirwaysPassengers?: FlightOfferPassengerDto[];
 }

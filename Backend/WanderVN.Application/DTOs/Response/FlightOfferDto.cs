@@ -20,9 +20,6 @@ public class FlightOfferDto
 
     public string TotalCurrency { get; set; } = "USD";
 
-    [Obsolete("Use Passengers list instead")]
-    public string PassengerId { get; set; } = string.Empty;
-
     public string Duration { get; set; } = string.Empty;
 
     // Mã IATA điểm khởi hành (ví dụ: HAN)
@@ -57,10 +54,6 @@ public class FlightOfferDto
 
     // ID của ưu đãi Duffel Airways chuyên dùng để đặt vé sandbox thành công 100%
     public string DuffelAirwaysOfferId { get; set; } = string.Empty;
-
-    [Obsolete("Use DuffelAirwaysPassengers list instead")]
-    // ID hành khách tương ứng của ưu đãi Duffel Airways
-    public string DuffelAirwaysPassengerId { get; set; } = string.Empty;
 
     // Danh sách hành khách đi kèm (chứa ID và loại hành khách từ Duffel)
     public List<FlightOfferPassengerDto> Passengers { get; set; } = new();

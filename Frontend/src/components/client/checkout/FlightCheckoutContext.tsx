@@ -65,9 +65,8 @@ export const FlightCheckoutProvider: React.FC<ProviderProps> = ({
   // Khởi tạo danh sách hành khách dựa trên passengerCounts
   const [passengersList, setPassengersList] = useState<CheckoutPassenger[]>(() => {
     const list: CheckoutPassenger[] = [];
-    const basePassengerId = initialOffer?.duffelAirwaysPassengerId || initialOffer?.passengerId || 'pas_default';
-
     const availableDuffelPassengers = initialOffer?.duffelAirwaysPassengers || initialOffer?.passengers || [];
+    const basePassengerId = availableDuffelPassengers[0]?.id || 'pas_default';
     const adultIds = availableDuffelPassengers.filter(p => p.type === 'adult').map(p => p.id);
     const childIds = availableDuffelPassengers.filter(p => p.type === 'child').map(p => p.id);
     const infantIds = availableDuffelPassengers.filter(p => p.type === 'infant_without_seat' || p.type === 'infant').map(p => p.id);
