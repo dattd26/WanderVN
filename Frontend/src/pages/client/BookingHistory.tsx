@@ -81,19 +81,32 @@ export const BookingHistory: React.FC = () => {
     if (activeTab === 'upcoming') {
       return safeBookings.filter(b => {
         const checkIn = getCheckInDate(b);
-        return b.status !== 'Cancelled' && checkIn && new Date(checkIn).getTime() >= today;
+        const norm = b.status ? b.status.trim().toLowerCase() : '';
+        return (norm === 'confirmed' || norm === 'pending') && checkIn && new Date(checkIn).getTime() >= today;
       });
     }
 
     if (activeTab === 'completed') {
       return safeBookings.filter(b => {
         const checkOut = getCheckOutDate(b);
-        return b.status === 'Completed' || (b.status === 'Confirmed' && checkOut && new Date(checkOut).getTime() < today);
+        const norm = b.status ? b.status.trim().toLowerCase() : '';
+        return (
+          norm === 'completed' ||
+          norm === 'checkedout' ||
+          norm === 'settlementpending' ||
+          norm === 'settled' ||
+          norm === 'checkedin' ||
+          norm === 'noshow' ||
+          (norm === 'confirmed' && checkOut && new Date(checkOut).getTime() < today)
+        );
       });
     }
 
     if (activeTab === 'cancelled') {
-      return safeBookings.filter(b => b.status === 'Cancelled');
+      return safeBookings.filter(b => {
+        const norm = b.status ? b.status.trim().toLowerCase() : '';
+        return norm === 'cancelled';
+      });
     }
 
     return safeBookings;
@@ -105,9 +118,28 @@ export const BookingHistory: React.FC = () => {
     
     return {
       all: safeBookings.length,
-      upcoming: safeBookings.filter(b => b.status !== 'Cancelled' && getCheckInDate(b) && new Date(getCheckInDate(b)).getTime() >= today).length,
-      completed: safeBookings.filter(b => b.status === 'Completed' || (b.status === 'Confirmed' && getCheckOutDate(b) && new Date(getCheckOutDate(b)).getTime() < today)).length,
-      cancelled: safeBookings.filter(b => b.status === 'Cancelled').length
+      upcoming: safeBookings.filter(b => {
+        const checkIn = getCheckInDate(b);
+        const norm = b.status ? b.status.trim().toLowerCase() : '';
+        return (norm === 'confirmed' || norm === 'pending') && checkIn && new Date(checkIn).getTime() >= today;
+      }).length,
+      completed: safeBookings.filter(b => {
+        const checkOut = getCheckOutDate(b);
+        const norm = b.status ? b.status.trim().toLowerCase() : '';
+        return (
+          norm === 'completed' ||
+          norm === 'checkedout' ||
+          norm === 'settlementpending' ||
+          norm === 'settled' ||
+          norm === 'checkedin' ||
+          norm === 'noshow' ||
+          (norm === 'confirmed' && checkOut && new Date(checkOut).getTime() < today)
+        );
+      }).length,
+      cancelled: safeBookings.filter(b => {
+        const norm = b.status ? b.status.trim().toLowerCase() : '';
+        return norm === 'cancelled';
+      }).length
     };
   }, [bookings]);
 
@@ -153,39 +185,62 @@ export const BookingHistory: React.FC = () => {
     const isUpcoming = checkInDate ? new Date(checkInDate).getTime() >= today : true;
     const normalizeStatus = status ? status.trim().toLowerCase() : 'pending';
 
-    if (normalizeStatus === 'confirmed' || normalizeStatus === 'approved') {
-      return isUpcoming ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-700">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Sắp diễn ra
-        </span>
-      ) : (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-700">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Đã hoàn thành
-        </span>
-      );
+    switch (normalizeStatus) {
+      case 'pending':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-700">
+            <Clock className="h-3.5 w-3.5" /> Chờ thanh toán
+          </span>
+        );
+      case 'confirmed':
+        return isUpcoming ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Sắp diễn ra
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Đã hoàn thành
+          </span>
+        );
+      case 'completed':
+      case 'settled':
+      case 'settlementpending':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Đã hoàn thành
+          </span>
+        );
+      case 'checkedin':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-700">
+            <LogIn className="h-3.5 w-3.5" /> Đang trải nghiệm
+          </span>
+        );
+      case 'checkedout':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Đã trả phòng
+          </span>
+        );
+      case 'cancelled':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-rose-700">
+            <XCircle className="h-3.5 w-3.5" /> Đã hủy bỏ
+          </span>
+        );
+      case 'noshow':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-700">
+            <AlertCircle className="h-3.5 w-3.5" /> Không nhận phòng
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-secondary">
+            <Clock className="h-3.5 w-3.5" /> {status || 'Chờ duyệt'}
+          </span>
+        );
     }
-
-    if (normalizeStatus === 'completed' || normalizeStatus === 'success') {
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-700">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Đã hoàn thành
-        </span>
-      );
-    }
-
-    if (normalizeStatus === 'cancelled' || normalizeStatus === 'rejected') {
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-rose-700">
-          <XCircle className="h-3.5 w-3.5" /> Đã hủy bỏ
-        </span>
-      );
-    }
-
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-secondary">
-        <Clock className="h-3.5 w-3.5" /> Đã thanh toán / Chờ duyệt
-      </span>
-    );
   };
 
   if (!currentUserId) {

@@ -17,7 +17,8 @@ import {
   ArrowRight,
   Plane,
   Hotel as HotelIcon,
-  CreditCard
+  CreditCard,
+  LogIn
 } from 'lucide-react';
 import vnpayLogo from '../../assets/images/vnpay.png';
 import zalopayLogo from '../../assets/images/zalopay.png';
@@ -176,19 +177,65 @@ export const BookingLookup: React.FC = () => {
     const normalizeStatus = status ? status.trim().toLowerCase() : 'pending';
     const normalizePayment = paymentStatus ? paymentStatus.trim().toLowerCase() : 'unpaid';
 
-    if (normalizeStatus === 'cancelled') {
-      return <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-rose-700"><XCircle className="h-3.5 w-3.5" /> Đã hủy bỏ</span>;
+    switch (normalizeStatus) {
+      case 'pending':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-amber-700">
+            <Clock className="h-3.5 w-3.5" /> Chờ thanh toán
+          </span>
+        );
+      case 'confirmed':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Đã thanh toán
+          </span>
+        );
+      case 'completed':
+      case 'settled':
+      case 'settlementpending':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-sky-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Đã trải nghiệm
+          </span>
+        );
+      case 'checkedin':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-indigo-700">
+            <LogIn className="h-3.5 w-3.5" /> Đang trải nghiệm
+          </span>
+        );
+      case 'checkedout':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-sky-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Đã trả phòng
+          </span>
+        );
+      case 'cancelled':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-rose-700">
+            <XCircle className="h-3.5 w-3.5" /> Đã hủy bỏ
+          </span>
+        );
+      case 'noshow':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-amber-700">
+            <AlertCircle className="h-3.5 w-3.5" /> Không nhận phòng
+          </span>
+        );
+      default:
+        if (normalizePayment === 'paid') {
+          return (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Đã thanh toán
+            </span>
+          );
+        }
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-secondary/25 bg-secondary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-secondary">
+            <Clock className="h-3.5 w-3.5" /> Chờ thanh toán
+          </span>
+        );
     }
-
-    if (normalizeStatus === 'completed') {
-      return <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-sky-700"><CheckCircle2 className="h-3.5 w-3.5" /> Đã trải nghiệm</span>;
-    }
-
-    if (normalizePayment === 'paid') {
-      return <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Đã thanh toán</span>;
-    }
-
-    return <span className="inline-flex items-center gap-1.5 rounded-full border border-secondary/25 bg-secondary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-secondary"><Clock className="h-3.5 w-3.5" /> Chờ thanh toán</span>;
   };
 
   return (
