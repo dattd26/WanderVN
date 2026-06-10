@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { CheckCircle, XCircle, Calendar, Building, ShieldCheck, ArrowRight, Home, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, Calendar, Building, ShieldCheck, ArrowRight, Home, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { paymentService } from '../../services';
 
 
 export const VNPayReturn: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
 
   // Lấy thông tin trực tiếp từ Query String của VNPay gửi về
   const responseCode = searchParams.get('vnp_ResponseCode') || '';
@@ -20,6 +23,30 @@ export const VNPayReturn: React.FC = () => {
 
   // Đổi số tiền (chia cho 100 theo quy định VNPay)
   const amount = rawAmount ? parseFloat(rawAmount) / 100 : 0;
+
+  // Thanh toán lại đơn đang chờ bằng chính cổng VNPay
+  const handleRetryPayment = async () => {
+    const id = parseInt(bookingId, 10);
+    if (!id || Number.isNaN(id)) {
+      setRetryError('Không xác định được mã đơn để thanh toán lại.');
+      return;
+    }
+
+    setIsRetrying(true);
+    setRetryError(null);
+    try {
+      const paymentUrl = await paymentService.createVNPayUrl({ bookingId: id });
+      if (paymentUrl) {
+        window.location.assign(paymentUrl);
+        return;
+      }
+      setRetryError('Không khởi tạo được liên kết thanh toán.');
+    } catch (err: unknown) {
+      setRetryError((err as Error).message || 'Có lỗi xảy ra khi tạo liên kết thanh toán.');
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   // Hàm chuyển đổi định dạng yyyyMMddHHmmss của VNPay sang hiển thị thân thiện tiếng Việt
   const formatVNPayDate = (dateStr: string) => {
@@ -162,6 +189,13 @@ export const VNPayReturn: React.FC = () => {
               </div>
             </div>
 
+            {retryError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-center gap-3 text-left">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span className="font-semibold">{retryError}</span>
+              </div>
+            )}
+
             {/* Điều hướng */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -170,12 +204,30 @@ export const VNPayReturn: React.FC = () => {
               >
                 <Home className="h-4 w-4" /> Quay Lại Trang Chủ
               </Link>
-              <Link
-                to="/flights"
-                className="font-label-md text-xs uppercase tracking-widest px-6 py-3.5 bg-secondary text-on-primary hover:bg-on-secondary-container transition-all flex items-center justify-center gap-2 animate-pulse"
-              >
-                <RefreshCw className="h-4 w-4" /> Thực Hiện Lại Giao Dịch
-              </Link>
+              {bookingId ? (
+                <button
+                  onClick={handleRetryPayment}
+                  disabled={isRetrying}
+                  className="font-label-md text-xs uppercase tracking-widest px-6 py-3.5 bg-secondary text-on-primary hover:bg-on-secondary-container transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:animate-none animate-pulse"
+                >
+                  {isRetrying ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Đang khởi tạo...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" /> Thực Hiện Lại Giao Dịch
+                    </>
+                  )}
+                </button>
+              ) : (
+                <Link
+                  to="/booking-lookup"
+                  className="font-label-md text-xs uppercase tracking-widest px-6 py-3.5 bg-secondary text-on-primary hover:bg-on-secondary-container transition-all flex items-center justify-center gap-2 animate-pulse"
+                >
+                  <RefreshCw className="h-4 w-4" /> Tra Cứu & Thanh Toán Lại
+                </Link>
+              )}
             </div>
           </div>
         )}

@@ -133,9 +133,15 @@ public class ProcessVNPayIpnCommandHandler : IRequestHandler<ProcessVNPayIpnComm
 
                 await _unitOfWork.Payments.AddAsync(payment, cancellationToken);
             }
+            else if (responseCode == "24")
+            {
+                // Người dùng chủ động hủy giao dịch tại cổng: giữ nguyên đơn ở trạng thái
+                // chờ thanh toán để khách có thể thanh toán lại trong cửa sổ giữ chỗ.
+                return new VNPayIpnResponse { Success = true, RspCode = "00", Message = "Transaction cancelled by user, booking kept pending" };
+            }
             else
             {
-                // Giao dịch không thành công ở cổng VNPay
+                // Giao dịch bị từ chối thực sự ở cổng VNPay
                 booking.PaymentStatus = BookingPaymentStatus.Failed;
                 booking.Status = BookingStatus.Cancelled;
                 ReleaseHotelRooms(booking);
