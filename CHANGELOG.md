@@ -14,6 +14,19 @@ All notable changes to this project will be documented in this file.
     - Mở rộng prop `className` cho `FiltersSidebar` để truyền và nhận các lớp CSS hoạt ảnh một cách trực quan.
 
 ### Fixed
+- **Lỗi tạo đơn đặt phòng khách sạn (Create Hotel Booking Room Status & Email Mismatch)**: Khắc phục lỗi khi đặt phòng khách sạn bị từ chối do kiểm tra trạng thái phòng tĩnh ("Available") và sửa lỗi hiển thị sai tiền tệ trong email xác nhận.
+  - **Why it changed**:
+    1. Trước đây, hệ thống tìm phòng trống bằng cách kiểm tra cột `Status == "Available"` trên bảng `Rooms`. Nếu phòng đó đã có một booking vào thời gian khác (khiến status phòng chuyển sang "Booked"), hệ thống sẽ báo hết phòng và từ chối đặt phòng dù khoảng thời gian mới hoàn toàn trống.
+    2. Email xác nhận đặt phòng khách sạn bị hardcode tiền tệ là USD và hiển thị kí hiệu `$` ở đầu, trong khi giá phòng thực tế lưu và thanh toán bằng VNĐ.
+    3. Trình thu hồi phòng chưa thanh toán (`UnpaidBookingExpirationBackgroundService`) sử dụng thời gian hết hạn mặc định là 1 phút thay vì 30 phút nếu cấu hình chưa được seed vào DB, dẫn đến các booking mới tạo bị hủy ngay lập tức.
+  - **Affected files**: [CreateHotelBookingCommandHandler.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Features/Bookings/Commands/CreateHotelBooking/CreateHotelBookingCommandHandler.cs), [UnpaidBookingExpirationBackgroundService.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/Services/UnpaidBookingExpirationBackgroundService.cs), [WanderVNDbContext.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/Data/WanderVNDbContext.cs).
+  - **What changed**:
+    - Thay đổi logic tìm phòng khả dụng trong `CreateHotelBookingCommandHandler` sang kiểm tra trùng lặp lịch đặt phòng (date overlapping check) thực tế dựa trên ngày nhận/trả phòng và trạng thái các booking khác thay vì kiểm tra cột `Status` tĩnh.
+    - Bổ sung logic lấy thông tin người dùng đăng nhập làm fallback nếu thông tin liên hệ từ request bị thiếu để tránh lỗi lưu DB và giúp tra cứu thuận tiện.
+    - Sửa định dạng giá tiền hiển thị trong email xác nhận đặt phòng sang `{totalPrice:N0} VND`.
+    - Tăng thời gian giữ phòng chờ thanh toán mặc định của background service (`DefaultExpirationMinutes`) lên 30 phút.
+    - Khai báo kiểu dữ liệu cột `decimal(18, 2)` cho các trường `DuffelAmountVnd`, `MarkupAmountVnd` và `PaymentFeeVnd` trong `WanderVNDbContext` để dập tắt cảnh báo từ EF Core.
+
 - **Status Badge & Booking History Filtering**: Sửa logic hàm `renderStatusBadge` và bộ lọc tab lịch sử để hỗ trợ chính xác tất cả các trạng thái trong enum `BookingStatus` của backend (Pending, Confirmed, Completed, Cancelled, SettlementPending, Settled, CheckedIn, CheckedOut, NoShow).
   - **Why it changed**: Trước đây logic status badge ở frontend bị sai lệch so với enum backend (như dùng status giả lập `'Paid'`), dẫn đến các booking có trạng thái `Confirmed` rơi vào nhánh fallback hiển thị sai lệch thông tin thành "Đang xử lý" hoặc "Đã thanh toán / Chờ duyệt" và không hiển thị đúng nút Check-out.
   - **Affected files**: [BookingHistory.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingHistory.tsx), [BookingLookup.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingLookup.tsx), [BookingDetail.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingDetail.tsx).

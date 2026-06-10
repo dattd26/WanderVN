@@ -44,20 +44,66 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
         if (roomType == null)
             throw new KeyNotFoundException("Không tìm thấy loại phòng yêu cầu");
 
-        // Tìm phòng trống thuộc loại phòng được chọn trước khi tiến hành đặt hàng để tránh lỗi tạo đơn hàng khi hết phòng
-        var room = await _unitOfWork.Rooms
-            .FindFirstOrDefaultAsync(r => r.RoomTypeId == request.Request.RoomTypeId && r.Status == "Available", cancellationToken: cancellationToken);
+        // Tìm phòng trống thuộc loại phòng được chọn mà không bị trùng lịch đặt phòng nào khác
+        var checkInDateOnly = DateOnly.FromDateTime(checkIn);
+        var checkOutDateOnly = DateOnly.FromDateTime(checkOut);
+
+        var rooms = await _unitOfWork.Rooms
+            .GetAsync(r => r.RoomTypeId == request.Request.RoomTypeId, disableTracking: false, cancellationToken: cancellationToken);
+
+        WanderVN.Domain.Entities.Rooms? room = null;
+
+        foreach (var r in rooms)
+        {
+            var isBooked = await _unitOfWork.Repository<WanderVN.Domain.Entities.BookingHotels>()
+                .FindFirstOrDefaultAsync(bh => bh.RoomId == r.Id 
+                    && bh.Booking!.Status != BookingStatus.Cancelled
+                    && bh.CheckOutDate > checkInDateOnly 
+                    && bh.CheckInDate < checkOutDateOnly,
+                    includeProperties: "Booking",
+                    cancellationToken: cancellationToken) != null;
+
+            if (!isBooked)
+            {
+                room = r;
+                break;
+            }
+        }
 
         if (room == null)
         {
-            throw new InvalidOperationException("Không còn phòng trống cho loại phòng đã chọn.");
+            throw new InvalidOperationException("Không còn phòng trống cho loại phòng đã chọn trong thời gian yêu cầu.");
         }
 
         // Tính toán tổng chi phí đặt phòng
         decimal totalPrice = request.Request.TotalPrice ?? roomType.BasePrice;
 
-        // Xác thực: Guest bắt buộc phải có email
-        if (request.Request.UserId == null && string.IsNullOrWhiteSpace(request.Request.Email))
+        // Lấy thông tin user đăng nhập để làm fallback nếu thiếu thông tin liên hệ trong request
+        WanderVN.Domain.Entities.Users? user = null;
+        if (request.Request.UserId.HasValue)
+        {
+            user = await _unitOfWork.Users.FindFirstOrDefaultAsync(u => u.Id == request.Request.UserId.Value, cancellationToken: cancellationToken);
+        }
+
+        string? contactEmail = request.Request.Email;
+        string? contactName = request.Request.CustomerName;
+        string? contactPhone = request.Request.CustomerPhone;
+
+        if (string.IsNullOrWhiteSpace(contactEmail) && user != null)
+        {
+            contactEmail = user.Email;
+        }
+        if (string.IsNullOrWhiteSpace(contactName) && user != null)
+        {
+            contactName = user.FullName;
+        }
+        if (string.IsNullOrWhiteSpace(contactPhone) && user != null)
+        {
+            contactPhone = user.PhoneNumber;
+        }
+
+        // Xác thực: Bắt buộc phải có email liên hệ
+        if (string.IsNullOrWhiteSpace(contactEmail))
         {
             throw new ArgumentException("Vui lòng cung cấp email liên hệ để đặt phòng.");
         }
@@ -72,9 +118,9 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
             Status = BookingStatus.Pending,
             PaymentStatus = BookingPaymentStatus.Unpaid,
             CreatedAt = DateTimeOffset.UtcNow,
-            Email = request.Request.Email,
-            CustomerName = request.Request.CustomerName,
-            CustomerPhone = request.Request.CustomerPhone
+            Email = contactEmail,
+            CustomerName = contactName,
+            CustomerPhone = contactPhone
         };
 
         // Khởi tạo chi tiết đặt phòng khách sạn và liên kết với đơn hàng thông qua navigation property
@@ -88,6 +134,7 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
 
         // Cập nhật trạng thái phòng sang Đã đặt
         room.Status = "Booked";
+        _unitOfWork.Rooms.Update(room);
 
         // Thêm đơn hàng và chi tiết đặt phòng vào context
         await _unitOfWork.Bookings.AddAsync(booking, cancellationToken);
@@ -96,19 +143,9 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
         // Thực hiện lưu toàn bộ thay đổi xuống DB trong một transaction duy nhất
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Xác định email và tên người nhận xác nhận (ưu tiên thông tin guest, fallback sang user đã đăng nhập)
-        string? recipientEmail = request.Request.Email;
-        string recipientName = request.Request.CustomerName ?? "Quý khách";
-
-        if (string.IsNullOrEmpty(recipientEmail) && request.Request.UserId.HasValue)
-        {
-            var user = await _unitOfWork.Users.FindFirstOrDefaultAsync(u => u.Id == request.Request.UserId.Value, cancellationToken: cancellationToken);
-            if (user != null)
-            {
-                recipientEmail = user.Email;
-                recipientName = user.FullName ?? recipientName;
-            }
-        }
+        // Xác định email và tên người nhận xác nhận dựa trên thông tin đã lưu trong booking
+        string? recipientEmail = booking.Email;
+        string recipientName = booking.CustomerName ?? "Quý khách";
 
         if (!string.IsNullOrEmpty(recipientEmail))
         {
@@ -147,7 +184,7 @@ public class CreateHotelBookingCommandHandler : IRequestHandler<CreateHotelBooki
                             </tr>
                             <tr>
                                 <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Tổng tiền:</td>
-                                <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #d32f2f;'>${totalPrice:N2} USD</td>
+                                <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #d32f2f;'>{totalPrice:N0} VND</td>
                             </tr>
                             <tr>
                                 <td style='padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;'>Trạng thái đơn:</td>
