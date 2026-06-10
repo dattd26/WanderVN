@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { HotelSearchForm } from '../../components/client/HotelSearchForm';
 import { FiltersSidebar } from '../../components/client/FiltersSidebar';
@@ -7,6 +7,7 @@ import { HotelMapModal } from '../../components/client/HotelMapModal';
 import type { SearchHotelsDto } from '../../types';
 import { searchService, geocodingService } from '../../services';
 import { Loader2, Hotel } from 'lucide-react';
+import { gsap } from 'gsap';
 
 export const SearchStays: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -29,6 +30,109 @@ export const SearchStays: React.FC = () => {
 
   // Tìm tên địa điểm hiện tại trực tiếp từ URL query parameters để hiển thị tiêu đề kết quả tìm kiếm (Instant UX)
   const currentLocationName = searchParams.get('locationName') || 'Việt Nam';
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Kích hoạt hiệu ứng chuyển cảnh mượt mà bằng GSAP khi trang được tải
+  useEffect(() => {
+    const mm = gsap.matchMedia();
+
+    mm.add(
+      {
+        reduceMotion: '(prefers-reduced-motion: reduce)',
+        animate: '(prefers-reduced-motion: no-preference)',
+      },
+      (context) => {
+        const { reduceMotion } = context.conditions as { reduceMotion: boolean };
+
+        if (reduceMotion) {
+          gsap.set('.search-header-text, .search-form-anim, .sidebar-anim, .results-header-anim', {
+            opacity: 1,
+            y: 0,
+          });
+          return;
+        }
+
+        gsap.fromTo(
+          '.search-header-text',
+          { opacity: 0, y: 15 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: 'power3.out',
+          }
+        );
+
+        gsap.fromTo(
+          '.search-form-anim',
+          { opacity: 0, y: 15 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            delay: 0.15,
+            ease: 'power3.out',
+          }
+        );
+
+        gsap.fromTo(
+          ['.sidebar-anim', '.results-header-anim'],
+          { opacity: 0, y: 20 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.1,
+            delay: 0.25,
+            ease: 'power3.out',
+          }
+        );
+      },
+      containerRef
+    );
+
+    return () => mm.revert();
+  }, []);
+
+  // Hiệu ứng xuất hiện so le (stagger) cho danh sách khách sạn sau khi tải xong dữ liệu
+  useEffect(() => {
+    if (loading) return;
+
+    const mm = gsap.matchMedia();
+
+    mm.add(
+      {
+        reduceMotion: '(prefers-reduced-motion: reduce)',
+        animate: '(prefers-reduced-motion: no-preference)',
+      },
+      (context) => {
+        const { reduceMotion } = context.conditions as { reduceMotion: boolean };
+
+        if (reduceMotion) {
+          gsap.set('.hotel-card-anim', { opacity: 1, y: 0 });
+          return;
+        }
+
+        gsap.fromTo(
+          '.hotel-card-anim',
+          { opacity: 0, y: 20 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+            stagger: 0.08,
+            ease: 'power2.out',
+            clearProps: 'all',
+          }
+        );
+      },
+      containerRef
+    );
+
+    return () => mm.revert();
+  }, [loading]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,15 +208,17 @@ export const SearchStays: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div ref={containerRef} className="flex flex-col min-h-screen bg-background">
       {/* Widget Thanh Tìm kiếm rút gọn ở Header */}
       <header className="relative pt-32 pb-16 px-margin-mobile md:px-margin-desktop bg-surface-container-low border-b border-surface-variant/40">
         <div className="max-w-container-max mx-auto">
-          <div className="mb-6">
-            <span className="font-label-md text-caption uppercase tracking-wider text-secondary">Hành trình của bạn</span>
-            <h1 className="font-display-lg text-headline-lg text-primary">Thay đổi tìm kiếm lưu trú</h1>
+          <div className="mb-6 overflow-hidden">
+            <span className="font-label-md text-caption uppercase tracking-wider text-secondary search-header-text block">Hành trình của bạn</span>
+            <h1 className="font-display-lg text-headline-lg text-primary search-header-text">Thay đổi tìm kiếm lưu trú</h1>
           </div>
-          <HotelSearchForm compact theme="light" />
+          <div className="search-form-anim">
+            <HotelSearchForm compact theme="light" />
+          </div>
         </div>
       </header>
 
@@ -121,6 +227,7 @@ export const SearchStays: React.FC = () => {
 
         {/* Bộ lọc bên trái Sidebar */}
         <FiltersSidebar
+          className="w-full lg:w-1/4 sidebar-anim"
           onPriceChange={(min, max) => setPriceRange({ min, max })}
           onTypeChange={(types) => setSelectedTypes(types)}
           onAmenityChange={(amenities) => setSelectedAmenities(amenities)}
@@ -132,7 +239,7 @@ export const SearchStays: React.FC = () => {
         {/* Danh sách kết quả bên phải */}
         <section className="w-full lg:w-3/4 space-y-8">
 
-          <div className="flex justify-between items-center border-b border-outline-variant/30 pb-4">
+          <div className="flex justify-between items-center border-b border-outline-variant/30 pb-4 results-header-anim">
             <div>
               <h2 className="font-display-lg text-headline-md text-on-surface">
                 {displayedHotels.length} Khách sạn tại {currentLocationName}
@@ -162,7 +269,9 @@ export const SearchStays: React.FC = () => {
           ) : displayedHotels.length > 0 ? (
             <div className="space-y-8">
               {displayedHotels.map((hotel) => (
-                <HotelCard key={hotel.id} hotel={hotel} />
+                <div key={hotel.id} className="hotel-card-anim">
+                  <HotelCard hotel={hotel} />
+                </div>
               ))}
             </div>
           ) : (
