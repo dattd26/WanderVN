@@ -12,6 +12,7 @@ import { FinanceFilters } from './components/FinanceFilters';
 import { FinanceTable } from './components/FinanceTable';
 import { FinancePagination } from './components/FinancePagination';
 import { AdminBatchesPanel } from './components/AdminBatchesPanel';
+import { VietQRModal } from './components/VietQRModal';
 
 export function AdminFinance() {
     const [activeTab, setActiveTab] = useState<'single' | 'batch'>('single');
@@ -22,6 +23,7 @@ export function AdminFinance() {
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [qrPayout, setQrPayout] = useState<PayoutDto | null>(null);
 
     // Bộ lọc
     const [keyword, setKeyword] = useState('');
@@ -109,16 +111,8 @@ export function AdminFinance() {
         return () => clearTimeout(timer);
     }, [fetchStats, fetchSetting]);
 
-    const handleConfirm = async (p: PayoutDto) => {
-        if (!confirm(`Xác nhận chi trả ${p.netAmount.toLocaleString('vi-VN')}₫ cho "${p.partnerName ?? 'N/A'}" — Booking ${p.bookingCode}?`)) {
-            return;
-        }
-        try {
-            await payoutService.confirmPayout(p.id, {});
-            await Promise.all([fetchPayouts(), fetchStats()]);
-        } catch (err) {
-            triggerMessage('error', err instanceof Error ? err.message : 'Không thể xác nhận thanh toán.');
-        }
+    const handleConfirm = (p: PayoutDto) => {
+        setQrPayout(p);
     };
 
     const handleReject = async (p: PayoutDto) => {
@@ -300,6 +294,20 @@ export function AdminFinance() {
                     </p>
                 </div>
             </div>
+
+            {qrPayout && (
+                <VietQRModal
+                    isOpen={qrPayout !== null}
+                    onClose={() => setQrPayout(null)}
+                    payoutId={qrPayout.id}
+                    partnerName={qrPayout.partnerName}
+                    bookingCode={qrPayout.bookingCode}
+                    onSuccess={async (txRef) => {
+                        await payoutService.confirmPayout(qrPayout.id, { transactionReference: txRef });
+                        await Promise.all([fetchPayouts(), fetchStats()]);
+                    }}
+                />
+            )}
         </div>
     );
 }

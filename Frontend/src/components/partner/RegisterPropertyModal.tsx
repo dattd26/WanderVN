@@ -158,6 +158,7 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
     setIsGeocoding(true);
     try {
       const searchTerms = `${newHotelForm.address}, ${newHotelForm.locationName}, Việt Nam`;
+      // call api cua openstreet map de lay toa do
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerms)}&countrycodes=vn&limit=1`;
       const res = await fetch(url, { headers: { 'Accept-Language': 'vi' } });
       const data = await res.json();
@@ -334,10 +335,10 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
                 return (
                   <div key={s.step} className="flex items-center gap-3.5 group">
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 border ${isCompleted
-                        ? 'bg-[#735C00] border-[#735C00] text-[#FAF6F0]'
-                        : isActive
-                          ? 'bg-[#FAF6F0] border-[#FAF6F0] text-[#1C1C19] ring-2 ring-[#735C00]/40'
-                          : 'border-[#444748] text-[#8C8A85]'
+                      ? 'bg-[#735C00] border-[#735C00] text-[#FAF6F0]'
+                      : isActive
+                        ? 'bg-[#FAF6F0] border-[#FAF6F0] text-[#1C1C19] ring-2 ring-[#735C00]/40'
+                        : 'border-[#444748] text-[#8C8A85]'
                       }`}>
                       {isCompleted ? <Check className="w-4 h-4" /> : s.step}
                     </div>
@@ -627,8 +628,8 @@ export const RegisterPropertyModal: React.FC<RegisterPropertyModalProps> = ({
                               });
                             }}
                             className={`p-3.5 rounded-xl border text-left text-xs transition-all flex items-center justify-between ${isChecked
-                                ? 'border-[#735C00] bg-[#FEF9EC] text-[#735C00] font-bold shadow-sm'
-                                : 'border-[#E6E2DD] bg-[#FAF6F0] hover:border-[#735C00]/40 text-[#444748]'
+                              ? 'border-[#735C00] bg-[#FEF9EC] text-[#735C00] font-bold shadow-sm'
+                              : 'border-[#E6E2DD] bg-[#FAF6F0] hover:border-[#735C00]/40 text-[#444748]'
                               }`}
                           >
                             <span>{amenity.label}</span>

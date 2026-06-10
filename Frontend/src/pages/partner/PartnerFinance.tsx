@@ -14,10 +14,12 @@ import { PartnerSidebar } from '../../components/partner/PartnerSidebar';
 import { payoutService } from '../../services/payoutService';
 import type { PartnerPayoutSummaryDto, PayoutDto, PartnerBatchDto, PayoutStatus } from '../../types';
 import { PAYOUT_STATUS_LABEL } from '../../types';
+import { UpdateBankInfoModal } from '../../components/partner/UpdateBankInfoModal';
 
 export const PartnerFinance: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<PartnerPayoutSummaryDto | null>(null);
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
 
   const [transactions, setTransactions] = useState<PayoutDto[]>([]);
   const [transactionStatus, setTransactionStatus] = useState<PayoutStatus | ''>('');
@@ -308,7 +310,7 @@ export const PartnerFinance: React.FC = () => {
                 </div>
               </section>
 
-              {/* SECTION 4: Bank Account Info Placeholder */}
+              {/* SECTION 4: Bank Account Info */}
               <section className="bg-[#1C1C19] text-[#FAF6F0] border border-[#1C1C19] rounded-xl p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="absolute top-0 right-0 p-8 opacity-5">
                   <Landmark className="w-32 h-32" />
@@ -319,21 +321,32 @@ export const PartnerFinance: React.FC = () => {
                     Tài khoản Ngân hàng Liên kết
                   </h3>
                   <p className="font-body-md text-[#FAF6F0]/70 text-sm mt-1 max-w-lg">
-                    Doanh thu sẽ được chuyển khoản định kỳ tự động vào tài khoản đối tác đã đăng ký dưới đây.
+                    Doanh thu sẽ được chuyển khoản định kỳ tự động vào tài khoản đối tác đã cấu hình dưới đây.
                   </p>
 
-                  <div className="mt-6 flex flex-col gap-1">
-                    <div className="text-[10px] uppercase tracking-widest text-[#B59A5A] font-bold">Chủ tài khoản</div>
-                    <div className="font-mono text-lg font-bold uppercase">CONG TY TNHH WANDERVn PARTNER</div>
+                  {summary?.bankName && summary?.bankAccountNumber && summary?.bankAccountName ? (
+                    <div className="mt-6 flex flex-col gap-1">
+                      <div className="text-[10px] uppercase tracking-widest text-[#B59A5A] font-bold">Chủ tài khoản</div>
+                      <div className="font-mono text-lg font-bold uppercase">{summary.bankAccountName}</div>
 
-                    <div className="text-[10px] uppercase tracking-widest text-[#B59A5A] font-bold mt-3">Ngân hàng & Số tài khoản</div>
-                    <div className="font-mono text-xl font-bold tracking-widest">VIETCOMBANK &bull; 0123 4567 8910</div>
-                  </div>
+                      <div className="text-[10px] uppercase tracking-widest text-[#B59A5A] font-bold mt-3">Ngân hàng &amp; Số tài khoản</div>
+                      <div className="font-mono text-xl font-bold tracking-widest uppercase">
+                        {summary.bankName} &bull; {summary.bankAccountNumber}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-6 p-4 rounded-lg bg-[#FAF6F0]/10 border border-[#FAF6F0]/20 text-xs text-[#FAF6F0]/80">
+                      Chưa liên kết tài khoản ngân hàng. Vui lòng thiết lập tài khoản để hệ thống đối soát và chi trả doanh thu cho bạn.
+                    </div>
+                  )}
                 </div>
 
                 <div className="z-10 self-start md:self-center">
-                  <button className="bg-[#FAF6F0] text-[#1C1C19] font-label-md text-xs uppercase tracking-widest font-bold px-6 py-3 rounded-lg shadow-md hover:bg-[#B59A5A] hover:text-[#1C1C19] transition-colors">
-                    Yêu cầu thay đổi
+                  <button
+                    onClick={() => setIsBankModalOpen(true)}
+                    className="bg-[#FAF6F0] text-[#1C1C19] font-label-md text-xs uppercase tracking-widest font-bold px-6 py-3 rounded-lg shadow-md hover:bg-[#B59A5A] hover:text-[#1C1C19] transition-colors"
+                  >
+                    {summary?.bankName ? 'Yêu cầu thay đổi' : 'Liên kết ngay'}
                   </button>
                 </div>
               </section>
@@ -343,6 +356,18 @@ export const PartnerFinance: React.FC = () => {
 
         </main>
       </div>
+
+      {summary && isBankModalOpen && (
+        <UpdateBankInfoModal
+          isOpen={isBankModalOpen}
+          onClose={() => setIsBankModalOpen(false)}
+          onSuccess={fetchSummary}
+          initialBankName={summary.bankName}
+          initialBankAccountNumber={summary.bankAccountNumber}
+          initialBankAccountName={summary.bankAccountName}
+          initialBankBin={summary.bankBin}
+        />
+      )}
     </div>
   );
 };

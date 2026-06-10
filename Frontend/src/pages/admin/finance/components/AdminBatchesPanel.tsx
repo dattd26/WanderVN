@@ -3,7 +3,7 @@ import { useToast } from '../../../../contexts/ToastContext';
 import { payoutService } from '../../../../services';
 import type { AdminBatchDto, PagedResult } from '../../../../types';
 import { CreateBatchModal } from './CreateBatchModal';
-import { ConfirmBatchModal } from './ConfirmBatchModal';
+import { VietQRModal } from './VietQRModal';
 import { FinancePagination } from './FinancePagination';
 
 export function AdminBatchesPanel() {
@@ -24,7 +24,7 @@ export function AdminBatchesPanel() {
 
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [confirmBatchId, setConfirmBatchId] = useState<number | null>(null);
+  const [confirmBatch, setConfirmBatch] = useState<AdminBatchDto | null>(null);
 
   // Debounce search
   useEffect(() => {
@@ -241,7 +241,7 @@ export function AdminBatchesPanel() {
                             {batch.status === 'Processing' ? (
                               <>
                                 <button
-                                  onClick={() => setConfirmBatchId(batch.id)}
+                                  onClick={() => setConfirmBatch(batch)}
                                   className="px-2 py-1 bg-emerald-600 text-white rounded text-[11px] font-bold hover:bg-emerald-700 transition-all flex items-center gap-0.5 shadow-sm"
                                   title="Xác nhận đã thanh toán đợt"
                                 >
@@ -354,12 +354,19 @@ export function AdminBatchesPanel() {
         onSuccess={fetchBatches}
       />
 
-      <ConfirmBatchModal
-        isOpen={confirmBatchId !== null}
-        batchId={confirmBatchId}
-        onClose={() => setConfirmBatchId(null)}
-        onSuccess={fetchBatches}
-      />
+      {confirmBatch && (
+        <VietQRModal
+          isOpen={confirmBatch !== null}
+          batchId={confirmBatch.id}
+          partnerName={confirmBatch.partnerName}
+          bookingCode={confirmBatch.batchCode}
+          onClose={() => setConfirmBatch(null)}
+          onSuccess={async (txRef) => {
+            await payoutService.confirmBatch(confirmBatch.id, { transactionReference: txRef });
+            fetchBatches();
+          }}
+        />
+      )}
     </div>
   );
 }

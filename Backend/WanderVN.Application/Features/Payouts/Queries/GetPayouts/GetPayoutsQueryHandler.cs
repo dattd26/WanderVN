@@ -34,6 +34,10 @@ public class GetPayoutsQueryHandler : IRequestHandler<GetPayoutsQuery, PagedResu
             PartnerName = p.Partner?.FullName,
             PartnerEmail = p.Partner?.Email,
             PartnerAvatarUrl = p.Partner?.AvatarUrl,
+            BankName = p.Partner?.BankName,
+            BankAccountNumber = p.Partner?.BankAccountNumber,
+            BankAccountName = p.Partner?.BankAccountName,
+            BankBin = p.Partner?.BankBin,
 
             BookingId = p.BookingId,
             BookingCode = p.Booking?.BookingCode ?? string.Empty,

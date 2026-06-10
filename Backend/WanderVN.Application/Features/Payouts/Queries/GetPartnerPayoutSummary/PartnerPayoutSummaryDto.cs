@@ -8,4 +8,8 @@ public class PartnerPayoutSummaryDto
     public decimal PendingBalance { get; set; }
     public decimal PaidThisMonth { get; set; }
     public decimal CommissionRate { get; set; }
+    public string? BankName { get; set; }
+    public string? BankAccountNumber { get; set; }
+    public string? BankAccountName { get; set; }
+    public string? BankBin { get; set; }
 }

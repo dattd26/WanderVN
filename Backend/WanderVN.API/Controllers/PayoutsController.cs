@@ -16,6 +16,8 @@ using WanderVN.Application.Features.Payouts.Commands.CancelBatch;
 using WanderVN.Application.Features.Payouts.Queries.GetUnbatchedPayouts;
 using WanderVN.Application.Features.Payouts.Queries.GetAdminBatches;
 using WanderVN.Application.Features.Payouts.Queries.GetAdminBatchDetail;
+using WanderVN.Application.Features.Payouts.Queries.GeneratePayoutQR;
+using WanderVN.Application.Features.Payouts.Queries.GenerateBatchPayoutQR;
 
 namespace WanderVN.API.Controllers;
 
@@ -160,6 +162,26 @@ public class PayoutsController : ControllerBase
         command.BatchId = id;
         var data = await _mediator.Send(command, cancellationToken);
         var response = new ApiResponse<bool>(true, "Hủy đợt chi trả thành công.", 200, data);
+        return Ok(response);
+    }
+
+    /// GET api/v1/payouts/{id:int}/vietqr
+    [HttpGet("{id:int}/vietqr")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetPayoutQR(int id, CancellationToken cancellationToken)
+    {
+        var data = await _mediator.Send(new GeneratePayoutQRQuery { Id = id }, cancellationToken);
+        var response = new ApiResponse<PayoutQRDto>(true, "Tạo mã QR thanh toán thành công.", 200, data);
+        return Ok(response);
+    }
+
+    /// GET api/v1/payouts/batches/{id:int}/vietqr
+    [HttpGet("batches/{id:int}/vietqr")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetBatchPayoutQR(int id, CancellationToken cancellationToken)
+    {
+        var data = await _mediator.Send(new GenerateBatchPayoutQRQuery { BatchId = id }, cancellationToken);
+        var response = new ApiResponse<PayoutQRDto>(true, "Tạo mã QR thanh toán đợt thành công.", 200, data);
         return Ok(response);
     }
 }
