@@ -365,6 +365,7 @@ export const PartnerFinance: React.FC = () => {
           initialBankName={summary.bankName}
           initialBankAccountNumber={summary.bankAccountNumber}
           initialBankAccountName={summary.bankAccountName}
+          initialBankBin={summary.bankBin}
         />
       )}
     </div>

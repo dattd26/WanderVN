@@ -11,6 +11,7 @@ import type {
   CreateBatchPayload,
   ConfirmBatchPayload,
   GetAdminBatchesQuery,
+  VietQRDto,
 } from '../types';
 
 export const payoutService = {
@@ -111,5 +112,13 @@ export const payoutService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reason: reason ?? '' }),
     });
+  },
+
+  async getPayoutQR(id: number): Promise<VietQRDto> {
+    return request<VietQRDto>(`/payouts/${id}/vietqr`);
+  },
+
+  async getBatchPayoutQR(id: number): Promise<VietQRDto> {
+    return request<VietQRDto>(`/payouts/batches/${id}/vietqr`);
   },
 };

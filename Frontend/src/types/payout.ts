@@ -11,6 +11,10 @@ export interface PayoutDto {
   partnerName?: string | null;
   partnerEmail?: string | null;
   partnerAvatarUrl?: string | null;
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountName?: string | null;
+  bankBin?: string | null;
 
   bookingId: number;
   bookingCode: string;
@@ -62,12 +66,14 @@ export interface PartnerPayoutSummaryDto {
   bankName?: string | null;
   bankAccountNumber?: string | null;
   bankAccountName?: string | null;
+  bankBin?: string | null;
 }
 
 export interface UpdateBankInfoPayload {
   bankName: string;
   bankAccountNumber: string;
   bankAccountName: string;
+  bankBin: string;
 }
 
 export interface BatchPayoutDto {
@@ -107,6 +113,10 @@ export interface AdminBatchDto {
   partnerId: number;
   partnerName?: string | null;
   partnerEmail?: string | null;
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountName?: string | null;
+  bankBin?: string | null;
   totalGross: number;
   totalCommission: number;
   totalNet: number;
@@ -154,3 +164,13 @@ export const PAYOUT_STATUS_LABEL: Record<PayoutStatus, string> = {
   Failed: 'Từ chối / Thất bại',
   Cancelled: 'Bị hủy',
 };
+
+export interface VietQRDto {
+  qrDataURL: string;
+  bankName: string;
+  bankBin: string;
+  bankAccountNumber: string;
+  bankAccountName: string;
+  amount: number;
+  addInfo: string;
+}
