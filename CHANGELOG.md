@@ -3,7 +3,23 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Fixed
+- **Status Badge & Booking History Filtering**: Sửa logic hàm `renderStatusBadge` và bộ lọc tab lịch sử để hỗ trợ chính xác tất cả các trạng thái trong enum `BookingStatus` của backend (Pending, Confirmed, Completed, Cancelled, SettlementPending, Settled, CheckedIn, CheckedOut, NoShow).
+  - **Why it changed**: Trước đây logic status badge ở frontend bị sai lệch so với enum backend (như dùng status giả lập `'Paid'`), dẫn đến các booking có trạng thái `Confirmed` rơi vào nhánh fallback hiển thị sai lệch thông tin thành "Đang xử lý" hoặc "Đã thanh toán / Chờ duyệt" và không hiển thị đúng nút Check-out.
+  - **Affected files**: [BookingHistory.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingHistory.tsx), [BookingLookup.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingLookup.tsx), [BookingDetail.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingDetail.tsx).
+  - **What changed**:
+    - Đồng bộ `renderStatusBadge` trên cả 3 trang sử dụng cấu trúc `switch-case` chuẩn hóa đầy đủ 9 trạng thái.
+    - Sửa logic đếm số lượng (`tabCounts`) và lọc đơn đặt (`filteredBookings`) trong các tab (Sắp đi, Đã trải nghiệm, Đã hủy) để phân loại chính xác các trạng thái nghiệp vụ mới (`CheckedIn`, `CheckedOut`, `Settled`, `SettlementPending`, `NoShow`).
+    - Sửa điều kiện ẩn/hiển thị nút check-out và cancel ở trang chi tiết theo trạng thái thực tế.
 
+### Style 
+• Đã style lại UI/UX cho các màn booking và dùng GSAP core cho entrance animation có prefers-reduced-motion:
+
+  - Cập nhật BookingHistory.tsx, BookingDetail.tsx, BookingLookup.tsx.
+  - Đồng bộ lại 2 card con HotelBookingCard.tsx, FlightBookingCard.tsx vì BookingHistory render qua chúng.
+  - Chuẩn hóa màu label/status: emerald cho paid/upcoming, sky cho completed, rose cho cancelled, secondary cho pending.
+  - Bỏ nhiều hardcode màu lẫn tông (#FAF9F6, amber/gray/red rời rạc), thay bằng token Tailwind của project.
+  - Thêm gsap vào package.json và package-lock.json.
 ### Added
 - **Multiple Passengers Flight Booking**: Cập nhật backend API tìm kiếm vé máy bay để hỗ trợ nhập số lượng nhiều hành khách thay vì chỉ 1 loại như trước đây.
   - **Why it changed**: Cho phép người dùng tìm kiếm và đặt vé máy bay cho nhiều người lớn, trẻ em, và em bé trong cùng một chuyến bay.
