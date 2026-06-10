@@ -1,5 +1,5 @@
 import { request } from '../shared/apiClient';
-import type { PartnerHotelDto } from '../../types';
+import type { PartnerHotelDto, UpdateBankInfoPayload } from '../../types';
 import type { HotelBooking } from '../../components/partner/tabs/BookingsTab';
 
 export interface PagedResult<T> {
@@ -226,6 +226,17 @@ export const partnerService = {
   async markNoShow(hotelId: number, bookingId: number): Promise<{ success: boolean; message: string }> {
     return request<{ success: boolean; message: string }>(`/partner/hotels/${hotelId}/bookings/${bookingId}/no-show`, {
       method: 'PUT',
+    });
+  },
+
+  /**
+   * Cập nhật thông tin tài khoản ngân hàng liên kết của đối tác.
+   */
+  async updateBankInfo(payload: UpdateBankInfoPayload): Promise<boolean> {
+    return request<boolean>('/partner/bank-info', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
   },
 };

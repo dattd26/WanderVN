@@ -59,6 +59,15 @@ export interface PartnerPayoutSummaryDto {
   pendingBalance: number;
   paidThisMonth: number;
   commissionRate: number; // e.g., 0.10 for 10%
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountName?: string | null;
+}
+
+export interface UpdateBankInfoPayload {
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountName: string;
 }
 
 export interface BatchPayoutDto {

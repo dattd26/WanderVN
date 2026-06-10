@@ -12,13 +12,16 @@ public class GetPartnerPayoutSummaryQueryHandler : IRequestHandler<GetPartnerPay
 {
     private readonly IPartnerPayoutRepository _payoutRepository;
     private readonly ICurrentUserService _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
 
     public GetPartnerPayoutSummaryQueryHandler(
         IPartnerPayoutRepository payoutRepository,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IUnitOfWork unitOfWork)
     {
         _payoutRepository = payoutRepository;
         _currentUser = currentUser;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<PartnerPayoutSummaryDto> Handle(GetPartnerPayoutSummaryQuery request, CancellationToken cancellationToken)
@@ -27,6 +30,7 @@ public class GetPartnerPayoutSummaryQueryHandler : IRequestHandler<GetPartnerPay
             ?? throw new UnauthorizedAccessException("Không thể xác định danh tính đối tác.");
 
         var stats = await _payoutRepository.GetPartnerSummaryStatsAsync(partnerId, cancellationToken);
+        var user = await _unitOfWork.Users.GetByIdAsync(partnerId, cancellationToken);
 
         return new PartnerPayoutSummaryDto
         {
@@ -35,7 +39,10 @@ public class GetPartnerPayoutSummaryQueryHandler : IRequestHandler<GetPartnerPay
             NetTotal = stats.NetTotal,
             PendingBalance = stats.PendingBalance,
             PaidThisMonth = stats.PaidThisMonth,
-            CommissionRate = stats.CommissionRate
+            CommissionRate = stats.CommissionRate,
+            BankName = user?.BankName,
+            BankAccountNumber = user?.BankAccountNumber,
+            BankAccountName = user?.BankAccountName
         };
     }
 }

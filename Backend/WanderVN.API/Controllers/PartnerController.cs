@@ -13,6 +13,7 @@ using WanderVN.Application.Features.Partner.Commands.UpdateRoomType;
 using WanderVN.Application.Features.Partner.Commands.ToggleRoomBlock;
 using WanderVN.Application.Features.Partner.Commands.UpdateRatePlans;
 using WanderVN.Application.Features.Partner.Queries.GetHotelBookings;
+using WanderVN.Application.Features.Partner.Commands.UpdateBankInfo;
 
 namespace WanderVN.API.Controllers;
 
@@ -70,7 +71,7 @@ public class PartnerController : ControllerBase
     [RequestSizeLimit(10_000_000)] // 10MB / ảnh
     public async Task<IActionResult> UploadHotelImage(
         [FromRoute] int hotelId,
-        [FromForm] IFormFile file,
+        IFormFile file,
         [FromForm] bool isPrimary = false)
     {
         if (file == null || file.Length == 0)
@@ -112,7 +113,7 @@ public class PartnerController : ControllerBase
     public async Task<IActionResult> UploadRoomTypeImage(
         [FromRoute] int hotelId,
         [FromRoute] int roomTypeId,
-        [FromForm] IFormFile file)
+        IFormFile file)
     {
         if (file == null || file.Length == 0)
             throw new ArgumentException("Vui lòng chọn file ảnh để upload.");
@@ -248,5 +249,15 @@ public class PartnerController : ControllerBase
         var command = new WanderVN.Application.Features.Partner.Commands.NoShowBooking.NoShowBookingCommand { HotelId = hotelId, BookingId = bookingId };
         await _mediator.Send(command);
         return Ok(new ApiResponse<object>(true, "Đã đánh dấu khách không đến.", 200, null));
+    }
+
+    /// <summary>
+    /// PUT: api/v1/partner/bank-info — Cập nhật thông tin tài khoản ngân hàng liên kết.
+    /// </summary>
+    [HttpPut("bank-info")]
+    public async Task<IActionResult> UpdateBankInfo([FromBody] UpdateBankInfoCommand command)
+    {
+        await _mediator.Send(command);
+        return Ok(new ApiResponse<object>(true, "Cập nhật tài khoản ngân hàng thành công.", 200, null));
     }
 }

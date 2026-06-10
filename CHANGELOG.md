@@ -3,7 +3,26 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- **Partner Bank Account Linkage**: Tích hợp chức năng thêm và cập nhật tài khoản ngân hàng liên kết cho đối tác (Partner) để nhận thanh toán doanh thu đối soát.
+  - **Why it changed**: Loại bỏ dữ liệu mockup tĩnh ở trang Đối soát tài chính của Partner, thay thế bằng dữ liệu thực tế giúp đối tác tự cấu hình và quản lý tài khoản thanh toán của họ.
+  - **Affected files**:
+    - Backend: [007_Add_Partner_Bank_Info.sql](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Database/Migrations/007_Add_Partner_Bank_Info.sql), [Users.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Domain/Entities/Users.cs), [UpdateBankInfoCommand.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Features/Partner/Commands/UpdateBankInfo/UpdateBankInfoCommand.cs), [UpdateBankInfoCommandHandler.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Features/Partner/Commands/UpdateBankInfo/UpdateBankInfoCommandHandler.cs), [PartnerController.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.API/Controllers/PartnerController.cs), [PartnerPayoutSummaryDto.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Features/Payouts/Queries/GetPartnerPayoutSummary/PartnerPayoutSummaryDto.cs), [GetPartnerPayoutSummaryQuery.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Features/Payouts/Queries/GetPartnerPayoutSummary/GetPartnerPayoutSummaryQuery.cs)
+    - Frontend: [payout.ts](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/types/payout.ts), [partnerService.ts](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/services/partner/partnerService.ts), [UpdateBankInfoModal.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/partner/UpdateBankInfoModal.tsx), [PartnerFinance.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/partner/PartnerFinance.tsx)
+  - **What changed**:
+    - Thêm 3 cột `BankName`, `BankAccountNumber`, và `BankAccountName` vào bảng `Users` và ánh xạ thực thể EF Core.
+    - Xây dựng command CQRS `UpdateBankInfoCommand` đi kèm Validator xác thực dữ liệu đầu vào.
+    - Cung cấp API `PUT /api/v1/partner/bank-info` bảo mật theo vai trò `Partner`.
+    - Trả về thông tin tài khoản ngân hàng liên kết trong DTO tóm tắt thanh toán của đối tác.
+    - Cập nhật frontend để map dữ liệu tài khoản thật vào trang `PartnerFinance` và hiển thị Banner cảnh báo nếu chưa liên kết.
+    - Thêm component `UpdateBankInfoModal` dạng Form-dialog hỗ trợ cập nhật thông tin thời gian thực.
+
 ### Fixed
+- **Swagger JSON Generation Error**: Sửa lỗi Internal Server Error (500) khi load định nghĩa API Swagger do Swashbuckle xung đột với thuộc tính `[FromForm]` đặt trực tiếp trên kiểu `IFormFile` ở các API tải ảnh.
+  - **Why it changed**: Trình biên dịch Swashbuckle 6.0+ không hỗ trợ gán trực tiếp thuộc tính `[FromForm]` trên tham số `IFormFile` khi sinh tài liệu OpenAPI, làm crash tiến trình load JSON.
+  - **Affected files**: [PartnerController.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.API/Controllers/PartnerController.cs).
+  - **What changed**: Gỡ bỏ thuộc tính `[FromForm]` thừa trên các tham số `IFormFile file` trong controller để model binder của ASP.NET Core tự động nhận diện dạng dữ liệu tệp tin đa phần (multipart/form-data) và giúp Swashbuckle kết xuất thành công Swagger UI.
+
 - **Status Badge & Booking History Filtering**: Sửa logic hàm `renderStatusBadge` và bộ lọc tab lịch sử để hỗ trợ chính xác tất cả các trạng thái trong enum `BookingStatus` của backend (Pending, Confirmed, Completed, Cancelled, SettlementPending, Settled, CheckedIn, CheckedOut, NoShow).
   - **Why it changed**: Trước đây logic status badge ở frontend bị sai lệch so với enum backend (như dùng status giả lập `'Paid'`), dẫn đến các booking có trạng thái `Confirmed` rơi vào nhánh fallback hiển thị sai lệch thông tin thành "Đang xử lý" hoặc "Đã thanh toán / Chờ duyệt" và không hiển thị đúng nút Check-out.
   - **Affected files**: [BookingHistory.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingHistory.tsx), [BookingLookup.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingLookup.tsx), [BookingDetail.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingDetail.tsx).
