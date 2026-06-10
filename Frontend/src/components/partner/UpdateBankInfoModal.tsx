@@ -33,10 +33,10 @@ export const UpdateBankInfoModal: React.FC<UpdateBankInfoModalProps> = ({
   initialBankAccountName,
   initialBankBin,
 }) => {
-  const [bankName, setBankName] = useState('');
-  const [bankAccountNumber, setBankAccountNumber] = useState('');
-  const [bankAccountName, setBankAccountName] = useState('');
-  const [bankBin, setBankBin] = useState('');
+  const [bankName, setBankName] = useState(initialBankName || '');
+  const [bankAccountNumber, setBankAccountNumber] = useState(initialBankAccountNumber || '');
+  const [bankAccountName, setBankAccountName] = useState(initialBankAccountName || '');
+  const [bankBin, setBankBin] = useState(initialBankBin || '');
 
   const [banks, setBanks] = useState<BankItem[]>([]);
   const [loadingBanks, setLoadingBanks] = useState(false);
@@ -82,17 +82,7 @@ export const UpdateBankInfoModal: React.FC<UpdateBankInfoModalProps> = ({
     fetchBanks();
   }, [isOpen]);
 
-  useEffect(() => {
-    if (isOpen) {
-      setBankName(initialBankName || '');
-      setBankAccountNumber(initialBankAccountNumber || '');
-      setBankAccountName(initialBankAccountName || '');
-      setBankBin(initialBankBin || '');
-      setSearchQuery('');
-      setIsDropdownOpen(false);
-      setError(null);
-    }
-  }, [isOpen, initialBankName, initialBankAccountNumber, initialBankAccountName, initialBankBin]);
+  // Không cần useEffect đồng bộ dữ liệu vì component được mount/unmount động ở component cha
 
   if (!isOpen) return null;
 
@@ -141,9 +131,10 @@ export const UpdateBankInfoModal: React.FC<UpdateBankInfoModalProps> = ({
       await partnerService.updateBankInfo(payload);
       onSuccess();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Lỗi khi cập nhật tài khoản ngân hàng:', err);
-      setError(err?.message || 'Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại sau.');
+      const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại sau.';
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -187,13 +178,13 @@ export const UpdateBankInfoModal: React.FC<UpdateBankInfoModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          
+
           {/* Ngân Hàng Selection (Searchable Combobox) */}
           <div className="space-y-1.5 relative" ref={dropdownRef}>
             <label className="font-label-md text-xs uppercase tracking-wider text-[#444748] font-bold">
               Ngân hàng liên kết *
             </label>
-            
+
             <button
               type="button"
               onClick={() => !submitting && setIsDropdownOpen(!isDropdownOpen)}
@@ -241,9 +232,8 @@ export const UpdateBankInfoModal: React.FC<UpdateBankInfoModalProps> = ({
                           key={bank.id}
                           type="button"
                           onClick={() => handleSelectBank(bank)}
-                          className={`w-full px-4 py-2.5 text-left text-xs flex items-center justify-between hover:bg-[#F1EDE8] transition-colors ${
-                            isSelected ? 'bg-[#735C00]/5 text-[#735C00] font-bold' : 'text-[#1C1C19]'
-                          }`}
+                          className={`w-full px-4 py-2.5 text-left text-xs flex items-center justify-between hover:bg-[#F1EDE8] transition-colors ${isSelected ? 'bg-[#735C00]/5 text-[#735C00] font-bold' : 'text-[#1C1C19]'
+                            }`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             {bank.logo ? (

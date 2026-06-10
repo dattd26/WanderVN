@@ -19,13 +19,12 @@ export const VietQRModal: React.FC<VietQRModalProps> = ({
   payoutId,
   batchId,
   partnerName,
-  bookingCode,
   onSuccess,
 }) => {
   const [loading, setLoading] = useState(false);
   const [qrData, setQrData] = useState<VietQRDto | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [transactionReference, setTransactionReference] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -33,12 +32,12 @@ export const VietQRModal: React.FC<VietQRModalProps> = ({
   useEffect(() => {
     const fetchQR = async () => {
       if (!isOpen) return;
-      
+
       setLoading(true);
       setError(null);
       setQrData(null);
       setTransactionReference('');
-      
+
       try {
         let res: VietQRDto;
         if (payoutId) {
@@ -49,9 +48,9 @@ export const VietQRModal: React.FC<VietQRModalProps> = ({
           throw new Error('Không có thông tin khoản chi trả để tạo mã QR.');
         }
         setQrData(res);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Lỗi khi tải mã VietQR:', err);
-        setError(err?.message || 'Không thể kết nối với hệ thống VietQR. Vui lòng kiểm tra lại thông tin ngân hàng của đối tác.');
+        setError(err instanceof Error ? err.message : 'Không thể kết nối với hệ thống VietQR. Vui lòng kiểm tra lại thông tin ngân hàng của đối tác.');
       } finally {
         setLoading(false);
       }
@@ -74,8 +73,8 @@ export const VietQRModal: React.FC<VietQRModalProps> = ({
     try {
       await onSuccess(transactionReference.trim() || undefined);
       onClose();
-    } catch (err: any) {
-      setError(err?.message || 'Lỗi khi xác nhận thanh toán.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Lỗi khi xác nhận thanh toán.');
     } finally {
       setSubmitting(false);
     }
@@ -84,7 +83,7 @@ export const VietQRModal: React.FC<VietQRModalProps> = ({
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-admin-primary/60 backdrop-blur-md overflow-y-auto">
       <div className="bg-[#FAF6F0] w-full max-w-[520px] rounded-2xl shadow-2xl border border-[#E6E2DD] overflow-hidden p-6 relative animate-in fade-in zoom-in duration-300">
-        
+
         {/* Close Button */}
         <button
           type="button"
@@ -133,7 +132,7 @@ export const VietQRModal: React.FC<VietQRModalProps> = ({
                   className="w-full h-full object-contain"
                 />
               </div>
-              
+
               <div className="flex-1 space-y-3 w-full text-xs">
                 <div className="p-2.5 rounded-lg bg-[#F1EDE8]/50 border border-[#E6E2DD]/40 space-y-2 relative">
                   <div className="flex justify-between items-center">

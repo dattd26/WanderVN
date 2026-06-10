@@ -357,7 +357,7 @@ export const PartnerFinance: React.FC = () => {
         </main>
       </div>
 
-      {summary && (
+      {summary && isBankModalOpen && (
         <UpdateBankInfoModal
           isOpen={isBankModalOpen}
           onClose={() => setIsBankModalOpen(false)}
