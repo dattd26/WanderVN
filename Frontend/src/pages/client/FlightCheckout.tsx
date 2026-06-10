@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { flightService, paymentService } from '../../services';
 import type { FlightOfferDto } from '../../types';
+import { useToast } from '../../contexts/ToastContext';
 import {
   AlertTriangle,
   ChevronLeft,
@@ -81,6 +82,7 @@ export const FlightCheckout: React.FC = () => {
 
 const FlightCheckoutContent: React.FC = () => {
   const navigate = useNavigate();
+  const { triggerMessage } = useToast();
   const {
     offer,
     contactForm,
@@ -168,7 +170,7 @@ const FlightCheckoutContent: React.FC = () => {
         }
       }
 
-      alert(`Đặt vé thành công! Mã đặt vé: ${result.bookingCode}`);
+      triggerMessage('success', `Đặt vé thành công! Mã đặt vé: ${result.bookingCode}`);
       navigate('/flights');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Có lỗi xảy ra khi đặt vé.';

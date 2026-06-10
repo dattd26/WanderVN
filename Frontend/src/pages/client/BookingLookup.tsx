@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { request, paymentService } from '../../services';
+import { useToast } from '../../contexts/ToastContext';
 import type { BookingLookupDetailDto } from '../../types';
 import {
   Calendar,
@@ -32,6 +33,7 @@ export const BookingLookup: React.FC = () => {
   const [booking, setBooking] = useState<BookingLookupDetailDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { triggerMessage } = useToast();
 
   useEffect(() => {
     if (!pageRef.current) return;
@@ -126,10 +128,10 @@ export const BookingLookup: React.FC = () => {
     try {
       await request<BookingLookupDetailDto>(`/bookings/${booking.bookingId}/cancel`, { method: 'PUT' });
       setBooking((prev: BookingLookupDetailDto | null) => prev ? { ...prev, status: 'Cancelled' } : null);
-      alert('Hủy đặt chỗ thành công!');
+      triggerMessage('success', 'Hủy đặt chỗ thành công!');
     } catch (err: unknown) {
       console.error('Lỗi hủy đặt chỗ:', err);
-      alert((err as Error).message || 'Có lỗi xảy ra khi hủy đặt chỗ.');
+      triggerMessage('error', (err as Error).message || 'Có lỗi xảy ra khi hủy đặt chỗ.');
     } finally {
       setIsProcessing(false);
     }
@@ -143,10 +145,10 @@ export const BookingLookup: React.FC = () => {
     try {
       await request<BookingLookupDetailDto>(`/bookings/${booking.bookingId}/checkout`, { method: 'PUT' });
       setBooking((prev: BookingLookupDetailDto | null) => prev ? { ...prev, status: 'Completed' } : null);
-      alert('Xác nhận trả phòng thành công!');
+      triggerMessage('success', 'Xác nhận trả phòng thành công!');
     } catch (err: unknown) {
       console.error('Lỗi trả phòng:', err);
-      alert((err as Error).message || 'Có lỗi xảy ra khi trả phòng.');
+      triggerMessage('error', (err as Error).message || 'Có lỗi xảy ra khi trả phòng.');
     } finally {
       setIsProcessing(false);
     }
@@ -163,11 +165,11 @@ export const BookingLookup: React.FC = () => {
       if (paymentUrl) {
         window.location.href = paymentUrl;
       } else {
-        alert('Không khởi tạo được liên kết thanh toán.');
+        triggerMessage('error', 'Không khởi tạo được liên kết thanh toán.');
       }
     } catch (err: unknown) {
       console.error(`Lỗi thanh toán ${provider}:`, err);
-      alert((err as Error).message || 'Có lỗi xảy ra khi tạo liên kết thanh toán.');
+      triggerMessage('error', (err as Error).message || 'Có lỗi xảy ra khi tạo liên kết thanh toán.');
     } finally {
       setIsProcessing(false);
     }

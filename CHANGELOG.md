@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- **Hệ thống Stacked Toast thông báo với hoạt họa GSAP (Stacked Toasts & GSAP Core Animations)**: Nâng cấp cơ chế thông báo của toàn bộ hệ thống bằng việc thay thế các hộp thoại `alert()` mặc định của trình duyệt bằng hệ thống Stacked Toasts hoạt họa mượt mà bằng GSAP.
+  - **Why it changed**: Cải thiện trải nghiệm người dùng (UI/UX) theo phong cách hiện đại và đồng bộ với triết lý thiết kế tối giản của WanderVN. Toasts hỗ trợ xếp chồng từ dưới lên, tự động biến mất sau 4 giây hoặc khi bấm đóng, và hoàn toàn tương thích với cài đặt giảm chuyển động (`prefers-reduced-motion`).
+  - **Affected files**:
+    - [ToastContext.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/contexts/ToastContext.tsx)
+    - Các trang Client: [FlightCheckout.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/FlightCheckout.tsx), [BookingDetail.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingDetail.tsx), [BookingLookup.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingLookup.tsx), [FlightSearchForm.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/client/FlightSearchForm.tsx)
+    - Các trang Admin: [ChangePasswordAdmin.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/change-password/ChangePasswordAdmin.tsx), [AdminPartners.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/partners/AdminPartners.tsx), [AdminFinance.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/finance/AdminFinance.tsx), [PartnerRejectModal.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/partners/components/PartnerRejectModal.tsx), [AdminBatchesPanel.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/finance/components/AdminBatchesPanel.tsx), [AdminUsers.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/users/AdminUsers.tsx)
+    - Trang Partner: [PartnerDashboard.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/partner/PartnerDashboard.tsx)
+  - **What changed**:
+    - Thiết kế giao diện Toast theo bảng màu của WanderVN: nền giấy ấm (`#fdf9f4`), viền nhạt (`#e6e2dd`), bo góc 4px (`rounded-[4px]`), viền nhấn Lantern Gold (`#735c00`) cho success và Oxblood (`#9a2436`) cho error.
+    - Sử dụng GSAP `fromTo` và `to` để chạy hoạt ảnh trượt/scale nhẹ cho Toast khi xuất hiện và khi biến mất.
+    - Quét sạch toàn bộ các câu lệnh `alert()` chặn trình duyệt và thay thế bằng `triggerMessage()` không đồng bộ, loại bỏ hoàn toàn emoji không phù hợp.
+
 - **Tái thiết kế giao diện Chatbot & Tải lịch sử trò chuyện (ChatWidget Redesign, GSAP & Neumorphic Glassmorphism)**: Tái thiết kế toàn diện khung Chatbot của khách hàng, tích hợp hiệu ứng chuyển động mượt mà bằng GSAP, tự động nạp lịch sử chat, áp dụng icon custom và tông màu xanh chủ đạo Cyan/Teal thời thượng.
   - **Why it changed**: Cải thiện thẩm mỹ giao diện theo phong cách sang trọng hiện đại (Tactile / Soft UI kết hợp Glassmorphic), đồng bộ màu sắc thương hiệu hướng tới tương lai của Neomorphism, và giải quyết vấn đề chatbot bị mất lịch sử trò chuyện trước đó khi người dùng mở lại hoặc chuyển trang.
   - **Affected files**: [ChatWidget.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/ChatWidget.tsx).

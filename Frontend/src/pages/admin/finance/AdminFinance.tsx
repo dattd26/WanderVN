@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { payoutService, settingsService } from '../../../services';
+import { useToast } from '../../../contexts/ToastContext';
 import type {
     PayoutDto,
     PayoutStatsDto,
@@ -32,6 +33,7 @@ export function AdminFinance() {
     // Phân trang
     const [pageNumber, setPageNumber] = useState(1);
     const [pageSize, setPageSize] = useState(10);
+    const { triggerMessage } = useToast();
 
     // Debounce keyword 400ms
     useEffect(() => {
@@ -85,10 +87,10 @@ export function AdminFinance() {
             await settingsService.updateSetting('CommissionFee', commissionFee.toString());
             const today = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
             setLastUpdated(today);
-            alert(`Commission fee globally updated to ${commissionFee}%`);
+            triggerMessage('success', `Commission fee globally updated to ${commissionFee}%`);
         } catch (err: unknown) {
             console.log(err);
-            alert('Lỗi cập nhật Commission Fee.' + (err instanceof Error ? err.message : ''));
+            triggerMessage('error', 'Lỗi cập nhật Commission Fee. ' + (err instanceof Error ? err.message : ''));
         }
     };
 
@@ -115,7 +117,7 @@ export function AdminFinance() {
             await payoutService.confirmPayout(p.id, {});
             await Promise.all([fetchPayouts(), fetchStats()]);
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Không thể xác nhận thanh toán.');
+            triggerMessage('error', err instanceof Error ? err.message : 'Không thể xác nhận thanh toán.');
         }
     };
 
@@ -128,7 +130,7 @@ export function AdminFinance() {
             await payoutService.rejectPayout(p.id, reason);
             await Promise.all([fetchPayouts(), fetchStats()]);
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Không thể từ chối thanh toán.');
+            triggerMessage('error', err instanceof Error ? err.message : 'Không thể từ chối thanh toán.');
         }
     };
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from '../../../../contexts/ToastContext';
 
 interface PartnerRejectModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface PartnerRejectModalProps {
 export function PartnerRejectModal({ isOpen, onClose, onSubmit }: PartnerRejectModalProps) {
   const [reason, setReason] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const { triggerMessage } = useToast();
 
   // Reset reason when modal opens
   useEffect(() => {
@@ -22,7 +24,7 @@ export function PartnerRejectModal({ isOpen, onClose, onSubmit }: PartnerRejectM
 
   const handleSubmit = () => {
     if (!reason.trim()) {
-      alert('Vui lòng nhập lý do từ chối.');
+      triggerMessage('error', 'Vui lòng nhập lý do từ chối.');
       return;
     }
     onSubmit(reason.trim());

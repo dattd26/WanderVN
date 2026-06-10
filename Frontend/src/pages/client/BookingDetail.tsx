@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { Plane, Clock, User, Calendar, CreditCard, ChevronLeft, MapPin, Building2, AlertCircle, Loader2 } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 import type { BookingHistoryDto } from '../../types';
 import { request } from '../../services/shared/apiClient';
 import { normalizeBookingData, type RawBookingData } from '../../utils/bookingUtils';
@@ -10,6 +11,7 @@ export default function BookingDetail() {
   const pageRef = useRef<HTMLDivElement>(null);
   const { bookingId } = useParams(); 
   const navigate = useNavigate();
+  const { triggerMessage } = useToast();
   const [booking, setBooking] = useState<BookingHistoryDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -79,10 +81,10 @@ export default function BookingDetail() {
       setIsProcessing(true);
       await request(`/bookings/${bookingId}/cancel`, { method: 'PUT' });
       setBooking(prev => prev ? { ...prev, status: 'Cancelled' } : null);
-      alert(`Hủy ${serviceName} thành công!`);
+      triggerMessage('success', `Hủy ${serviceName} thành công!`);
     } catch (error) {
       console.error('Lỗi hủy đơn:', error);
-      alert(error instanceof Error ? error.message : 'Không thể kết nối đến máy chủ.');
+      triggerMessage('error', error instanceof Error ? error.message : 'Không thể kết nối đến máy chủ.');
     } finally {
       setIsProcessing(false);
     }
@@ -95,10 +97,10 @@ export default function BookingDetail() {
       setIsProcessing(true);
       await request(`/bookings/${bookingId}/checkout`, { method: 'PUT' });
       setBooking(prev => prev ? { ...prev, status: 'Completed' } : null);
-      alert('Xác nhận trả phòng thành công!');
+      triggerMessage('success', 'Xác nhận trả phòng thành công!');
     } catch (error) {
       console.error('Lỗi xác nhận trả phòng:', error);
-      alert(error instanceof Error ? error.message : 'Không thể kết nối đến máy chủ.');
+      triggerMessage('error', error instanceof Error ? error.message : 'Không thể kết nối đến máy chủ.');
     } finally {
       setIsProcessing(false);
     }
