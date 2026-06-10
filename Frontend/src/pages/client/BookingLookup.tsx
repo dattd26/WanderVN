@@ -82,7 +82,7 @@ export const BookingLookup: React.FC = () => {
     });
 
     return () => mm.revert();
-  }, [booking?.bookingId]);
+  }, [booking]);
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
