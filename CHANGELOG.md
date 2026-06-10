@@ -3,7 +3,14 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Style 
+• Đã style lại UI/UX cho các màn booking và dùng GSAP core cho entrance animation có prefers-reduced-motion:
 
+  - Cập nhật BookingHistory.tsx, BookingDetail.tsx, BookingLookup.tsx.
+  - Đồng bộ lại 2 card con HotelBookingCard.tsx, FlightBookingCard.tsx vì BookingHistory render qua chúng.
+  - Chuẩn hóa màu label/status: emerald cho paid/upcoming, sky cho completed, rose cho cancelled, secondary cho pending.
+  - Bỏ nhiều hardcode màu lẫn tông (#FAF9F6, amber/gray/red rời rạc), thay bằng token Tailwind của project.
+  - Thêm gsap vào package.json và package-lock.json.
 ### Added
 - **Multiple Passengers Flight Booking**: Cập nhật backend API tìm kiếm vé máy bay để hỗ trợ nhập số lượng nhiều hành khách thay vì chỉ 1 loại như trước đây.
   - **Why it changed**: Cho phép người dùng tìm kiếm và đặt vé máy bay cho nhiều người lớn, trẻ em, và em bé trong cùng một chuyến bay.
