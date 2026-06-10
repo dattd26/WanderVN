@@ -105,11 +105,26 @@ export default function BookingDetail() {
   };
 
   const renderStatusBadge = (status: string) => {
-    switch(status) {
-      case 'Completed': return <span className="rounded-full border border-sky-200 bg-sky-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-sky-700">Đã hoàn thành</span>;
-      case 'Cancelled': return <span className="rounded-full border border-rose-200 bg-rose-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-rose-700">Đã hủy</span>;
-      case 'Paid': return <span className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700">Đã thanh toán</span>;
-      default: return <span className="rounded-full border border-secondary/25 bg-secondary/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-secondary">Đang xử lý</span>;
+    const normalizeStatus = status ? status.trim().toLowerCase() : 'pending';
+    switch(normalizeStatus) {
+      case 'pending': 
+        return <span className="rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-700">Chờ thanh toán</span>;
+      case 'confirmed': 
+        return <span className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700">Đã xác nhận</span>;
+      case 'completed': 
+      case 'settled':
+      case 'settlementpending':
+        return <span className="rounded-full border border-sky-200 bg-sky-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-sky-700">Đã hoàn thành</span>;
+      case 'checkedin': 
+        return <span className="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-indigo-700">Đang trải nghiệm</span>;
+      case 'checkedout': 
+        return <span className="rounded-full border border-sky-200 bg-sky-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-sky-700">Đã trả phòng</span>;
+      case 'cancelled': 
+        return <span className="rounded-full border border-rose-200 bg-rose-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-rose-700">Đã hủy</span>;
+      case 'noshow':
+        return <span className="rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-700">Không nhận phòng</span>;
+      default: 
+        return <span className="rounded-full border border-secondary/25 bg-secondary/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-secondary">Đang xử lý</span>;
     }
   };
 
@@ -307,7 +322,7 @@ export default function BookingDetail() {
             Trạng thái đơn được đồng bộ theo hệ thống WanderVN
           </span>
           <div className="flex w-full gap-3 sm:w-auto">
-            {booking.status !== 'Cancelled' && booking.status !== 'Completed' && (
+            {booking && (booking.status?.trim().toLowerCase() === 'pending' || booking.status?.trim().toLowerCase() === 'confirmed') && (
               <button 
                 onClick={handleCancelBooking} 
                 disabled={isProcessing} 
@@ -317,7 +332,7 @@ export default function BookingDetail() {
               </button>
             )}
 
-            {!isFlight && (booking.status === 'Paid' || booking.status === 'Pending') && (
+            {!isFlight && booking && (booking.status?.trim().toLowerCase() === 'confirmed' || booking.status?.trim().toLowerCase() === 'checkedin') && (
               <button 
                 onClick={handleCheckOut} 
                 disabled={isProcessing} 
