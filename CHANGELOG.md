@@ -14,6 +14,17 @@ All notable changes to this project will be documented in this file.
     - Mở rộng prop `className` cho `FiltersSidebar` để truyền và nhận các lớp CSS hoạt ảnh một cách trực quan.
 
 ### Fixed
+- **Lỗi hiển thị gợi ý khách sạn khi đặt vé máy bay trên Chatbot (Chatbot Flight Search Intent & URL Parser)**: Khắc phục lỗi chatbot tự động hiển thị danh sách khách sạn và gợi ý khách sạn khi người dùng yêu cầu đặt vé máy bay, đồng thời nâng cấp bộ phân tích tham số tìm kiếm chuyến bay từ lịch sử hội thoại.
+  - **Why it changed**:
+    1. Khi người dùng yêu cầu đặt vé máy bay (ví dụ: "đặt vé máy bay từ sài gòn đến đà nẵng"), chatbot tự động phân tích địa điểm đến làm vị trí tìm khách sạn, dẫn đến việc gợi ý khách sạn đè lên và hiển thị kèm theo nút tìm chuyến bay gây nhầm lẫn.
+    2. Bộ trích xuất link tìm kiếm chuyến bay trước đây chỉ phân tích tin nhắn cuối cùng và phản hồi của AI, làm mất dấu thông tin địa điểm và ngày đi/về nếu cuộc đối thoại diễn ra qua nhiều lượt (multi-turn conversation).
+  - **Affected files**: [ChatbotService.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/Services/ChatbotService.cs).
+  - **What changed**:
+    - Bổ sung hàm `IsFlightRequest` để nhận diện chính xác yêu cầu về chuyến bay của người dùng từ tin nhắn và lịch sử trò chuyện.
+    - Bỏ qua việc tìm kiếm khách sạn và hiển thị badge gợi ý khách sạn khi người dùng đang thực hiện yêu cầu tìm/đặt vé máy bay.
+    - Cập nhật `BuildSystemPrompt` để hướng dẫn Gemini tập trung tư vấn chuyến bay thay vì khách sạn khi phát hiện intent tìm chuyến bay.
+    - Nâng cấp `ExtractFlightSearchUrl` và `ExtractAirportCode` để quét toàn bộ lịch sử hội thoại của người dùng, phân tích chi tiết các tham số tìm kiếm bao gồm: mã sân bay đi/đến (hỗ trợ phân tích theo thứ tự và ngữ cảnh "từ/đến"), ngày đi/về (hỗ trợ khứ hồi), số lượng khách (phân tách người lớn, trẻ em, em bé), hạng ghế (thương gia/phổ thông), loại hành trình (khứ hồi/một chiều), và sinh URL đầy đủ chính xác.
+
 - **Lỗi tạo đơn đặt phòng khách sạn (Create Hotel Booking Room Status & Email Mismatch)**: Khắc phục lỗi khi đặt phòng khách sạn bị từ chối do kiểm tra trạng thái phòng tĩnh ("Available") và sửa lỗi hiển thị sai tiền tệ trong email xác nhận.
   - **Why it changed**:
     1. Trước đây, hệ thống tìm phòng trống bằng cách kiểm tra cột `Status == "Available"` trên bảng `Rooms`. Nếu phòng đó đã có một booking vào thời gian khác (khiến status phòng chuyển sang "Booked"), hệ thống sẽ báo hết phòng và từ chối đặt phòng dù khoảng thời gian mới hoàn toàn trống.
