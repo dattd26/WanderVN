@@ -1,3 +1,5 @@
+using System.Data;
+using Dapper;
 using Microsoft.EntityFrameworkCore;
 using WanderVN.Domain.Entities;
 using WanderVN.Domain.Repositories;
@@ -27,11 +29,23 @@ public class ChatLogsRepository : GenericRepository<ChatLogs>, IChatLogsReposito
 
     public async Task<IEnumerable<ChatLogs>> GetUserChatHistory(int userId, int? limit = 50, CancellationToken cancellationToken = default)
     {
-        var query = _dbSet
-            .Where(c => c.UserId == userId)
-            .OrderByDescending(c => c.SentAt)
-            .Take(limit ?? 50);
+        var connection = _context.Database.GetDbConnection();
+        if (connection.State == ConnectionState.Closed)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
 
-        return await query.ToListAsync(cancellationToken);
+        // Sử dụng Dapper để truy vấn chat logs trực tiếp từ SQL Server
+        const string sql = @"
+            SELECT TOP (@Limit) Id, UserId, MessageText, IsFromBot, SentAt
+            FROM ChatLogs
+            WHERE UserId = @UserId
+            ORDER BY SentAt DESC";
+
+        var result = await connection.QueryAsync<ChatLogs>(
+            new CommandDefinition(sql, new { UserId = userId, Limit = limit ?? 50 }, cancellationToken: cancellationToken)
+        );
+
+        return result;
     }
 }

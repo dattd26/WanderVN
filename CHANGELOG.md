@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- **Tái thiết kế giao diện Chatbot & Tải lịch sử trò chuyện (ChatWidget Redesign, GSAP & Neumorphic Glassmorphism)**: Tái thiết kế toàn diện khung Chatbot của khách hàng, tích hợp hiệu ứng chuyển động mượt mà bằng GSAP, tự động nạp lịch sử chat, áp dụng icon custom và tông màu xanh chủ đạo Cyan/Teal thời thượng.
+  - **Why it changed**: Cải thiện thẩm mỹ giao diện theo phong cách sang trọng hiện đại (Tactile / Soft UI kết hợp Glassmorphic), đồng bộ màu sắc thương hiệu hướng tới tương lai của Neomorphism, và giải quyết vấn đề chatbot bị mất lịch sử trò chuyện trước đó khi người dùng mở lại hoặc chuyển trang.
+  - **Affected files**: [ChatWidget.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/ChatWidget.tsx).
+  - **What changed**:
+    - Chuyển đổi toàn bộ màu sắc chủ đạo của widget (nút bấm, thanh tiêu đề, bong bóng chat, liên kết gợi ý, trạng thái tải) sang tông màu **Cyan/Teal** sang trọng.
+    - Sử dụng tệp hình ảnh icon chatbot riêng biệt (`chatbot.png`) thay thế cho biểu tượng Lucide mặc định tại nút trigger, thanh tiêu đề, và bổ sung làm avatar hiển thị cạnh bong bóng chat của bot.
+    - Áp dụng ngôn ngữ thiết kế **Soft UI / Modern Neomorphism** cho nút trigger (shadow lõm nổi) và bong bóng chat của người dùng.
+    - Áp dụng thiết kế **Glassmorphism nhẹ** với `backdrop-blur-xl`, nền mờ trong suốt (`bg-white/80`, `bg-slate-900/80`), viền phản xạ ánh sáng (`border-white/20`) và bóng đổ kép để tạo chiều sâu trực quan.
+    - Tích hợp **GSAP Core** để tạo hiệu ứng nhấp nhô (gentle floating float) cho nút trigger và hoạt ảnh đóng/mở mượt mà (scale, slide up, rotation) thay thế cho việc giật cục của React conditional rendering.
+    - Bổ sung luồng gọi `ChatbotService.getConversationHistory` nạp lại tối đa 30 lượt tin nhắn lịch sử và sắp xếp theo trình tự thời gian khi widget được kích hoạt mở.
+
+- **Chuyển đổi truy vấn Lịch sử Chatbot sang Dapper (Dapper Chat History Query with Limit)**: Cập nhật hàm `GetUserChatHistory` để thực thi câu lệnh SQL thô thông qua Dapper.
+  - **Why it changed**: Tuân thủ hướng dẫn kiến trúc của dự án yêu cầu tất cả các truy vấn đọc dữ liệu phải đi qua Dapper và Stored Procedure thay vì gọi trực tiếp EF Core LINQ trên DbContext nhằm tối ưu hiệu năng.
+  - **Affected files**: [ChatLogsRepository.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/Repositories/ChatLogsRepository.cs), [ChatbotController.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.API/Controllers/ChatbotController.cs).
+  - **What changed**:
+    - Thay thế EF Core LINQ trong `GetUserChatHistory` bằng lệnh truy vấn SQL thô `SELECT TOP (@Limit) ...` thông qua Dapper `QueryAsync<ChatLogs>`.
+    - Sử dụng `System.Linq` đảo chiều danh sách (`Reverse()`) ở lớp Controller trước khi trả về client để đảm bảo tin nhắn hiển thị đúng trình tự thời gian từ cũ đến mới.
+
 - **GSAP Animations on SearchStays Page**: Tích hợp các hiệu ứng chuyển cảnh và xuất hiện so le (stagger animations) bằng thư viện GSAP cho trang tìm kiếm khách sạn.
   - **Why it changed**: Cải thiện trải nghiệm người dùng (UX) theo phong cách tối giản biên tập (Editorial Minimalism), tăng tính tương tác sinh động khi tải trang và khi bộ lọc thay đổi danh sách hiển thị.
   - **Affected files**: [SearchStays.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/SearchStays.tsx), [FiltersSidebar.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/client/FiltersSidebar.tsx).
