@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PlaneTakeoff, PlaneLanding, Calendar, User, Search, ChevronDown } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 
 export interface PassengerCounts {
   adults: number;
@@ -41,6 +42,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 }) => {
   const [tripType, setTripType] = useState<'round-trip' | 'one-way'>(initialTripType);
   const [cabinClass, setCabinClass] = useState<'business' | 'economy'>(initialCabinClass);
+  const { triggerMessage } = useToast();
 
   const [origin, setOrigin] = useState<AirportDto | null>(null);
   const [destination, setDestination] = useState<AirportDto | null>(null);
@@ -128,15 +130,15 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!origin || !destination) {
-      alert('⚠️ Vui lòng chọn điểm xuất phát và điểm đến.');
+      triggerMessage('error', 'Vui lòng chọn điểm xuất phát và điểm đến.');
       return;
     }
     if (origin.iataCode === destination.iataCode) {
-      alert('⚠️ Điểm xuất phát và điểm đến không được trùng nhau.');
+      triggerMessage('error', 'Điểm xuất phát và điểm đến không được trùng nhau.');
       return;
     }
     if (tripType === 'round-trip' && returnDate <= departureDate) {
-      alert('⚠️ Ngày trở về phải sau ngày khởi hành.');
+      triggerMessage('error', 'Ngày trở về phải sau ngày khởi hành.');
       return;
     }
     onSearch(origin.iataCode, destination.iataCode, departureDate, tripType, cabinClass, tripType === 'round-trip' ? returnDate : undefined, passengers);

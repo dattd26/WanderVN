@@ -34,6 +34,69 @@ All notable changes to this project will be documented in this file.
   - **Why it changed**: Trình biên dịch Swashbuckle 6.0+ không hỗ trợ gán trực tiếp thuộc tính `[FromForm]` trên tham số `IFormFile` khi sinh tài liệu OpenAPI, làm crash tiến trình load JSON.
   - **Affected files**: [PartnerController.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.API/Controllers/PartnerController.cs).
   - **What changed**: Gỡ bỏ thuộc tính `[FromForm]` thừa trên các tham số `IFormFile file` trong controller để model binder của ASP.NET Core tự động nhận diện dạng dữ liệu tệp tin đa phần (multipart/form-data) và giúp Swashbuckle kết xuất thành công Swagger UI.
+- **Hệ thống Stacked Toast thông báo với hoạt họa GSAP (Stacked Toasts & GSAP Core Animations)**: Nâng cấp cơ chế thông báo của toàn bộ hệ thống bằng việc thay thế các hộp thoại `alert()` mặc định của trình duyệt bằng hệ thống Stacked Toasts hoạt họa mượt mà bằng GSAP.
+  - **Why it changed**: Cải thiện trải nghiệm người dùng (UI/UX) theo phong cách hiện đại và đồng bộ với triết lý thiết kế tối giản của WanderVN. Toasts hỗ trợ xếp chồng từ dưới lên, tự động biến mất sau 4 giây hoặc khi bấm đóng, và hoàn toàn tương thích với cài đặt giảm chuyển động (`prefers-reduced-motion`).
+  - **Affected files**:
+    - [ToastContext.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/contexts/ToastContext.tsx)
+    - Các trang Client: [FlightCheckout.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/FlightCheckout.tsx), [BookingDetail.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingDetail.tsx), [BookingLookup.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingLookup.tsx), [FlightSearchForm.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/client/FlightSearchForm.tsx)
+    - Các trang Admin: [ChangePasswordAdmin.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/change-password/ChangePasswordAdmin.tsx), [AdminPartners.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/partners/AdminPartners.tsx), [AdminFinance.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/finance/AdminFinance.tsx), [PartnerRejectModal.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/partners/components/PartnerRejectModal.tsx), [AdminBatchesPanel.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/finance/components/AdminBatchesPanel.tsx), [AdminUsers.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/users/AdminUsers.tsx)
+    - Trang Partner: [PartnerDashboard.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/partner/PartnerDashboard.tsx)
+  - **What changed**:
+    - Thiết kế giao diện Toast theo bảng màu của WanderVN: nền giấy ấm (`#fdf9f4`), viền nhạt (`#e6e2dd`), bo góc 4px (`rounded-[4px]`), viền nhấn Lantern Gold (`#735c00`) cho success và Oxblood (`#9a2436`) cho error.
+    - Sử dụng GSAP `fromTo` và `to` để chạy hoạt ảnh trượt/scale nhẹ cho Toast khi xuất hiện và khi biến mất.
+    - Quét sạch toàn bộ các câu lệnh `alert()` chặn trình duyệt và thay thế bằng `triggerMessage()` không đồng bộ, loại bỏ hoàn toàn emoji không phù hợp.
+
+- **Tái thiết kế giao diện Chatbot & Tải lịch sử trò chuyện (ChatWidget Redesign, GSAP & Neumorphic Glassmorphism)**: Tái thiết kế toàn diện khung Chatbot của khách hàng, tích hợp hiệu ứng chuyển động mượt mà bằng GSAP, tự động nạp lịch sử chat, áp dụng icon custom và tông màu xanh chủ đạo Cyan/Teal thời thượng.
+  - **Why it changed**: Cải thiện thẩm mỹ giao diện theo phong cách sang trọng hiện đại (Tactile / Soft UI kết hợp Glassmorphic), đồng bộ màu sắc thương hiệu hướng tới tương lai của Neomorphism, và giải quyết vấn đề chatbot bị mất lịch sử trò chuyện trước đó khi người dùng mở lại hoặc chuyển trang.
+  - **Affected files**: [ChatWidget.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/ChatWidget.tsx).
+  - **What changed**:
+    - Chuyển đổi toàn bộ màu sắc chủ đạo của widget (nút bấm, thanh tiêu đề, bong bóng chat, liên kết gợi ý, trạng thái tải) sang tông màu **Cyan/Teal** sang trọng.
+    - Sử dụng tệp hình ảnh icon chatbot riêng biệt (`chatbot.png`) thay thế cho biểu tượng Lucide mặc định tại nút trigger, thanh tiêu đề, và bổ sung làm avatar hiển thị cạnh bong bóng chat của bot.
+    - Áp dụng ngôn ngữ thiết kế **Soft UI / Modern Neomorphism** cho nút trigger (shadow lõm nổi) và bong bóng chat của người dùng.
+    - Áp dụng thiết kế **Glassmorphism nhẹ** với `backdrop-blur-xl`, nền mờ trong suốt (`bg-white/80`, `bg-slate-900/80`), viền phản xạ ánh sáng (`border-white/20`) và bóng đổ kép để tạo chiều sâu trực quan.
+    - Tích hợp **GSAP Core** để tạo hiệu ứng nhấp nhô (gentle floating float) cho nút trigger và hoạt ảnh đóng/mở mượt mà (scale, slide up, rotation) thay thế cho việc giật cục của React conditional rendering.
+    - Bổ sung luồng gọi `ChatbotService.getConversationHistory` nạp lại tối đa 30 lượt tin nhắn lịch sử và sắp xếp theo trình tự thời gian khi widget được kích hoạt mở.
+
+- **Chuyển đổi truy vấn Lịch sử Chatbot sang Dapper (Dapper Chat History Query with Limit)**: Cập nhật hàm `GetUserChatHistory` để thực thi câu lệnh SQL thô thông qua Dapper.
+  - **Why it changed**: Tuân thủ hướng dẫn kiến trúc của dự án yêu cầu tất cả các truy vấn đọc dữ liệu phải đi qua Dapper và Stored Procedure thay vì gọi trực tiếp EF Core LINQ trên DbContext nhằm tối ưu hiệu năng.
+  - **Affected files**: [ChatLogsRepository.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/Repositories/ChatLogsRepository.cs), [ChatbotController.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.API/Controllers/ChatbotController.cs).
+  - **What changed**:
+    - Thay thế EF Core LINQ trong `GetUserChatHistory` bằng lệnh truy vấn SQL thô `SELECT TOP (@Limit) ...` thông qua Dapper `QueryAsync<ChatLogs>`.
+    - Sử dụng `System.Linq` đảo chiều danh sách (`Reverse()`) ở lớp Controller trước khi trả về client để đảm bảo tin nhắn hiển thị đúng trình tự thời gian từ cũ đến mới.
+
+- **GSAP Animations on SearchStays Page**: Tích hợp các hiệu ứng chuyển cảnh và xuất hiện so le (stagger animations) bằng thư viện GSAP cho trang tìm kiếm khách sạn.
+  - **Why it changed**: Cải thiện trải nghiệm người dùng (UX) theo phong cách tối giản biên tập (Editorial Minimalism), tăng tính tương tác sinh động khi tải trang và khi bộ lọc thay đổi danh sách hiển thị.
+  - **Affected files**: [SearchStays.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/SearchStays.tsx), [FiltersSidebar.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/client/FiltersSidebar.tsx).
+  - **What changed**:
+    - Sử dụng `gsap.matchMedia()` để tạo hiệu ứng so le mượt mà cho tiêu đề trang, ô tìm kiếm và sidebar bộ lọc khi bắt đầu truy cập.
+    - Lắng nghe trạng thái `loading` để kích hoạt hiệu ứng stagger slide-up cho danh sách thẻ khách sạn (`HotelCard`) sau khi gọi API xong.
+    - Hỗ trợ đầy đủ `prefers-reduced-motion` để tự động tắt hoặc tối giản hiệu ứng khi người dùng bật chế độ giảm chuyển động trên thiết bị.
+    - Mở rộng prop `className` cho `FiltersSidebar` để truyền và nhận các lớp CSS hoạt ảnh một cách trực quan.
+
+### Fixed
+- **Lỗi hiển thị gợi ý khách sạn khi đặt vé máy bay trên Chatbot (Chatbot Flight Search Intent & URL Parser)**: Khắc phục lỗi chatbot tự động hiển thị danh sách khách sạn và gợi ý khách sạn khi người dùng yêu cầu đặt vé máy bay, đồng thời nâng cấp bộ phân tích tham số tìm kiếm chuyến bay từ lịch sử hội thoại.
+  - **Why it changed**:
+    1. Khi người dùng yêu cầu đặt vé máy bay (ví dụ: "đặt vé máy bay từ sài gòn đến đà nẵng"), chatbot tự động phân tích địa điểm đến làm vị trí tìm khách sạn, dẫn đến việc gợi ý khách sạn đè lên và hiển thị kèm theo nút tìm chuyến bay gây nhầm lẫn.
+    2. Bộ trích xuất link tìm kiếm chuyến bay trước đây chỉ phân tích tin nhắn cuối cùng và phản hồi của AI, làm mất dấu thông tin địa điểm và ngày đi/về nếu cuộc đối thoại diễn ra qua nhiều lượt (multi-turn conversation).
+  - **Affected files**: [ChatbotService.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/Services/ChatbotService.cs).
+  - **What changed**:
+    - Bổ sung hàm `IsFlightRequest` để nhận diện chính xác yêu cầu về chuyến bay của người dùng từ tin nhắn và lịch sử trò chuyện.
+    - Bỏ qua việc tìm kiếm khách sạn và hiển thị badge gợi ý khách sạn khi người dùng đang thực hiện yêu cầu tìm/đặt vé máy bay.
+    - Cập nhật `BuildSystemPrompt` để hướng dẫn Gemini tập trung tư vấn chuyến bay thay vì khách sạn khi phát hiện intent tìm chuyến bay.
+    - Nâng cấp `ExtractFlightSearchUrl` và `ExtractAirportCode` để quét toàn bộ lịch sử hội thoại của người dùng, phân tích chi tiết các tham số tìm kiếm bao gồm: mã sân bay đi/đến (hỗ trợ phân tích theo thứ tự và ngữ cảnh "từ/đến"), ngày đi/về (hỗ trợ khứ hồi), số lượng khách (phân tách người lớn, trẻ em, em bé), hạng ghế (thương gia/phổ thông), loại hành trình (khứ hồi/một chiều), và sinh URL đầy đủ chính xác.
+
+- **Lỗi tạo đơn đặt phòng khách sạn (Create Hotel Booking Room Status & Email Mismatch)**: Khắc phục lỗi khi đặt phòng khách sạn bị từ chối do kiểm tra trạng thái phòng tĩnh ("Available") và sửa lỗi hiển thị sai tiền tệ trong email xác nhận.
+  - **Why it changed**:
+    1. Trước đây, hệ thống tìm phòng trống bằng cách kiểm tra cột `Status == "Available"` trên bảng `Rooms`. Nếu phòng đó đã có một booking vào thời gian khác (khiến status phòng chuyển sang "Booked"), hệ thống sẽ báo hết phòng và từ chối đặt phòng dù khoảng thời gian mới hoàn toàn trống.
+    2. Email xác nhận đặt phòng khách sạn bị hardcode tiền tệ là USD và hiển thị kí hiệu `$` ở đầu, trong khi giá phòng thực tế lưu và thanh toán bằng VNĐ.
+    3. Trình thu hồi phòng chưa thanh toán (`UnpaidBookingExpirationBackgroundService`) sử dụng thời gian hết hạn mặc định là 1 phút thay vì 30 phút nếu cấu hình chưa được seed vào DB, dẫn đến các booking mới tạo bị hủy ngay lập tức.
+  - **Affected files**: [CreateHotelBookingCommandHandler.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Features/Bookings/Commands/CreateHotelBooking/CreateHotelBookingCommandHandler.cs), [UnpaidBookingExpirationBackgroundService.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/Services/UnpaidBookingExpirationBackgroundService.cs), [WanderVNDbContext.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/Data/WanderVNDbContext.cs).
+  - **What changed**:
+    - Thay đổi logic tìm phòng khả dụng trong `CreateHotelBookingCommandHandler` sang kiểm tra trùng lặp lịch đặt phòng (date overlapping check) thực tế dựa trên ngày nhận/trả phòng và trạng thái các booking khác thay vì kiểm tra cột `Status` tĩnh.
+    - Bổ sung logic lấy thông tin người dùng đăng nhập làm fallback nếu thông tin liên hệ từ request bị thiếu để tránh lỗi lưu DB và giúp tra cứu thuận tiện.
+    - Sửa định dạng giá tiền hiển thị trong email xác nhận đặt phòng sang `{totalPrice:N0} VND`.
+    - Tăng thời gian giữ phòng chờ thanh toán mặc định của background service (`DefaultExpirationMinutes`) lên 30 phút.
+    - Khai báo kiểu dữ liệu cột `decimal(18, 2)` cho các trường `DuffelAmountVnd`, `MarkupAmountVnd` và `PaymentFeeVnd` trong `WanderVNDbContext` để dập tắt cảnh báo từ EF Core.
 
 - **Status Badge & Booking History Filtering**: Sửa logic hàm `renderStatusBadge` và bộ lọc tab lịch sử để hỗ trợ chính xác tất cả các trạng thái trong enum `BookingStatus` của backend (Pending, Confirmed, Completed, Cancelled, SettlementPending, Settled, CheckedIn, CheckedOut, NoShow).
   - **Why it changed**: Trước đây logic status badge ở frontend bị sai lệch so với enum backend (như dùng status giả lập `'Paid'`), dẫn đến các booking có trạng thái `Confirmed` rơi vào nhánh fallback hiển thị sai lệch thông tin thành "Đang xử lý" hoặc "Đã thanh toán / Chờ duyệt" và không hiển thị đúng nút Check-out.

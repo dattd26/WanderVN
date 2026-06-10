@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { userService } from '../../../services';
+import { useToast } from '../../../contexts/ToastContext';
 import type { UserDto, PagedResult } from '../../../types';
 import { UserModal } from './UserModal';
 import { UserSummaryCards } from './components/UserSummaryCards';
@@ -9,6 +10,7 @@ import { UserPagination } from './components/UserPagination';
 import { GovernanceCard } from './components/GovernanceCard';
 
 export function AdminUsers() {
+  const { triggerMessage } = useToast();
   // --- State dữ liệu API ---
   const [pagedResult, setPagedResult] = useState<PagedResult<UserDto> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,7 +124,7 @@ export function AdminUsers() {
     } catch (err) {
       const error = err as Error;
       console.error('Lỗi khi thay đổi trạng thái:', error);
-      alert(error.message || `Có lỗi xảy ra khi ${actionText} người dùng.`);
+      triggerMessage('error', error.message || `Có lỗi xảy ra khi ${actionText} người dùng.`);
     }
   };
 
@@ -130,13 +132,13 @@ export function AdminUsers() {
     if (!window.confirm(`Bạn có chắc chắn muốn xoá người dùng [${email}] không? Thao tác này không thể hoàn tác.`)) return;
     try {
       await userService.deleteCustomer(userId);
-      alert('Xóa khách hàng thành công!');
+      triggerMessage('success', 'Xóa khách hàng thành công!');
       fetchCustomers();
       fetchStats();
     } catch (err) {
       const error = err as Error;
       console.error('Lỗi khi xóa người dùng:', error);
-      alert(error.message || 'Có lỗi xảy ra khi xóa người dùng này.');
+      triggerMessage('error', error.message || 'Có lỗi xảy ra khi xóa người dùng này.');
     }
   };
 

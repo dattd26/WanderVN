@@ -85,7 +85,7 @@ public class ChatbotController : ControllerBase
 
             return Ok(new ApiResponse<object>(true, "Chat history retrieved", 200, new
             {
-                messages = history.Select(h => new
+                messages = history.Reverse().Select(h => new
                 {
                     text = h.MessageText,
                     isFromBot = h.IsFromBot,

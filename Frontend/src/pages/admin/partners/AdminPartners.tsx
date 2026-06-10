@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { userService } from '../../../services';
+import { useToast } from '../../../contexts/ToastContext';
 import type { UserDto, PagedResult } from '../../../types';
 import { PartnerModal } from './PartnerModal';
 import { PartnerStatsCards } from './components/PartnerStatsCards';
@@ -13,6 +14,7 @@ import { PartnerRejectModal } from './components/PartnerRejectModal';
 
 export function AdminPartners() {
   const [activeTab, setActiveTab] = useState<PartnerTabKey>('list');
+  const { triggerMessage } = useToast();
 
   // --- Dữ liệu Partner List (Status = 1) ---
   const [pagedResult, setPagedResult] = useState<PagedResult<UserDto> | null>(null);
@@ -143,7 +145,7 @@ export function AdminPartners() {
       );
       fetchStats();
     } catch {
-      alert('Cập nhật trạng thái khóa/mở khóa thất bại!');
+      triggerMessage('error', 'Cập nhật trạng thái khóa/mở khóa thất bại!');
     }
   };
 
@@ -154,7 +156,7 @@ export function AdminPartners() {
       fetchPartners();
       fetchStats();
     } catch {
-      alert('Duyệt hồ sơ thất bại!');
+      triggerMessage('error', 'Duyệt hồ sơ thất bại!');
     }
   };
 
@@ -165,7 +167,7 @@ export function AdminPartners() {
       setRejectModalOpen(false);
       setRejectTargetId(null);
     } catch {
-      alert('Từ chối hồ sơ thất bại!');
+      triggerMessage('error', 'Từ chối hồ sơ thất bại!');
     }
   };
 

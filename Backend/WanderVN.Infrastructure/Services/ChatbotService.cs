@@ -52,14 +52,21 @@ public class ChatbotService : IChatbotService
 
             var history = await LoadConversationHistory(request.UserId, cancellationToken);
 
-            // Trích xuất intent tìm khách sạn từ toàn bộ nội dung hội thoại
-            var intent = ParseHotelSearchIntent(request.Message, history);
-            _logger.LogInformation("Parsed hotel intent: Location={Location}, CheckIn={CheckIn}, CheckOut={CheckOut}, Guests={Guests}",
-                intent.Location, intent.CheckIn, intent.CheckOut, intent.Guests);
+            // Kiểm tra intent tìm chuyến bay từ hội thoại
+            var isFlight = IsFlightRequest(request.Message, history);
 
-            var hotelContext = await BuildHotelContextFromDb(request, intent, cancellationToken);
+            HotelSearchContext hotelContext = new();
+            if (!isFlight)
+            {
+                // Trích xuất intent tìm khách sạn từ toàn bộ nội dung hội thoại
+                var intent = ParseHotelSearchIntent(request.Message, history);
+                _logger.LogInformation("Parsed hotel intent: Location={Location}, CheckIn={CheckIn}, CheckOut={CheckOut}, Guests={Guests}",
+                    intent.Location, intent.CheckIn, intent.CheckOut, intent.Guests);
 
-            var systemPrompt = BuildSystemPrompt(hotelContext);
+                hotelContext = await BuildHotelContextFromDb(request, intent, cancellationToken);
+            }
+
+            var systemPrompt = BuildSystemPrompt(hotelContext, isFlight);
             var aiResponse = await CallGeminiApi(request.Message, history, systemPrompt, cancellationToken);
 
             if (string.IsNullOrEmpty(aiResponse))
@@ -70,11 +77,11 @@ public class ChatbotService : IChatbotService
 
             await _chatLogsRepository.SaveChatLog(request.UserId, aiResponse, true, cancellationToken);
 
-            var hotelSuggestions = hotelContext.Hotels.Count > 0
+            var hotelSuggestions = (!isFlight && hotelContext.Hotels.Count > 0)
                 ? MapToHotelSuggestions(hotelContext.Hotels)
                 : null;
 
-            var flightUrl = ExtractFlightSearchUrl(request.Message, aiResponse);
+            var flightUrl = ExtractFlightSearchUrl(request.Message, history, aiResponse);
 
             return new ChatbotResponse
             {
@@ -191,7 +198,7 @@ public class ChatbotService : IChatbotService
         return context;
     }
 
-    private string BuildSystemPrompt(HotelSearchContext hotelContext)
+    private string BuildSystemPrompt(HotelSearchContext hotelContext, bool isFlight)
     {
         var sb = new StringBuilder();
 
@@ -210,7 +217,16 @@ public class ChatbotService : IChatbotService
         sb.AppendLine("- Chỉ hỏi thêm khi thực sự thiếu thông tin (ví dụ: chưa biết địa điểm)");
         sb.AppendLine("- Không bịa ra giá phòng nếu không có dữ liệu thực tế");
 
-        if (hotelContext.Hotels.Count > 0)
+        if (isFlight)
+        {
+            sb.AppendLine();
+            sb.AppendLine("=== HƯỚNG DẪN TÌM CHUYẾN BAY ===");
+            sb.AppendLine("- Khách hàng đang muốn tìm kiếm hoặc đặt vé máy bay.");
+            sb.AppendLine("- Hãy trả lời thân thiện, hỗ trợ khách hàng xác định các thông tin: điểm đi, điểm đến, ngày đi, ngày về (nếu khứ hồi), số lượng khách.");
+            sb.AppendLine("- Nếu khách hàng chưa cung cấp ngày đi/ngày về hoặc điểm đi/điểm đến, hãy nhẹ nhàng hỏi họ.");
+            sb.AppendLine("- Hệ thống sẽ tự động tạo một nút bấm 'Tìm chuyến bay ngay' phía dưới câu trả lời của bạn chứa link tìm kiếm chuyến bay khi đã trích xuất được điểm đi và điểm đến từ cuộc hội thoại.");
+        }
+        else if (hotelContext.Hotels.Count > 0)
         {
             sb.AppendLine();
 
@@ -390,26 +406,53 @@ public class ChatbotService : IChatbotService
         }).ToList();
     }
 
-    // Phân tích tin nhắn và phản hồi để tạo URL tìm kiếm chuyến bay nếu user hỏi về vé máy bay
-    private static string? ExtractFlightSearchUrl(string userMessage, string aiResponse)
+    // Kiểm tra xem người dùng có đang yêu cầu tìm/đặt vé máy bay hay không
+    private static bool IsFlightRequest(string userMessage, List<ConversationTurn> history)
     {
-        var combined = (userMessage + " " + aiResponse).ToLower();
+        var combinedText = (string.Join(" ", history
+            .Where(h => h.Role == "user")
+            .Select(h => h.Text)) + " " + userMessage).ToLower();
 
-        bool isFlightIntent = combined.Contains("vé máy bay") ||
-                              combined.Contains("chuyến bay") ||
-                              combined.Contains("bay từ") ||
-                              combined.Contains("đặt vé") ||
-                              combined.Contains("flight");
+        return combinedText.Contains("vé máy bay") ||
+               combinedText.Contains("chuyến bay") ||
+               combinedText.Contains("bay từ") ||
+               combinedText.Contains("bay đến") ||
+               combinedText.Contains("bay đi") ||
+               combinedText.Contains("vé bay") ||
+               combinedText.Contains("đặt vé máy bay") ||
+               combinedText.Contains("đặt chuyến bay") ||
+               combinedText.Contains("máy bay") ||
+               combinedText.Contains("flight");
+    }
+
+    // Phân tích tin nhắn và phản hồi để tạo URL tìm kiếm chuyến bay nếu user hỏi về vé máy bay
+    private static string? ExtractFlightSearchUrl(string userMessage, List<ConversationTurn> history, string aiResponse)
+    {
+        var combinedUserText = string.Join(" ", history
+            .Where(h => h.Role == "user")
+            .Select(h => h.Text)) + " " + userMessage;
+
+        var combinedAll = (combinedUserText + " " + aiResponse).ToLower();
+
+        bool isFlightIntent = combinedAll.Contains("vé máy bay") ||
+                              combinedAll.Contains("chuyến bay") ||
+                              combinedAll.Contains("bay từ") ||
+                              combinedAll.Contains("bay đến") ||
+                              combinedAll.Contains("bay đi") ||
+                              combinedAll.Contains("vé bay") ||
+                              combinedAll.Contains("đặt vé máy bay") ||
+                              combinedAll.Contains("đặt chuyến bay") ||
+                              combinedAll.Contains("máy bay") ||
+                              combinedAll.Contains("flight");
 
         if (!isFlightIntent)
             return null;
 
         string? origin = null;
         string? destination = null;
-        string? departureDate = null;
 
-        // Trích xuất mã sân bay IATA (3 ký tự viết hoa) nếu có trong tin nhắn gốc
-        var iataCodes = Regex.Matches(userMessage, @"\b([A-Z]{3})\b")
+        // Trích xuất mã sân bay IATA (3 ký tự viết hoa) nếu có trong tin nhắn gốc của user hoặc lịch sử
+        var iataCodes = Regex.Matches(combinedUserText, @"\b([A-Z]{3})\b")
             .Cast<Match>()
             .Select(m => m.Value)
             .ToList();
@@ -421,59 +464,184 @@ public class ChatbotService : IChatbotService
         }
         else
         {
-            // Fallback: map tên thành phố phổ biến sang mã IATA
-            origin = ExtractAirportCode(userMessage, isOrigin: true);
-            destination = ExtractAirportCode(userMessage, isOrigin: false);
+            // Trích xuất từ tên các thành phố
+            origin = ExtractAirportCode(combinedUserText, isOrigin: true);
+            destination = ExtractAirportCode(combinedUserText, isOrigin: false);
         }
 
-        // Trích xuất ngày bay dạng yyyy-MM-dd hoặc dd/MM/yyyy
-        var dateMatch = Regex.Match(userMessage, @"(\d{4}-\d{2}-\d{2})|(\d{1,2}/\d{1,2}/\d{4})");
-        if (dateMatch.Success)
+        // Nếu điểm đi giống điểm đến thì reset điểm đến để người dùng tự chọn
+        if (origin != null && origin == destination)
         {
-            if (DateTime.TryParse(dateMatch.Value, out var parsedDate))
-                departureDate = parsedDate.ToString("yyyy-MM-dd");
+            destination = null;
         }
+
+        var (departureDate, returnDate) = ExtractFlightDateRange(combinedUserText);
 
         if (origin == null && destination == null)
             return null;
+
+        string cabinClass = "economy";
+        if (combinedUserText.ToLower().Contains("thương gia") || 
+            combinedUserText.ToLower().Contains("business") || 
+            combinedUserText.ToLower().Contains("first class") || 
+            combinedUserText.ToLower().Contains("vip"))
+        {
+            cabinClass = "business";
+        }
+
+        string tripType = "one-way";
+        if (combinedUserText.ToLower().Contains("khứ hồi") || 
+            combinedUserText.ToLower().Contains("khu hoi") || 
+            combinedUserText.ToLower().Contains("hai chiều") || 
+            combinedUserText.ToLower().Contains("round-trip") || 
+            combinedUserText.ToLower().Contains("roundtrip") || 
+            returnDate != null)
+        {
+            tripType = "round-trip";
+        }
+
+        var (adults, children, infants) = ExtractPassengers(combinedUserText);
 
         var queryParams = new List<string>();
         if (origin != null) queryParams.Add($"origin={origin}");
         if (destination != null) queryParams.Add($"destination={destination}");
         if (departureDate != null) queryParams.Add($"departureDate={departureDate}");
+        queryParams.Add($"tripType={tripType}");
+        queryParams.Add($"cabinClass={cabinClass}");
+        queryParams.Add($"_t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+        if (tripType == "round-trip" && returnDate != null)
+        {
+            queryParams.Add($"returnDate={returnDate}");
+        }
+        queryParams.Add($"adults={adults}");
+        queryParams.Add($"children={children}");
+        queryParams.Add($"infants={infants}");
 
         return $"http://localhost:5173/flights?{string.Join("&", queryParams)}";
     }
 
+    // Trích xuất ngày đi và ngày về (nếu có)
+    private static (string? departureDate, string? returnDate) ExtractFlightDateRange(string text)
+    {
+        var dates = new List<DateTime>();
+        var currentYear = DateTime.Now.Year;
+
+        // Định dạng dd/MM hoặc dd/M
+        var shortDateMatches = Regex.Matches(text, @"\b(\d{1,2})/(\d{1,2})\b");
+        foreach (Match m in shortDateMatches)
+        {
+            if (int.TryParse(m.Groups[1].Value, out int day) &&
+                int.TryParse(m.Groups[2].Value, out int month))
+            {
+                try
+                {
+                    var dt = new DateTime(currentYear, month, day);
+                    if (dt < DateTime.Today) dt = dt.AddYears(1);
+                    dates.Add(dt);
+                }
+                catch { }
+            }
+        }
+
+        // Định dạng dd/MM/yyyy
+        var fullDateMatches = Regex.Matches(text, @"\b(\d{1,2})/(\d{1,2})/(\d{4})\b");
+        foreach (Match m in fullDateMatches)
+        {
+            if (DateTime.TryParseExact(m.Value, new[] { "d/M/yyyy", "dd/MM/yyyy" },
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var dt))
+            {
+                dates.RemoveAll(d => d.Day == dt.Day && d.Month == dt.Month);
+                dates.Add(dt);
+            }
+        }
+
+        // Định dạng ISO yyyy-MM-dd
+        var isoMatches = Regex.Matches(text, @"\b(\d{4})-(\d{2})-(\d{2})\b");
+        foreach (Match m in isoMatches)
+        {
+            if (DateTime.TryParse(m.Value, out var dt))
+                dates.Add(dt);
+        }
+
+        dates = dates.Distinct().OrderBy(d => d).ToList();
+
+        string? dep = null;
+        string? ret = null;
+
+        if (dates.Count >= 2)
+        {
+            dep = dates[0].ToString("yyyy-MM-dd");
+            ret = dates[1].ToString("yyyy-MM-dd");
+        }
+        else if (dates.Count == 1)
+        {
+            dep = dates[0].ToString("yyyy-MM-dd");
+        }
+
+        return (dep, ret);
+    }
+
+    // Trích xuất số lượng hành khách (người lớn, trẻ em, em bé)
+    private static (int adults, int children, int infants) ExtractPassengers(string text)
+    {
+        int adults = 1;
+        int children = 0;
+        int infants = 0;
+
+        var infantMatch = Regex.Match(text, @"(\d+)\s*(?:em bé|sơ sinh|infants?|inf)", RegexOptions.IgnoreCase);
+        if (infantMatch.Success && int.TryParse(infantMatch.Groups[1].Value, out int infCount))
+        {
+            infants = infCount;
+        }
+
+        var childMatch = Regex.Match(text, @"(\d+)\s*(?:trẻ em|trẻ nhỏ|children|child|bé|kids?)", RegexOptions.IgnoreCase);
+        if (childMatch.Success && int.TryParse(childMatch.Groups[1].Value, out int childCount))
+        {
+            if (!text.Contains("em bé") || childMatch.Value.Contains("trẻ") || childMatch.Value.Contains("child") || childMatch.Value.Contains("kid"))
+            {
+                children = childCount;
+            }
+        }
+
+        var adultMatch = Regex.Match(text, @"(\d+)\s*(?:người lớn|người|khách|adults?|pax)", RegexOptions.IgnoreCase);
+        if (adultMatch.Success && int.TryParse(adultMatch.Groups[1].Value, out int adultCount))
+        {
+            adults = adultCount;
+        }
+
+        return (adults, children, infants);
+    }
+
+    // Trích xuất mã sân bay IATA dựa trên tên thành phố
     private static string? ExtractAirportCode(string text, bool isOrigin)
     {
-        // Ánh xạ tên thành phố/tỉnh phổ biến sang mã IATA
         var cityToIata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "hà nội", "HAN" }, { "ha noi", "HAN" }, { "nội bài", "HAN" },
-            { "hồ chí minh", "SGN" }, { "ho chi minh", "SGN" }, { "sài gòn", "SGN" }, { "saigon", "SGN" }, { "tân sơn nhất", "SGN" },
-            { "đà nẵng", "DAD" }, { "da nang", "DAD" },
-            { "phú quốc", "PQC" }, { "phu quoc", "PQC" },
-            { "nha trang", "CXR" },
-            { "huế", "HUI" }, { "hue", "HUI" },
-            { "đà lạt", "DLI" }, { "da lat", "DLI" },
-            { "cần thơ", "VCA" }, { "can tho", "VCA" },
-            { "hải phòng", "HPH" }, { "hai phong", "HPH" },
-            { "buôn ma thuột", "BMV" }, { "buon ma thuot", "BMV" },
-            { "pleiku", "PXU" },
-            { "quy nhơn", "UIH" }, { "quy nhon", "UIH" },
-            { "vinh", "VII" },
-            { "thanh hóa", "THD" }, { "thanh hoa", "THD" },
+            { "hà nội", "HAN" }, { "ha noi", "HAN" }, { "nội bài", "HAN" }, { "han", "HAN" },
+            { "hồ chí minh", "SGN" }, { "ho chi minh", "SGN" }, { "sài gòn", "SGN" }, { "saigon", "SGN" }, { "tân sơn nhất", "SGN" }, { "sgn", "SGN" },
+            { "đà nẵng", "DAD" }, { "da nang", "DAD" }, { "dad", "DAD" },
+            { "phú quốc", "PQC" }, { "phu quoc", "PQC" }, { "pqc", "PQC" },
+            { "nha trang", "CXR" }, { "cxr", "CXR" },
+            { "huế", "HUI" }, { "hue", "HUI" }, { "hui", "HUI" },
+            { "đà lạt", "DLI" }, { "da lat", "DLI" }, { "dli", "DLI" },
+            { "cần thơ", "VCA" }, { "can tho", "VCA" }, { "vca", "VCA" },
+            { "hải phòng", "HPH" }, { "hai phong", "HPH" }, { "hph", "HPH" },
+            { "buôn ma thuột", "BMV" }, { "buon ma thuot", "BMV" }, { "bmv", "BMV" },
+            { "pleiku", "PXU" }, { "pxu", "PXU" },
+            { "quy nhơn", "UIH" }, { "quy nhon", "UIH" }, { "uih", "UIH" },
+            { "vinh", "VII" }, { "vii", "VII" },
+            { "thanh hóa", "THD" }, { "thanh hoa", "THD" }, { "thd", "THD" },
         };
 
         var lowerText = text.ToLower();
 
-        // Tìm theo pattern "từ [thành phố]" cho origin, "đến/tới [thành phố]" cho destination
         if (isOrigin)
         {
             foreach (var entry in cityToIata)
             {
-                if (Regex.IsMatch(lowerText, $@"(từ|from)\s+{Regex.Escape(entry.Key)}"))
+                var pattern = $@"(?:^|\s)(?:từ|from|đi từ)\s+{Regex.Escape(entry.Key)}(?:$|\s|[.,!?])";
+                if (Regex.IsMatch(lowerText, pattern))
                     return entry.Value;
             }
         }
@@ -481,16 +649,49 @@ public class ChatbotService : IChatbotService
         {
             foreach (var entry in cityToIata)
             {
-                if (Regex.IsMatch(lowerText, $@"(đến|tới|to|đi)\s+{Regex.Escape(entry.Key)}"))
+                var pattern = $@"(?:^|\s)(?:đến|tới|to|đi|bay đến|bay tới|về)\s+{Regex.Escape(entry.Key)}(?:$|\s|[.,!?])";
+                if (Regex.IsMatch(lowerText, pattern))
                     return entry.Value;
             }
         }
 
-        // Fallback: tìm kiếm tên thành phố xuất hiện trong text
+        var matches = new List<(string code, int index)>();
         foreach (var entry in cityToIata)
         {
-            if (lowerText.Contains(entry.Key))
-                return entry.Value;
+            var searchKey = entry.Key;
+            var index = -1;
+            if (searchKey.Length == 3)
+            {
+                var pattern = $@"(?:^|\s){Regex.Escape(searchKey)}(?:$|\s|[.,!?])";
+                var match = Regex.Match(lowerText, pattern);
+                if (match.Success)
+                {
+                    index = match.Index;
+                }
+            }
+            else
+            {
+                index = lowerText.IndexOf(searchKey);
+            }
+
+            if (index >= 0)
+            {
+                matches.Add((entry.Value, index));
+            }
+        }
+
+        if (matches.Count > 0)
+        {
+            var sorted = matches.OrderBy(m => m.index).ToList();
+            if (isOrigin)
+            {
+                return sorted[0].code;
+            }
+            else
+            {
+                if (sorted.Count >= 2)
+                    return sorted.Last().code;
+            }
         }
 
         return null;

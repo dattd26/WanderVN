@@ -14,6 +14,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 import { PartnerHeader } from '../../components/partner/PartnerHeader';
 import { PartnerSidebar } from '../../components/partner/PartnerSidebar';
 import { partnerService } from '../../services';
@@ -22,6 +23,7 @@ import { DashboardCardSkeleton } from '../../components/ui/DashboardCardSkeleton
 
 export const PartnerDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { triggerMessage } = useToast();
 
   // ── Khởi tạo các state quản lý dữ liệu và UI ──
   const [allHotels, setAllHotels] = useState<PartnerHotelDto[]>([]);
@@ -408,7 +410,7 @@ export const PartnerDashboard: React.FC = () => {
                           <button
                             onClick={() => {
                               // TODO: Di chuyển tới màn hình quản lý đặt phòng, loại phòng chi tiết
-                              alert('Tính năng Quản lý chi tiết đang được phát triển ở giai đoạn kế tiếp!');
+                              triggerMessage('success', 'Tính năng Quản lý chi tiết đang được phát triển ở giai đoạn kế tiếp!');
                             }}
                             className="flex-grow-[1.5] font-label-md text-caption uppercase tracking-widest bg-primary text-on-primary px-3 py-2.5 rounded hover:bg-secondary hover:text-on-secondary transition-colors flex items-center justify-center gap-1.5"
                           >

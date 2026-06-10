@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../../services/auth/authService';
+import { useToast } from '../../../contexts/ToastContext';
 
 export function ChangePasswordAdmin() {
   const navigate = useNavigate();
+  const { triggerMessage } = useToast();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,16 +17,16 @@ export function ChangePasswordAdmin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      alert('Mật khẩu xác nhận không khớp!');
+      triggerMessage('error', 'Mật khẩu xác nhận không khớp!');
       return;
     }
 
     try {
       await authService.changePassword({ oldPassword, newPassword });
-      alert('Cập nhật mật khẩu thành công!');
+      triggerMessage('success', 'Cập nhật mật khẩu thành công!');
       navigate('/admin/dashboard');
     } catch (error: unknown) {
-      alert((error as Error).message || 'Có lỗi xảy ra khi đổi mật khẩu.');
+      triggerMessage('error', (error as Error).message || 'Có lỗi xảy ra khi đổi mật khẩu.');
     }
   };
 

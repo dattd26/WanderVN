@@ -13,7 +13,7 @@ namespace WanderVN.Infrastructure.Services;
 /// </summary>
 public class UnpaidBookingExpirationBackgroundService : BackgroundService
 {
-    private const int DefaultExpirationMinutes = 1;
+    private const int DefaultExpirationMinutes = 30;
     private static readonly TimeSpan ScanInterval = TimeSpan.FromMinutes(1);
 
     private readonly IServiceScopeFactory _scopeFactory;

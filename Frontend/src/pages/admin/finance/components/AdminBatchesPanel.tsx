@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useToast } from '../../../../contexts/ToastContext';
 import { payoutService } from '../../../../services';
 import type { AdminBatchDto, PagedResult } from '../../../../types';
 import { CreateBatchModal } from './CreateBatchModal';
@@ -6,6 +7,7 @@ import { VietQRModal } from './VietQRModal';
 import { FinancePagination } from './FinancePagination';
 
 export function AdminBatchesPanel() {
+  const { triggerMessage } = useToast();
   const [pagedResult, setPagedResult] = useState<PagedResult<AdminBatchDto> | null>(null);
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
@@ -71,10 +73,10 @@ export function AdminBatchesPanel() {
     setIsLoading(true);
     try {
       await payoutService.cancelBatch(batch.id, reason);
-      alert('Đã hủy đợt chi trả thành công. Các khoản giao dịch con đã được trả lại trạng thái Chờ chi trả.');
+      triggerMessage('success', 'Đã hủy đợt chi trả thành công. Các khoản giao dịch con đã được trả lại trạng thái Chờ chi trả.');
       fetchBatches();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể hủy đợt chi trả.');
+      triggerMessage('error', err instanceof Error ? err.message : 'Không thể hủy đợt chi trả.');
     } finally {
       setIsLoading(false);
     }
