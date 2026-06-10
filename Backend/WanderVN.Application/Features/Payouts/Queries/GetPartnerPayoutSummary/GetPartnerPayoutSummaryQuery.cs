@@ -42,7 +42,8 @@ public class GetPartnerPayoutSummaryQueryHandler : IRequestHandler<GetPartnerPay
             CommissionRate = stats.CommissionRate,
             BankName = user?.BankName,
             BankAccountNumber = user?.BankAccountNumber,
-            BankAccountName = user?.BankAccountName
+            BankAccountName = user?.BankAccountName,
+            BankBin = user?.BankBin
         };
     }
 }

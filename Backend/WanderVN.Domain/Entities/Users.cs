@@ -36,6 +36,7 @@ public partial class Users
     public string? BankName { get; set; }
     public string? BankAccountNumber { get; set; }
     public string? BankAccountName { get; set; }
+    public string? BankBin { get; set; }
 
     public virtual ICollection<Bookings> Bookings { get; set; } = new List<Bookings>();
 

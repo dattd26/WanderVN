@@ -78,6 +78,14 @@ public static class DependencyInjection
         // Đăng ký ZaloPay Service với HttpClient
         services.AddHttpClient<IZaloPayService, ZaloPayService>();
 
+        // Đăng ký VietQR Service với HttpClient
+        services.AddHttpClient<IVietQRService, VietQRService>(c =>
+        {
+            c.BaseAddress = new Uri(configuration["VietQR:BaseUrl"] ?? "https://api.vietqr.io/");
+            c.DefaultRequestHeaders.Add("x-client-id", configuration["VietQR:ClientId"] ?? "");
+            c.DefaultRequestHeaders.Add("x-api-key", configuration["VietQR:ApiKey"] ?? "");
+        });
+
         services.AddScoped<IHotelRepository, HotelRepository>();
         services.AddScoped<IHomeRepository, HomeRepository>();
         services.AddScoped<IBookingRepository, BookingRepository>();

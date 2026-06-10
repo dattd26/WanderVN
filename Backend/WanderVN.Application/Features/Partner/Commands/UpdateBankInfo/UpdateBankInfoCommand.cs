@@ -8,6 +8,7 @@ public class UpdateBankInfoCommand : IRequest<bool>
     public string BankName { get; set; } = string.Empty;
     public string BankAccountNumber { get; set; } = string.Empty;
     public string BankAccountName { get; set; } = string.Empty;
+    public string BankBin { get; set; } = string.Empty;
 }
 
 public class UpdateBankInfoCommandValidator : AbstractValidator<UpdateBankInfoCommand>
@@ -25,5 +26,9 @@ public class UpdateBankInfoCommandValidator : AbstractValidator<UpdateBankInfoCo
         RuleFor(x => x.BankAccountName)
             .NotEmpty().WithMessage("Tên chủ tài khoản không được để trống.")
             .MaximumLength(255).WithMessage("Tên chủ tài khoản không quá 255 ký tự.");
+
+        RuleFor(x => x.BankBin)
+            .NotEmpty().WithMessage("Mã BIN ngân hàng không được để trống.")
+            .MaximumLength(10).WithMessage("Mã BIN ngân hàng không quá 10 ký tự.");
     }
 }

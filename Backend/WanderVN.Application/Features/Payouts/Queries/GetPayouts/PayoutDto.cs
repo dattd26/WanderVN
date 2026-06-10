@@ -9,6 +9,10 @@ public class PayoutDto
     public string? PartnerName { get; set; }
     public string? PartnerEmail { get; set; }
     public string? PartnerAvatarUrl { get; set; }
+    public string? BankName { get; set; }
+    public string? BankAccountNumber { get; set; }
+    public string? BankAccountName { get; set; }
+    public string? BankBin { get; set; }
 
     // Booking info
     public int BookingId { get; set; }

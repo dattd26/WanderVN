@@ -31,6 +31,7 @@ public class UpdateBankInfoCommandHandler : IRequestHandler<UpdateBankInfoComman
         user.BankName = request.BankName.Trim();
         user.BankAccountNumber = request.BankAccountNumber.Trim();
         user.BankAccountName = request.BankAccountName.Trim();
+        user.BankBin = request.BankBin.Trim();
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

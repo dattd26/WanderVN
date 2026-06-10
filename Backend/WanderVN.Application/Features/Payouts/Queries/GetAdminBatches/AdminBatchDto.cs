@@ -12,6 +12,11 @@ public class AdminBatchDto
     public string? PartnerName { get; set; }
     public string? PartnerEmail { get; set; }
     
+    public string? BankName { get; set; }
+    public string? BankAccountNumber { get; set; }
+    public string? BankAccountName { get; set; }
+    public string? BankBin { get; set; }
+    
     public decimal TotalGross { get; set; }
     public decimal TotalCommission { get; set; }
     public decimal TotalNet { get; set; }
