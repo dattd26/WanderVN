@@ -3,7 +3,30 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- **GSAP Animations on SearchStays Page**: Tích hợp các hiệu ứng chuyển cảnh và xuất hiện so le (stagger animations) bằng thư viện GSAP cho trang tìm kiếm khách sạn.
+  - **Why it changed**: Cải thiện trải nghiệm người dùng (UX) theo phong cách tối giản biên tập (Editorial Minimalism), tăng tính tương tác sinh động khi tải trang và khi bộ lọc thay đổi danh sách hiển thị.
+  - **Affected files**: [SearchStays.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/SearchStays.tsx), [FiltersSidebar.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/components/client/FiltersSidebar.tsx).
+  - **What changed**:
+    - Sử dụng `gsap.matchMedia()` để tạo hiệu ứng so le mượt mà cho tiêu đề trang, ô tìm kiếm và sidebar bộ lọc khi bắt đầu truy cập.
+    - Lắng nghe trạng thái `loading` để kích hoạt hiệu ứng stagger slide-up cho danh sách thẻ khách sạn (`HotelCard`) sau khi gọi API xong.
+    - Hỗ trợ đầy đủ `prefers-reduced-motion` để tự động tắt hoặc tối giản hiệu ứng khi người dùng bật chế độ giảm chuyển động trên thiết bị.
+    - Mở rộng prop `className` cho `FiltersSidebar` để truyền và nhận các lớp CSS hoạt ảnh một cách trực quan.
+
 ### Fixed
+- **Lỗi tạo đơn đặt phòng khách sạn (Create Hotel Booking Room Status & Email Mismatch)**: Khắc phục lỗi khi đặt phòng khách sạn bị từ chối do kiểm tra trạng thái phòng tĩnh ("Available") và sửa lỗi hiển thị sai tiền tệ trong email xác nhận.
+  - **Why it changed**:
+    1. Trước đây, hệ thống tìm phòng trống bằng cách kiểm tra cột `Status == "Available"` trên bảng `Rooms`. Nếu phòng đó đã có một booking vào thời gian khác (khiến status phòng chuyển sang "Booked"), hệ thống sẽ báo hết phòng và từ chối đặt phòng dù khoảng thời gian mới hoàn toàn trống.
+    2. Email xác nhận đặt phòng khách sạn bị hardcode tiền tệ là USD và hiển thị kí hiệu `$` ở đầu, trong khi giá phòng thực tế lưu và thanh toán bằng VNĐ.
+    3. Trình thu hồi phòng chưa thanh toán (`UnpaidBookingExpirationBackgroundService`) sử dụng thời gian hết hạn mặc định là 1 phút thay vì 30 phút nếu cấu hình chưa được seed vào DB, dẫn đến các booking mới tạo bị hủy ngay lập tức.
+  - **Affected files**: [CreateHotelBookingCommandHandler.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Application/Features/Bookings/Commands/CreateHotelBooking/CreateHotelBookingCommandHandler.cs), [UnpaidBookingExpirationBackgroundService.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/Services/UnpaidBookingExpirationBackgroundService.cs), [WanderVNDbContext.cs](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Backend/WanderVN.Infrastructure/Data/WanderVNDbContext.cs).
+  - **What changed**:
+    - Thay đổi logic tìm phòng khả dụng trong `CreateHotelBookingCommandHandler` sang kiểm tra trùng lặp lịch đặt phòng (date overlapping check) thực tế dựa trên ngày nhận/trả phòng và trạng thái các booking khác thay vì kiểm tra cột `Status` tĩnh.
+    - Bổ sung logic lấy thông tin người dùng đăng nhập làm fallback nếu thông tin liên hệ từ request bị thiếu để tránh lỗi lưu DB và giúp tra cứu thuận tiện.
+    - Sửa định dạng giá tiền hiển thị trong email xác nhận đặt phòng sang `{totalPrice:N0} VND`.
+    - Tăng thời gian giữ phòng chờ thanh toán mặc định của background service (`DefaultExpirationMinutes`) lên 30 phút.
+    - Khai báo kiểu dữ liệu cột `decimal(18, 2)` cho các trường `DuffelAmountVnd`, `MarkupAmountVnd` và `PaymentFeeVnd` trong `WanderVNDbContext` để dập tắt cảnh báo từ EF Core.
+
 - **Status Badge & Booking History Filtering**: Sửa logic hàm `renderStatusBadge` và bộ lọc tab lịch sử để hỗ trợ chính xác tất cả các trạng thái trong enum `BookingStatus` của backend (Pending, Confirmed, Completed, Cancelled, SettlementPending, Settled, CheckedIn, CheckedOut, NoShow).
   - **Why it changed**: Trước đây logic status badge ở frontend bị sai lệch so với enum backend (như dùng status giả lập `'Paid'`), dẫn đến các booking có trạng thái `Confirmed` rơi vào nhánh fallback hiển thị sai lệch thông tin thành "Đang xử lý" hoặc "Đã thanh toán / Chờ duyệt" và không hiển thị đúng nút Check-out.
   - **Affected files**: [BookingHistory.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingHistory.tsx), [BookingLookup.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingLookup.tsx), [BookingDetail.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/client/BookingDetail.tsx).

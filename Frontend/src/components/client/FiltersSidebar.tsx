@@ -11,6 +11,7 @@ interface FiltersSidebarProps {
   onMapClick?: () => void;
   mapCenter?: [number, number] | null;
   hotels?: SearchHotelsDto[];
+  className?: string;
 }
 
 export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
@@ -19,7 +20,8 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   onAmenityChange,
   onMapClick,
   mapCenter,
-  hotels = []
+  hotels = [],
+  className = 'w-full lg:w-1/4'
 }) => {
   const [maxPrice, setMaxPrice] = useState(8000000);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -76,7 +78,7 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   ];
 
   return (
-    <aside className="w-full lg:w-1/4 space-y-10">
+    <aside className={`space-y-10 ${className}`}>
       {/* Khối Bản đồ Thu nhỏ — click để mở modal map fullscreen */}
       <div
         role="button"
