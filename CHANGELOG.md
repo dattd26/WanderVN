@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Changed
+- **Admin Payout Details Modal & VietQR Modal Style Alignment**: Thay thế browser `alert` thô sơ bằng modal `PayoutDetailModal` trực quan, đồng thời đồng bộ hóa màu sắc cho cả `PayoutDetailModal` và `VietQRModal` theo chuẩn thiết kế Admin Portal.
+  - **Why it changed**: 
+    1. Cải thiện trải nghiệm người dùng (UX) của Admin khi xem chi tiết các khoản chi trả trong trang quản trị tài chính, thay thế popup mặc định của trình duyệt bằng giao diện đồng bộ với phong cách thiết kế chung.
+    2. Đồng bộ hóa màu sắc và phong cách giao diện của các hộp thoại chi trả (bao gồm cả `VietQRModal`) theo hệ thống token màu của Admin Portal (`admin-primary`, `admin-surface-container-low`, `admin-outline-variant`...), thay vì sử dụng màu limestone hoài cổ của trang Partner/Customer.
+    3. Khắc phục lỗi hiển thị tràn viền nhãn trạng thái đặt chỗ khi ở trạng thái dài như `SettlementPending`.
+  - **Affected files**:
+    - Frontend: [AdminFinance.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/finance/AdminFinance.tsx), [PayoutDetailModal.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/finance/components/PayoutDetailModal.tsx), [VietQRModal.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/finance/components/VietQRModal.tsx)
+  - **What changed**:
+    - Thiết kế component [PayoutDetailModal.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/finance/components/PayoutDetailModal.tsx) sử dụng các token màu admin và Material Symbols, loại bỏ biểu tượng Lucide.
+    - Sửa lỗi tràn giao diện bằng cách bổ sung hàm ánh xạ ngôn ngữ tiếng Việt cho các nhãn trạng thái (`getBookingStatusLabel`, `getPaymentStatusLabel`), giúp hiển thị nhãn ngắn gọn (`SettlementPending` -> `Chờ đối soát`).
+    - Cập nhật [VietQRModal.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/finance/components/VietQRModal.tsx) chuyển đổi từ giao diện màu limestone cũ sang giao diện có tông màu Admin xám/slate sang trọng đồng bộ.
+    - Tích hợp thư viện GSAP để tạo hiệu ứng mượt mà khi hiển thị và ẩn modal (fade-in/fade-out cho lớp phủ backdrop và scale/slide-up cho khung modal).
+    - Cập nhật state quản lý hiển thị chi tiết tại [AdminFinance.tsx](file:///home/ducdat/IT/CNPM/LT-Web-ASP.Net-Core/WanderVN/Frontend/src/pages/admin/finance/AdminFinance.tsx), gỡ bỏ hàm `alert` trình duyệt cũ.
+
 ### Added
 - **VietQR Partner Payout Integration**: Tích hợp VietQR giúp Admin dễ dàng thực hiện thanh toán chi trả doanh thu cho Partner qua mã QR được tạo động, bảo mật.
   - **Why it changed**: Cải thiện trải nghiệm của Admin khi đối soát và chi trả doanh thu, tránh việc nhập tay số tài khoản và số tiền gây nhầm lẫn thất thoát. Đồng thời, nâng cao UX cho Partner khi đăng ký tài khoản ngân hàng liên kết.

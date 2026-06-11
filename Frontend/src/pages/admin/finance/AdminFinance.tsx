@@ -13,6 +13,7 @@ import { FinanceTable } from './components/FinanceTable';
 import { FinancePagination } from './components/FinancePagination';
 import { AdminBatchesPanel } from './components/AdminBatchesPanel';
 import { VietQRModal } from './components/VietQRModal';
+import { PayoutDetailModal } from './components/PayoutDetailModal';
 
 export function AdminFinance() {
     const [activeTab, setActiveTab] = useState<'single' | 'batch'>('single');
@@ -24,6 +25,7 @@ export function AdminFinance() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [qrPayout, setQrPayout] = useState<PayoutDto | null>(null);
+    const [detailPayout, setDetailPayout] = useState<PayoutDto | null>(null);
 
     // Bộ lọc
     const [keyword, setKeyword] = useState('');
@@ -129,23 +131,7 @@ export function AdminFinance() {
     };
 
     const handleViewDetail = (p: PayoutDto) => {
-        alert(
-            `CHI TIẾT KHOẢN CHI TRẢ #${p.id}\n` +
-            `-----------------------------------\n` +
-            `• Đối tác: ${p.partnerName ?? 'N/A'} (${p.partnerEmail ?? '—'})\n` +
-            `• Mã Booking: ${p.bookingCode} [${p.serviceType}]\n` +
-            `• Trạng thái Booking: ${p.bookingStatus ?? '—'}\n` +
-            `• Trạng thái Thanh toán: ${p.paymentStatus ?? '—'}\n` +
-            `• Doanh thu (Gross): ${p.grossAmount.toLocaleString('vi-VN')}₫\n` +
-            `• Phí hoa hồng: ${p.commissionAmount.toLocaleString('vi-VN')}₫\n` +
-            `• Thực nhận (Net): ${p.netAmount.toLocaleString('vi-VN')}₫\n` +
-            `• Phương thức: ${p.payoutMethod}\n` +
-            `• Trạng thái: ${p.status === 'Pending' ? 'Chờ thanh toán' : p.status === 'Processing' ? 'Đang xử lý' : p.status === 'Paid' ? 'Đã chi trả' : p.status === 'Failed' ? 'Thất bại' : p.status === 'Cancelled' ? 'Đã hủy' : p.status}\n` +
-            (p.checkedOutAt ? `• Ngày Checkout: ${new Date(p.checkedOutAt).toLocaleString('vi-VN')}\n` : '') +
-            (p.paidAt ? `• Ngày Chi trả: ${new Date(p.paidAt).toLocaleString('vi-VN')}\n` : '') +
-            (p.transactionReference ? `• Tham chiếu/Lý do: ${p.transactionReference}\n` : '') +
-            `• Tạo lúc: ${new Date(p.createdAt).toLocaleString('vi-VN')}`
-        );
+        setDetailPayout(p);
     };
 
     const handleReset = () => {
@@ -308,6 +294,12 @@ export function AdminFinance() {
                     }}
                 />
             )}
+
+            <PayoutDetailModal
+                isOpen={detailPayout !== null}
+                payout={detailPayout}
+                onClose={() => setDetailPayout(null)}
+            />
         </div>
     );
 }
